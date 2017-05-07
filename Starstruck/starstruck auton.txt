@@ -1,0 +1,9 @@
+1st step: move forward 23 inches(from shaft encoder)
+2nd step: point turn values should be 4 inches
+3rd step: move forward 12 inches(from shaft encoder)
+-open and lift
+4th step: point turn values should be 4 inches
+5th step: move back 27 inches(from shaft encoder)
+-launch
+6th step: move forward 31 inches(from shaft encoder)
+7th step: repeat 6th step in reverses

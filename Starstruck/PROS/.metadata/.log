@@ -1,0 +1,28 @@
+!SESSION 2017-02-02 21:51:56.696 -----------------------------------------------
+eclipse.buildId=M20120914-1800
+java.version=1.8.0_111
+java.vendor=Oracle Corporation
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=en_US
+Framework arguments:  --product org.eclipse.platform.ide
+Command-line arguments:  -os win32 -ws win32 -arch x86_64 --product org.eclipse.platform.ide
+
+!ENTRY org.eclipse.equinox.p2.engine 4 4 2017-02-02 21:51:58.684
+!MESSAGE An error occurred while installing the items
+!SUBENTRY 1 org.eclipse.equinox.p2.engine 4 0 2017-02-02 21:51:58.684
+!MESSAGE session context was:(profile=PlatformProfile, phase=org.eclipse.equinox.internal.p2.engine.phases.Install, operand=null --> [R]NewCortexProject 1.0.0.0, action=org.eclipse.equinox.internal.p2.touchpoint.eclipse.actions.InstallBundleAction).
+!SUBENTRY 1 org.eclipse.equinox.p2.touchpoint.eclipse 4 0 2017-02-02 21:51:58.684
+!MESSAGE The artifact file for osgi.bundle,NewCortexProject,1.0.0.0 was not found.
+!SESSION 2017-02-04 11:30:28.351 -----------------------------------------------
+eclipse.buildId=M20120914-1800
+java.version=1.8.0_111
+java.vendor=Oracle Corporation
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=en_US
+Framework arguments:  --product org.eclipse.platform.ide
+Command-line arguments:  -os win32 -ws win32 -arch x86_64 --product org.eclipse.platform.ide
+
+!ENTRY org.eclipse.core.resources 4 77 2017-02-04 11:33:17.676
+!MESSAGE Invalid project description.
+!SUBENTRY 1 unknown 0 0 2017-02-04 11:33:17.676
+!MESSAGE OK
+!SUBENTRY 1 org.eclipse.core.resources 4 77 2017-02-04 11:33:17.676
+!MESSAGE C:\Users\skgho\Documents\VEX\Starstruck\PROS overlaps the workspace location: C:\Users\skgho\Documents\VEX\Starstruck\PROS

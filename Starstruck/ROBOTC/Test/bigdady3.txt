@@ -1,0 +1,992 @@
+  
+
+s 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 252
+right encoder count is 252
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 252
+right encoder count is 252
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 252
+right encoder count is 252
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 250
+right encoder count is 250
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 252
+right encoder count is 252
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 252
+right encoder count is 252
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 252
+right encoder count is 252
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 252
+right encoder count is 252
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 252
+right encoder count is 252
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 252
+right encoder count is 252
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 252
+right encoder count is 252
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 252
+right encoder count is 252
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 250
+right encoder count is 250
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 252
+right encoder count is 252
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 250
+right encoder count is 250
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 252
+right encoder count is 252
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 252
+right encoder count is 252
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 252
+right encoder count is 252
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 251
+right encoder count is 251
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 252
+right encoder count is 252
+encoder count is 8
+left encoder count is 0
+right encoder count is 0
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 250
+right encoder count is 250
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right ens 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+le is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder coun is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder couns 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 252
+right encoder count is 252
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count is 251
+right encoder count is 251
+left encoder count is 0
+right encoder count is 0
+encoder count is 8
+left encoder count 

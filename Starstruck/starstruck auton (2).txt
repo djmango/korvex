@@ -1,0 +1,4 @@
+1st step: Move 24 inches back
+2nd step: move 18 inches forward
+3rd step: move 54 inches forward
+4th step: repeat 2 and 3
