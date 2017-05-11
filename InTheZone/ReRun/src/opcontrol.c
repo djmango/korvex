@@ -69,11 +69,13 @@ void operatorControl() {
 			J1C5BD[DriveTimer] = joystickGetDigital(1,5,JOY_DOWN); // Get boolean value of lower right bumper
 			J1C6BU[DriveTimer] = joystickGetDigital(1,6,JOY_UP); // Get boolean value of upper left bumper
 			J1C6BD[DriveTimer] = joystickGetDigital(1,6,JOY_DOWN); // Get boolean value of lower left bumper
+			motorGet(unsigned char channel)
 			printf(J1C2Str);
 			lcdPrint(uart1,1, J1C2Str);
 			DriveTimer = DriveTimer + 1;
 			delay(50);
+		} // End Record function
+	if (joystickGetDigital(1,7,JOY_UP) == 1) { // Begin playback function
 		}
-
 	}
 }
