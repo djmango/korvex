@@ -36,5 +36,5 @@ void initializeIO() {
  * can be implemented in this task if desired.
  */
 void initialize() {
-  taskCreate(JINXRun, TASK_DEFAULT_STACK_SIZE, NULL, (TASK_PRIORITY_DEFAULT));
+  //taskCreate(JINXRun, TASK_DEFAULT_STACK_SIZE, NULL, (TASK_PRIORITY_DEFAULT));
 }
