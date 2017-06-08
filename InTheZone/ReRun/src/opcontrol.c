@@ -14,8 +14,9 @@
 //Documentation - I wil lbe taking input and storing it in an array, one for each input.
 //For example, J1C1 would be Joystick 1, adding C selects channel, and if there is a button B selects button, so , and its values updated every 50 msec.
 //Global variables
-int J1C2[600];
-int J1C3[600];
+int cache[6][600];
+//int J1C2[600];
+//int J1C3[600];
 //Initialize joystick 1 buttons - side note not enough memory
 /*int J1C5BU[600];
 int J1C5BD[600];
@@ -44,8 +45,8 @@ int rightclawsensor;
 int leftclawsensor;
 int rightclawpower;
 int leftclawpower;
-int leftencodervalue = encoderGet(encoderInit(1,2, false));
-int rightencodervalue = encoderGet(encoderInit(3,4, false));
+int leftencodervalue;
+int rightencodervalue;
 bool clawsynced = false;
 /*
  * Runs the user operator control code. This function will be started in its own task with the
@@ -65,13 +66,12 @@ bool clawsynced = false;
  * This task should never exit; it should end with some kind of infinite loop, even if empty.
  */
 void setCache() { //Paste output here for cache
-
 }
 void updateSensors() { //Update all sensor values
   leftencodervalue = encoderGet(encoderInit(1,2, false));
   rightencodervalue = encoderGet(encoderInit(3,4, false));
-  printf("left value %d \n", leftencodervalue);
-  printf("right value %d \n", rightencodervalue);
+  //printf("left value %d \n", leftencodervalue);
+  //printf("right value %d \n", rightencodervalue);
 }
 void clawSync(){ //Sync claw
   if(rightencodervalue < leftclawsensor && clawsynced == false){
@@ -133,20 +133,23 @@ void updateDrive() { //Update robot to joystick control
    }
  }
  void recordDrive() { // Record driver input while allowing driver control
-	 J1C2[DriveTimer] = joystickGetAnalog(1, 2);// Get analog value of vertical axis of right stick, joystick 1
-	 J1C3[DriveTimer] = joystickGetAnalog(1, 4); // Get analog value of vertical axis of left stick, joystick 1
+   delay(1);
+	 cache[1][DriveTimer] = joystickGetAnalog(1, 2);// Get analog value of vertical axis of right stick, joystick 1
+	 cache[2][DriveTimer] = joystickGetAnalog(1, 4); // Get analog value of vertical axis of left stick, joystick 1
 	 /*(J1C5BU[DriveTimer] = joystickGetDigital(1,5,JOY_UP); // Get boolean value of upper right bumper
 	 J1C5BD[DriveTimer] = joystickGetDigital(1,5,JOY_DOWN); // Get boolean value of lower right bumper
    J1C6BU[DriveTimer] = joystickGetDigital(1,6,JOY_UP); // Get boolean value of upper left bumper
 	 J1C6BD[DriveTimer] = joystickGetDigital(1,6,JOY_DOWN); // Get boolean value of lower left bumper*/
  }
  void playbackDrive() { // Set motor to array values
-   motorSet(2, -J1C2[DriveTimer]);
-   motorSet(3, -J1C2[DriveTimer]);
-   motorSet(4, J1C3[DriveTimer]);
-   motorSet(5, J1C3[DriveTimer]);
+   delay(1);
+   motorSet(2, -cache[1][DriveTimer]);
+   motorSet(3, -cache[1][DriveTimer]);
+   motorSet(4, cache[2][DriveTimer]);
+   motorSet(5, cache[2][DriveTimer]);
  }
  void setMode() { // Check buttons to set mode
+   delay(1);
    if (joystickGetDigital(1,7,JOY_DOWN) == 1){// If you push the lower button, turn on recording
      RecSwitch = 1;
      DriveTimer = 0;
@@ -178,7 +181,7 @@ void updateDrive() { //Update robot to joystick control
    }
  }
 
-void operatorControl() { //Motor documentation, 1-2 left joystick, 3-4 right joystick
+void operatorControl() { //Motor documentation, 1-2 left joystick, 3-4 right joystick, Left Claw 8 Right Claw 9
 	while (1) {
     setMode();
     clawSync();
@@ -186,6 +189,8 @@ void operatorControl() { //Motor documentation, 1-2 left joystick, 3-4 right joy
     //printf("Value is %d, time is %d \n", J1C2[DriveTimer], DriveTimer);
     //printf("J1C2[%d] = %d \n", DriveTimer, J1C2[DriveTimer]); //Print statements formatted so that copy-paste will work
     //printf("J1C3[%d] = %d \n", DriveTimer, J1C3[DriveTimer]);
+    printf("left value %d \n", leftencodervalue);
+    printf("right value %d \n", rightencodervalue);
     DriveTimer = DriveTimer + 1; // Record time
 		delay(50); // Wait for refresh
 	}
