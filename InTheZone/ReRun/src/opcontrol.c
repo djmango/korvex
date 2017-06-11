@@ -15,30 +15,6 @@
 //For example, J1C1 would be Joystick 1, adding C selects channel, and if there is a button B selects button, so , and its values updated every 50 msec.
 //Global variables
 int cache[6][600];
-//int J1C2[600];
-//int J1C3[600];
-//Initialize joystick 1 buttons - side note not enough memory
-/*int J1C5BU[600];
-int J1C5BD[600];
-int J1C6BU[600];
-int J1C6BD[600];
-int J1C7BU[600];
-int J1C7BL[600];
-int J1C7BD[600];
-int J1C7BR[600];
-int J1C8BU[600];
-int J1C8BL[600];
-int J1C8BD[600];
-int J1C8BR[600];
-//Initialize joystick 2
-int J2C7BU[600];
-int J2C7BL[600];
-int J2C7BD[600];
-int J2C7BR[600];
-int J2C8BU[600];
-int J2C8BL[600];
-int J2C8BD[600];
-int J2C8BR[600];*/
 int DriveTimer = 0; //Timer - update 1 time per driver cycle, every 25 msec
 int RecSwitch = 1; // Switch between playback and record
 int rightclawsensor;
@@ -65,11 +41,13 @@ bool clawsynced = false;
  *
  * This task should never exit; it should end with some kind of infinite loop, even if empty.
  */
+ Encoder leftencoder;
+ Encoder rightencoder;
 void setCache() { //Paste output here for cache
 }
 void updateSensors() { //Update all sensor values
-  leftencodervalue = encoderGet(encoderInit(1,2, false));
-  rightencodervalue = encoderGet(encoderInit(3,4, false));
+  leftencodervalue = encoderGet(leftencoder);
+  rightencodervalue = encoderGet(rightencoder);
   //printf("left value %d \n", leftencodervalue);
   //printf("right value %d \n", rightencodervalue);
 }
@@ -89,6 +67,10 @@ void updateDrive() { //Update robot to joystick control
 	 motorSet(3, -joystickGetAnalog(1,2));
 	 motorSet(4, joystickGetAnalog(1,3));
 	 motorSet(5, joystickGetAnalog(1,3));
+   motorSet(6, joystickGetAnalog(2,2)); //also lift
+   motorSet(7, joystickGetAnalog(2,2)); //lift
+   motorSet(8, joystickGetAnalog(2,3));
+   motorSet(9, joystickGetAnalog(2, 3));
    //Lift control
    if (joystickGetDigital(1, 6, JOY_UP) == 1){
      motorSet(6, 127);
@@ -191,7 +173,7 @@ void operatorControl() { //Motor documentation, 1-2 left joystick, 3-4 right joy
     //printf("J1C3[%d] = %d \n", DriveTimer, J1C3[DriveTimer]);
     printf("left value %d \n", leftencodervalue);
     printf("right value %d \n", rightencodervalue);
-    DriveTimer = DriveTimer + 1; // Record time
+    DriveTimer =+ 1; // Record time
 		delay(50); // Wait for refresh
 	}
 }

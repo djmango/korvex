@@ -37,4 +37,8 @@ void initializeIO() {
  * can be implemented in this task if desired.
  */
 void initialize() {
+  Encoder leftencoder;
+  Encoder rightencoder;
+  leftencoder = encoderInit(1,2, false);
+  rightencoder = encoderInit(3,4, false);
 }
