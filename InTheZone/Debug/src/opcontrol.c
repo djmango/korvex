@@ -60,6 +60,10 @@
  	 motorSet(3, -joystickGetAnalog(1,2));
  	 motorSet(4, joystickGetAnalog(1,3));
  	 motorSet(5, joystickGetAnalog(1,3));
+   motorSet(6, joystickGetAnalog(2,3));
+   motorSet(7, joystickGetAnalog(2,3));
+   motorSet(8, joystickGetAnalog(1,2));
+   motorSet(9, joystickGetAnalog(1,2));
     //Lift control
     if (joystickGetDigital(1, 6, JOY_UP) == 1){
       motorSet(6, 127);
@@ -105,9 +109,33 @@
   }
 void operatorControl() {
 	while (1) {
-		updateDrive();
-		updateSensors();
-		clawSync();
+		//updateDrive();
+		//updateSensors();
+		//clawSync();
+    motorSet(2, -joystickGetAnalog(1,2));
+    motorSet(3, -joystickGetAnalog(1,2));
+    motorSet(4, joystickGetAnalog(1,3));
+    motorSet(5, joystickGetAnalog(1,3));
+    motorSet(6, joystickGetAnalog(2,2));
+    motorSet(7, joystickGetAnalog(2,2));
+    if(joystickGetDigital(2, 5, JOY_UP) == 1 || joystickGetDigital(2, 6, JOY_UP) == 1 || joystickGetDigital(2, 5, JOY_DOWN) == 1 ||joystickGetDigital(2, 6, JOY_DOWN) == 1){
+      if(joystickGetDigital(2, 5, JOY_UP) == 1){
+        motorSet(8, 60);
+      }
+      if(joystickGetDigital(2, 5, JOY_DOWN) == 1){
+        motorSet(8, -60);
+      }
+      if(joystickGetDigital(2, 6, JOY_UP) == 1){
+        motorSet(9, 60);
+      }
+      if(joystickGetDigital(2, 6, JOY_DOWN) == 1){
+        motorSet(9, -60);
+      }
+    }
+    else{
+      motorSet(8, joystickGetAnalog(2,3));
+      motorSet(9, joystickGetAnalog(2,3));
+    }
 		delay(20);
 	}
 }
