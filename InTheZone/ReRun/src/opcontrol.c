@@ -114,14 +114,14 @@ void updateDrive() { //Update robot to joystick control
      motorSet(9, 0);
    }
  }
- void recordDrive() { // Record driver input while allowing driver control
+void recordDrive() { // Record driver input while allowing driver control
    delay(1);
 	 cache[1][DriveTimer] = joystickGetAnalog(1, 2);// Get analog value of vertical axis of right stick, joystick 1
 	 cache[2][DriveTimer] = joystickGetAnalog(1, 4); // Get analog value of vertical axis of left stick, joystick 1
-	 /*(J1C5BU[DriveTimer] = joystickGetDigital(1,5,JOY_UP); // Get boolean value of upper right bumper
-	 J1C5BD[DriveTimer] = joystickGetDigital(1,5,JOY_DOWN); // Get boolean value of lower right bumper
-   J1C6BU[DriveTimer] = joystickGetDigital(1,6,JOY_UP); // Get boolean value of upper left bumper
-	 J1C6BD[DriveTimer] = joystickGetDigital(1,6,JOY_DOWN); // Get boolean value of lower left bumper*/
+	 cache[3][DriveTimer] = joystickGetDigital(1,5,JOY_UP); // Get boolean value of upper right bumper
+	 cache[4][DriveTimer] = joystickGetDigital(1,5,JOY_DOWN); // Get boolean value of lower right bumper
+   cache[5][DriveTimer] = joystickGetDigital(1,6,JOY_UP); // Get boolean value of upper left bumper
+	 cache[6][DriveTimer] = joystickGetDigital(1,6,JOY_DOWN); // Get boolean value of lower left bumper*/
  }
  void playbackDrive() { // Set motor to array values
    delay(1);
