@@ -29,6 +29,51 @@
  *
  * This task should never exit; it should end with some kind of infinite loop, even if empty.
  */
+ int isFineControl = false;
+ int fineControl;
+ void updateDrive() { //Update robot to joystick control
+    //Chasis control
+ 	 	motorSet(2, (joystickGetAnalog(1,2) * fineControl));
+ 	 	motorSet(3, (joystickGetAnalog(1,2) * fineControl));
+ 	 	motorSet(4, (joystickGetAnalog(1,3) * fineControl));
+ 	 	motorSet(5, (joystickGetAnalog(1,3) * fineControl));
+    //mobo lift control
+    if (joystickGetDigital(1, 6, JOY_UP) == 1){
+      motorSet(6, 127);
+      motorSet(7, 127);
+    }
+    if (joystickGetDigital(1, 6, JOY_DOWN) == 1){
+      motorSet(6, -127);
+      motorSet(7, -127);
+    }
+    if (joystickGetDigital(1, 6, JOY_DOWN) == 0 && joystickGetDigital(1, 6, JOY_UP) == 0){
+      motorSet(6, 0);
+      motorSet(7, 0);
+    }
+		//lift control
+		if (joystickGetDigital(1, 7, JOY_UP) == 1){
+			motorSet(8, 127);
+			motorSet(9, 127);
+		}
+		if (joystickGetDigital(1, 7, JOY_DOWN) == 1){
+			motorSet(8, -127);
+			motorSet(9, -127);
+		}
+		if (joystickGetDigital(1, 7, JOY_DOWN) == 0 && joystickGetDigital(1, 6, JOY_UP) == 0){
+			motorSet(8, 0);
+			motorSet(9, 0);
+		}
+		//fine control toggle
+		if (joystickGetDigital(1, 7, JOY_DOWN) == 1 && isFineControl == false){ //toggle it on
+			isFineControl = true;
+			fineControl = .5;
+		}
+		if (joystickGetDigital(1, 7, JOY_DOWN) == 0 && isFineControl == true){ //toggle it off
+			isFineControl = false;
+			fineControl = 1;
+		}
+  }
+
 void operatorControl() {
 	while (1) {
 		delay(20);
