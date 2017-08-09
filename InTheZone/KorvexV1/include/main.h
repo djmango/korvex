@@ -20,6 +20,8 @@
  * obtained from http://sourceforge.net/projects/freertos/files/ or on request.
  */
 
+
+
 #ifndef MAIN_H_
 
 // This prevents multiple inclusion, which isn't bad for this file but is good practice
@@ -93,7 +95,8 @@ void initialize();
  * This task should never exit; it should end with some kind of infinite loop, even if empty.
  */
 void operatorControl();
-
+Encoder leftencoder;
+Encoder rightencoder;
 // End C++ export structure
 #ifdef __cplusplus
 }
