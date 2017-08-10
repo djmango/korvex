@@ -44,39 +44,55 @@
 // all variables
 int isFineControl = false;
 int fineControl = 1;
-int leftDriveValue;
-int rightDriveValue;
 int count = 0;
 int rightrpm = 0;
 int leftrpm = 0;
+int leftDriveValue;
+int rightDriveValue;
 int rightDriveTarget;
 int leftDriveTarget;
+int rightDrivePower;
+int leftDrivePower;
+float driveP = 5;
 
-
-//pids
+// pids
 void pid() {
-  if (joystickGetAnalog(1, 2) > 10) { //if right joystick is being used, increase target
+  if (joystickGetAnalog(1, 2) >
+      10) { // if right joystick is being used, increase target
     rightDriveTarget = rightDriveTarget + joystickGetAnalog(1, 3);
-  }
-  else {
+  } else {
     rightDriveTarget = 0;
   }
-  if (joystickGetAnalog(1, 3) > 10) { //if right joystick is being used, increase target
+  if (joystickGetAnalog(1, 3) >
+      10) { // if right joystick is being used, increase target
     leftDriveTarget = leftDriveTarget + joystickGetAnalog(1, 3);
-  }
-  else {
+  } else {
     leftDriveTarget = 0;
+  }
+  if (rightDriveValue <
+      rightDriveTarget) { // if right drive is lower than target
+    rightDrivePower = +driveP;
+  }
+  if (rightDriveValue >
+      rightDriveTarget) { // if right drive is higher than target
+    rightDrivePower = -driveP;
+  }
+  if (leftDriveValue < leftDriveTarget) { // if left drive is lower than target
+    leftDrivePower = +driveP;
+  }
+  if (leftDriveValue > leftDriveTarget) { // if left drive is higher than target
+    leftDrivePower = -driveP;
   }
 }
 // update all sensors and print to console
 void updateSensor() {
-  int leftencodervalue = encoderGet(leftencoder);
-  int rightencodervalue = encoderGet(rightencoder);
-  //printf("left value %d \n", leftencodervalue);
-  //printf("right value %d \n", rightencodervalue);
+  leftDriveValue = encoderGet(leftencoder);
+  rightDriveValue = encoderGet(rightencoder);
+  // printf("left value %d \n", leftencodervalue);
+  // printf("right value %d \n", rightencodervalue);
   if (count == 5) {
-    rightrpm = (rightencodervalue / 1)* 60;
-    leftrpm = (leftencodervalue / 1) * 60;
+    rightrpm = (rightDriveValue / 1) * 60;
+    leftrpm = (leftDriveValue / 1) * 60;
     printf("right value %d \n", rightrpm);
     printf("left value %d \n", leftrpm);
     encoderReset(leftencoder);
@@ -89,10 +105,10 @@ void updateSensor() {
 // update robot to joystick control
 void updateDrive() {
   // Chasis control
-  motorSet(2, -(joystickGetAnalog(1, 3) * fineControl));
-  motorSet(3, (joystickGetAnalog(1, 3) * fineControl));
-  motorSet(4, -(joystickGetAnalog(1, 2) * fineControl));
-  motorSet(5, (joystickGetAnalog(1, 2) * fineControl));
+  motorSet(2, -(leftDrivePower * fineControl));
+  motorSet(3, (leftDrivePower * fineControl));
+  motorSet(4, -(rightDrivePower * fineControl));
+  motorSet(5, (rightDrivePower * fineControl));
   // mobo lift control
   if (joystickGetDigital(1, 6, JOY_UP) == 1) {
     motorSet(6, 127);
@@ -136,10 +152,12 @@ void updateDrive() {
 
 void operatorControl() {
   TaskHandle driveTaskHandle = taskRunLoop(updateDrive, 50);
+  TaskHandle pidTaskHandle = taskRunLoop(pid, 50);
   TaskHandle sensorTaskHandle = taskRunLoop(updateSensor, 50);
   while (1) {
     delay(20);
   }
   taskDelete(driveTaskHandle);
   taskDelete(sensorTaskHandle);
+  taskDelete(pidTaskHandle);
 }
