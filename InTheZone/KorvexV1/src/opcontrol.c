@@ -47,68 +47,80 @@ int fineControl = 1;
 int count = 0;
 int rightrpm = 0;
 int leftrpm = 0;
+/*
+  DriveValue: The encoder/potentiometer reading of the motor/mechanic that is being corrected
+  DriveTarget: The total target of the motor/mechanic that is being corrected
+  DrivePower: The power value that is being pushed to the motor
+*/
 int leftDriveValue;
 int rightDriveValue;
 int rightDriveTarget;
 int leftDriveTarget;
 int rightDrivePower;
 int leftDrivePower;
-float driveP = 5;
+float driveP = 10;
 
 // pids
 void pid() {
-  if (joystickGetAnalog(1, 2) >
-      10) { // if right joystick is being used, increase target
-    rightDriveTarget = rightDriveTarget + joystickGetAnalog(1, 3);
+  if ((joystickGetAnalog(1, 2) >
+      10) || (joystickGetAnalog(1, 2) < -10)) { // if right joystick is being used, increase target
+    rightDriveTarget = joystickGetAnalog(1, 2);
   } else {
     rightDriveTarget = 0;
+    rightDrivePower = 0;
+    encoderReset(rightencoder);
   }
-  if (joystickGetAnalog(1, 3) >
-      10) { // if right joystick is being used, increase target
-    leftDriveTarget = leftDriveTarget + joystickGetAnalog(1, 3);
+  if ((joystickGetAnalog(1, 3) >
+      10) || (joystickGetAnalog(1, 3) < -10)) { // if right joystick is being used, increase target
+    leftDriveTarget = joystickGetAnalog(1, 3);
+    printf("left target %d \n", leftDriveTarget);
+    printf("left power %d \n", leftDrivePower);
   } else {
     leftDriveTarget = 0;
+    leftDrivePower = 0;
+    encoderReset(leftencoder);
   }
   if (rightDriveValue <
-      rightDriveTarget) { // if right drive is lower than target
-    rightDrivePower = +driveP;
+      rightDriveTarget) {
+    // if right drive is lower than target
+    rightDrivePower = rightDrivePower + driveP;
   }
   if (rightDriveValue >
-      rightDriveTarget) { // if right drive is higher than target
-    rightDrivePower = -driveP;
+      rightDriveTarget) {
+    // if right drive is higher than target
+    rightDrivePower = rightDrivePower - driveP;
   }
-  if (leftDriveValue < leftDriveTarget) { // if left drive is lower than target
-    leftDrivePower = +driveP;
+  if (leftDriveValue < leftDriveTarget) {
+    // if left drive is lower than target
+    leftDrivePower = leftDrivePower + driveP;
   }
-  if (leftDriveValue > leftDriveTarget) { // if left drive is higher than target
-    leftDrivePower = -driveP;
+  if (leftDriveValue > leftDriveTarget) {
+    // if left drive is higher than target
+    leftDrivePower = leftDrivePower - driveP;
   }
 }
+
 // update all sensors and print to console
 void updateSensor() {
   leftDriveValue = encoderGet(leftencoder);
   rightDriveValue = encoderGet(rightencoder);
-  // printf("left value %d \n", leftencodervalue);
-  // printf("right value %d \n", rightencodervalue);
-  if (count == 5) {
+  if (count == 50) {
     rightrpm = (rightDriveValue / 1) * 60;
     leftrpm = (leftDriveValue / 1) * 60;
-    printf("right value %d \n", rightrpm);
-    printf("left value %d \n", leftrpm);
-    encoderReset(leftencoder);
-    encoderReset(rightencoder);
     count = 0;
   }
   count = count + 1;
-  delay(200);
 }
 // update robot to joystick control
 void updateDrive() {
   // Chasis control
+  /*
   motorSet(2, -(leftDrivePower * fineControl));
   motorSet(3, (leftDrivePower * fineControl));
   motorSet(4, -(rightDrivePower * fineControl));
-  motorSet(5, (rightDrivePower * fineControl));
+  motorSet(5, (rightDrivePower * fineControl));*/
+  motorSet(2, (leftDrivePower * fineControl));
+  motorSet(3, (rightDrivePower * fineControl));
   // mobo lift control
   if (joystickGetDigital(1, 6, JOY_UP) == 1) {
     motorSet(6, 127);
@@ -125,15 +137,18 @@ void updateDrive() {
   }
   // lift control
   if (joystickGetDigital(1, 7, JOY_UP) == 1) {
+    // move up
     motorSet(8, 127);
     motorSet(9, 127);
   }
   if (joystickGetDigital(1, 7, JOY_DOWN) == 1) {
+    // move down
     motorSet(8, -127);
     motorSet(9, -127);
   }
   if (joystickGetDigital(1, 7, JOY_DOWN) == 0 &&
-      joystickGetDigital(1, 6, JOY_UP) == 0) {
+      joystickGetDigital(1, 7, JOY_UP) == 0) {
+    // dont move
     motorSet(8, 0);
     motorSet(9, 0);
   }
@@ -154,7 +169,7 @@ void operatorControl() {
   TaskHandle driveTaskHandle = taskRunLoop(updateDrive, 50);
   TaskHandle pidTaskHandle = taskRunLoop(pid, 50);
   TaskHandle sensorTaskHandle = taskRunLoop(updateSensor, 50);
-  while (1) {
+  while (isEnabled()) {
     delay(20);
   }
   taskDelete(driveTaskHandle);
