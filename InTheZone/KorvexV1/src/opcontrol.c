@@ -73,8 +73,8 @@ void pid() {
   if ((joystickGetAnalog(1, 3) >
       10) || (joystickGetAnalog(1, 3) < -10)) { // if right joystick is being used, increase target
     leftDriveTarget = joystickGetAnalog(1, 3);
-    printf("left target %d \n", leftDriveTarget);
-    printf("left power %d \n", leftDrivePower);
+    //printf("left target %d \n", leftDriveTarget);
+    //printf("left power %d \n", leftDrivePower);
   } else {
     leftDriveTarget = 0;
     leftDrivePower = 0;
@@ -104,9 +104,11 @@ void pid() {
 void updateSensor() {
   leftDriveValue = encoderGet(leftencoder);
   rightDriveValue = encoderGet(rightencoder);
-  if (count == 50) {
+  if (count == 5) {
     rightrpm = (rightDriveValue / 1) * 60;
     leftrpm = (leftDriveValue / 1) * 60;
+    printf("right rpm %d\n", rightrpm);
+    printf("left rpm %d\n", leftrpm);
     count = 0;
   }
   count = count + 1;
@@ -122,43 +124,54 @@ void updateDrive() {
   motorSet(2, (leftDrivePower * fineControl));
   motorSet(3, (rightDrivePower * fineControl));
   // mobo lift control
-  if (joystickGetDigital(1, 6, JOY_UP) == 1) {
+  if (joystickGetDigital(1, 5, JOY_UP) == 1) {
+    motorSet(4, 127);
+    motorSet(5, 127);
+  }
+  if (joystickGetDigital(1, 5, JOY_DOWN) == 1) {
+    motorSet(4, -127);
+    motorSet(5, -127);
+  }
+  if (joystickGetDigital(1, 5, JOY_DOWN) == 0 &&
+      joystickGetDigital(1, 5, JOY_UP) == 0) {
+    motorSet(4, 0);
+    motorSet(5, 0);
+  }
+  //mobo tilt control
+  if (joystickGetDigital(1, 7, JOY_UP) == 1) {
     motorSet(6, 127);
+  }
+  if (joystickGetDigital(1, 7, JOY_DOWN) == 1) {
+    motorSet(6, -127);
+  }
+  if (joystickGetDigital(1, 7, JOY_DOWN) == 0 &&
+      joystickGetDigital(1, 7, JOY_UP) == 0) {
+    motorSet(6, 0);
+  }
+  // lift control
+  if (joystickGetDigital(1, 6, JOY_UP) == 1) {
+    // move up
+    motorSet(8, 127);
     motorSet(7, 127);
   }
   if (joystickGetDigital(1, 6, JOY_DOWN) == 1) {
-    motorSet(6, -127);
+    // move down
+    motorSet(8, -127);
     motorSet(7, -127);
   }
   if (joystickGetDigital(1, 6, JOY_DOWN) == 0 &&
       joystickGetDigital(1, 6, JOY_UP) == 0) {
-    motorSet(6, 0);
-    motorSet(7, 0);
-  }
-  // lift control
-  if (joystickGetDigital(1, 7, JOY_UP) == 1) {
-    // move up
-    motorSet(8, 127);
-    motorSet(9, 127);
-  }
-  if (joystickGetDigital(1, 7, JOY_DOWN) == 1) {
-    // move down
-    motorSet(8, -127);
-    motorSet(9, -127);
-  }
-  if (joystickGetDigital(1, 7, JOY_DOWN) == 0 &&
-      joystickGetDigital(1, 7, JOY_UP) == 0) {
     // dont move
     motorSet(8, 0);
-    motorSet(9, 0);
+    motorSet(7, 0);
   }
   // fine control toggle
-  if (joystickGetDigital(1, 7, JOY_DOWN) == 1 &&
+  if (joystickGetDigital(1, 8, JOY_DOWN) == 1 &&
       isFineControl == false) { // toggle it on
     isFineControl = true;
     fineControl = .5;
   }
-  if (joystickGetDigital(1, 7, JOY_DOWN) == 0 &&
+  if (joystickGetDigital(1, 8, JOY_UP) == 1 &&
       isFineControl == true) { // toggle it off
     isFineControl = false;
     fineControl = 1;
