@@ -11,29 +11,6 @@
  */
 
 #include "main.h"
-void sensorvalues(){
-	while(true){
-	}
-}
-void clawcheck(int clawleftvalue, int clawrightvalue){
-	while(true){
-		if(analogRead(1) < analogRead(2)){
-			clawleftvalue = clawleftvalue - 1;
-			clawrightvalue = clawrightvalue + 1;
-		}
-		if(analogRead(1) > analogRead(2)){
-			clawleftvalue = clawleftvalue + 1;
-			clawrightvalue = clawrightvalue - 1;
-		}
-	}
-}
-void clawrelease(){
-	//What this is supposed to do: calculate acceleration of the lift and find perfect release
-	//time of the claw
-	while(true){
-
-	}
-}
 
 /*
  * Runs pre-initialization code. This function will be started in kernel mode one time while the
@@ -60,11 +37,4 @@ void initializeIO() {
  * can be implemented in this task if desired.
  */
 void initialize() {
-	lcdInit(uart2);
-	lcdClear(uart2);
-  lcdSetBacklight(uart2, true);
-  encoderInit(rightencoder);
-  encoderInit(leftencoder);
-  int leftencodervalue = encoderGet(encoderInit(leftencoder));
-  int rightencodervalue = encoderGet(encoderInit(rightencoder));
 }

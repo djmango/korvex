@@ -48,7 +48,8 @@ int count = 0;
 int rightrpm = 0;
 int leftrpm = 0;
 /*
-  DriveValue: The encoder/potentiometer reading of the motor/mechanic that is being corrected
+  DriveValue: The encoder/potentiometer reading of the motor/mechanic that is
+  being corrected
   DriveTarget: The total target of the motor/mechanic that is being corrected
   DrivePower: The power value that is being pushed to the motor
 */
@@ -62,31 +63,31 @@ float driveP = 10;
 
 // pids
 void pid() {
-  if ((joystickGetAnalog(1, 2) >
-      10) || (joystickGetAnalog(1, 2) < -10)) { // if right joystick is being used, increase target
+  if ((joystickGetAnalog(1, 2) > 10) ||
+      (joystickGetAnalog(1, 2) <
+       -10)) { // if right joystick is being used, increase target
     rightDriveTarget = joystickGetAnalog(1, 2);
   } else {
     rightDriveTarget = 0;
     rightDrivePower = 0;
     encoderReset(rightencoder);
   }
-  if ((joystickGetAnalog(1, 3) >
-      10) || (joystickGetAnalog(1, 3) < -10)) { // if right joystick is being used, increase target
+  if ((joystickGetAnalog(1, 3) > 10) ||
+      (joystickGetAnalog(1, 3) <
+       -10)) { // if right joystick is being used, increase target
     leftDriveTarget = joystickGetAnalog(1, 3);
-    //printf("left target %d \n", leftDriveTarget);
-    //printf("left power %d \n", leftDrivePower);
+    // printf("left target %d \n", leftDriveTarget);
+    // printf("left power %d \n", leftDrivePower);
   } else {
     leftDriveTarget = 0;
     leftDrivePower = 0;
     encoderReset(leftencoder);
   }
-  if (rightDriveValue <
-      rightDriveTarget) {
+  if (rightDriveValue < rightDriveTarget) {
     // if right drive is lower than target
     rightDrivePower = rightDrivePower + driveP;
   }
-  if (rightDriveValue >
-      rightDriveTarget) {
+  if (rightDriveValue > rightDriveTarget) {
     // if right drive is higher than target
     rightDrivePower = rightDrivePower - driveP;
   }
@@ -109,6 +110,8 @@ void updateSensor() {
     leftrpm = (leftDriveValue / 1) * 60;
     printf("right rpm %d\n", rightrpm);
     printf("left rpm %d\n", leftrpm);
+    // printf("left target %d\n", encoderGet(leftencoder));
+    // printf("left power %d\n", encoderGet(rightencoder));
     count = 0;
   }
   count = count + 1;
@@ -123,6 +126,7 @@ void updateDrive() {
   motorSet(5, (rightDrivePower * fineControl));*/
   motorSet(2, (leftDrivePower * fineControl));
   motorSet(3, (rightDrivePower * fineControl));
+
   // mobo lift control
   if (joystickGetDigital(1, 5, JOY_UP) == 1) {
     motorSet(4, 127);
@@ -137,7 +141,7 @@ void updateDrive() {
     motorSet(4, 0);
     motorSet(5, 0);
   }
-  //mobo tilt control
+  // mobo tilt control
   if (joystickGetDigital(1, 7, JOY_UP) == 1) {
     motorSet(6, 127);
   }
