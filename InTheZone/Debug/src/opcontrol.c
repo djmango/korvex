@@ -52,7 +52,7 @@ void updateDrive (int chassisControlLeft, int chassisControlRight, int liftContr
   motorSet(3, (joystickGetAnalog(1,3) * fineControl));
   //lift control
   motorSet(6, (joystickGetAnalog(2,3)));
-  motorSet(7, (joystickGetAnalog(2,3)));
+  motorSet(7, -(joystickGetAnalog(2,3)));
 
 }
 void fineControlToggle (int fineBtn) {
@@ -125,19 +125,6 @@ void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainbarBtnUp, int c
   }
 }
 
-/*port map current
-port 1 = **scrubbed**
-port 2 = drive left side
-port 3 = drive right side //TODO: update for accuracy
-port 4 = mobile goal lift 1
-port 5 = mobile goal lift 2
-port 6 = mobile goal tilt
-port 7 = dr4b left
-port 8 = dr4b right
-port 9 = claw
-port 10 = **scrubbed**
-*/
-
 /*port map DESIRED
 port 1 = **scrubbed**
 port 2 = drive left side (y-cable to power expander)
@@ -154,11 +141,11 @@ port 10 = **scrubbed**
 /*control map DESIRED //TODO: MAP EVERYTHING IN CODE ITS WAY TO LATE FOR THIS
 drive left side = mainLeftJoy(1,3)
 drive right side = mainRightJoy(1,2)
-mobile goal lift = seccondaryRightBumper(2,5)
+mobile goal lift = seccondaryRightBumper(2,6)
 mobile goal tilt = seccondaryRightButtons(2,8)
-dr4b = seccondaryRightJoy(2,2)
-chain bar = seccondaryLeftJoy(2,3)
-claw = seccondaryLeftBumper(2,6)
+dr4b = seccondaryRightJoy(2,3)P
+chain bar = seccondaryLeftJoy(2,2)
+claw = seccondaryLeftBumper(2,5)
 */
 
 void operatorControl() {
@@ -169,11 +156,11 @@ void operatorControl() {
     //fineControlToggle fineBtn
     //mobileGoalControl moboLiftBtn, moboTiltBtn
     //coneHandlerControl clawBtn, chainbarBtn
-    updateDrive(joystickGetAnalog(1,2), joystickGetAnalog(1,3), joystickGetAnalog(2,2));
+    updateDrive(joystickGetAnalog(1,3), joystickGetAnalog(1,2), joystickGetAnalog(2,2));
     fineControlToggle(joystickGetDigital(1, 7, JOY_DOWN));
-    mobileGoalControl(joystickGetDigital(2, 5, JOY_UP), joystickGetDigital(2, 5, JOY_DOWN), joystickGetDigital(2, 6, JOY_UP),
-     joystickGetDigital(2, 6, JOY_DOWN));
-    coneHandlerControl(joystickGetDigital(2, 8, JOY_UP), joystickGetDigital(2, 8, JOY_DOWN), joystickGetDigital(2, 7, JOY_DOWN),
+    mobileGoalControl(joystickGetDigital(2, 6, JOY_UP), joystickGetDigital(2, 6, JOY_DOWN), joystickGetDigital(2, 8, JOY_UP),
+     joystickGetDigital(2, 8, JOY_DOWN));
+    coneHandlerControl(joystickGetDigital(2, 5, JOY_UP), joystickGetDigital(2, 5, JOY_DOWN), joystickGetDigital(2, 7, JOY_DOWN),
      joystickGetDigital(2, 7, JOY_UP));
   }
   //taskDelete(driveTaskHandle);
