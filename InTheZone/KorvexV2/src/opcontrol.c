@@ -48,11 +48,11 @@ int fineControl = 1;
 //functions
 void updateDrive (int chassisControlLeft, int chassisControlRight, int liftControl) {
   //chassis control
-  motorSet(2, (joystickGetAnalog(1,2) * fineControl));
-  motorSet(3, (joystickGetAnalog(1,3) * fineControl));
+  motorSet(2, (chassisControlRight * fineControl));
+  motorSet(3, (chassisControlLeft * fineControl));
   //lift control
-  motorSet(6, (joystickGetAnalog(2,3)));
-  motorSet(7, (joystickGetAnalog(2,3)));
+  motorSet(6, (liftControl);
+  motorSet(7, (liftControl));
 
 }
 void fineControlToggle (int fineBtn) {
@@ -130,26 +130,24 @@ port 1 = **scrubbed**
 port 2 = drive left side (y-cable to power expander)
 port 3 = drive right side (y-cable to power expander)
 port 4 = mobile goal lift (y-cable)
-port 5 = mobile goal tilt (direct)
-port 6 = dr4b left (direct)
-port 7 = dr4b right (direct)
+port 5 = free
+port 6 = dr4b left (y-cable)
+port 7 = dr4b right (y-cable)
 port 8 = chain bar (y-cable)
 port 9 = claw (direct)
 port 10 = **scrubbed**
 */
 
-/*control map DESIRED //TODO: MAP EVERYTHING IN CODE ITS WAY TO LATE FOR THIS
+/*control map DESIRED
 drive left side = mainLeftJoy(1,3)
 drive right side = mainRightJoy(1,2)
 mobile goal lift = seccondaryRightBumper(2,6)
-mobile goal tilt = seccondaryRightButtons(2,8)
 dr4b = seccondaryRightJoy(2,3)P
 chain bar = seccondaryLeftJoy(2,2)
 claw = seccondaryLeftBumper(2,5)
 */
 
 void operatorControl() {
-  //TaskHandle driveTaskHandle = taskRunLoop(updateDrive, 50);
   while (isEnabled()) {
     delay(20);
     //chassisControl chassisControlLeft, chassisControlRight, liftControl
@@ -163,5 +161,4 @@ void operatorControl() {
     coneHandlerControl(joystickGetDigital(2, 5, JOY_UP), joystickGetDigital(2, 5, JOY_DOWN), joystickGetDigital(2, 7, JOY_DOWN),
      joystickGetDigital(2, 7, JOY_UP));
   }
-  //taskDelete(driveTaskHandle);
 }
