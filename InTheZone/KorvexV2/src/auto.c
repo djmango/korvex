@@ -48,7 +48,7 @@ port 10 = **scrubbed**
 */
 
 // defs
-//motor defs
+// motor defs
 #define driveLeft 2
 #define driveRight 3
 #define mobileGoal 4
@@ -57,7 +57,7 @@ port 10 = **scrubbed**
 #define chainBar 8
 #define claw 9
 
-//pid defs
+// pid defs
 #define PID_DRIVE_MAX 127
 #define PID_DRIVE_MIN (-127)
 #define PID_INTEGRAL_LIMIT 50
@@ -65,11 +65,24 @@ port 10 = **scrubbed**
 // vars
 float pid_Kp = 2.0;
 float pid_Ki = 0.04;
-float pid_Kd = 0.0;
+float pid_Kd = 0.05;
+bool encoderPIDenabled = false;
+int encoderValueLeft;
+int encoderTargetLeft;
+int motorLeft;
+
+int encoderValueRight;
+int encoderTargetRight;
+int motorRight;
+
 // leftDriveValue = encoderGet(leftencoder);
 // rightDriveValue = encoderGet(rightencoder);
-void encoderPID(int encoderValue, int encoderTarget, int motor) {
-  float encoderCalcValue = (encoderValue * 31.9024 / 360);
+void encoderReset() {
+  //reset all encoders
+  encoderReset (leftencoder);
+  encoderReset (rightencoder);
+}
+void driveLeftPID() {
   float pidError;
   float pidLastError;
   float pidIntegral;
@@ -77,46 +90,103 @@ void encoderPID(int encoderValue, int encoderTarget, int motor) {
   float pidDrive;
   pidLastError = 0;
   pidIntegral = 0;
-  // convert to a universal unit, in this case centimeters because science
-  // 31.9024 is avg circumfrence of omniwheel, 360 due to how the optical shaft encoder counts
-  // sensor scale becuase why not
-  // encoder target becuase i kinda need that
-  // glenn IS the code
-  // derek IS the coder
+  while (encoderPIDenabled = true) {
+    float encoderCalcValue = (encoderValueLeft * 31.9024 / 360);
+    // convert to a universal unit, in this case centimeters because science
+    // 31.9024 is avg circumfrence of omniwheel, 360 due to how the optical
+    // shaft encoder counts
+    // sensor scale becuase why not
+    // encoder target becuase i kinda need that
+    // glenn IS the code
+    // derek IS the coder
 
-  // mathy stuff
+    // mathy stuff
 
-  // calculate error
-  pidError = encoderCalcValue - encoderTarget;
+    // calculate error
+    pidError = encoderCalcValue - encoderTargetLeft;
 
-  // integral - if Ki is not 0
-  if (pid_Ki != 0) {
-    // If we are inside controlable window then integrate the error
-    if (abs(pidError) < PID_INTEGRAL_LIMIT)
-      pidIntegral = pidIntegral + pidError;
-    else
+    // integral - if Ki is not 0
+    if (pid_Ki != 0) {
+      // If we are inside controlable window then integrate the error
+      if (abs(pidError) < PID_INTEGRAL_LIMIT)
+        pidIntegral = pidIntegral + pidError;
+      else
+        pidIntegral = 0;
+    } else
       pidIntegral = 0;
-  } else
-    pidIntegral = 0;
 
-  // calculate the derivative
-  pidDerivative = pidError - pidLastError;
-  pidLastError = pidError;
+    // calculate the derivative
+    pidDerivative = pidError - pidLastError;
+    pidLastError = pidError;
 
-  // calculate drive
-  pidDrive = (pid_Kp * pidError) + (pid_Ki * pidIntegral) + (pid_Kd * pidDerivative);
+    // calculate drive
+    pidDrive =
+        (pid_Kp * pidError) + (pid_Ki * pidIntegral) + (pid_Kd * pidDerivative);
 
-  // limit drive
-  if (pidDrive > PID_DRIVE_MAX)
-    pidDrive = PID_DRIVE_MAX;
-  if (pidDrive < PID_DRIVE_MIN)
-    pidDrive = PID_DRIVE_MIN;
+    // limit drive
+    if (pidDrive > PID_DRIVE_MAX)
+      pidDrive = PID_DRIVE_MAX;
+    if (pidDrive < PID_DRIVE_MIN)
+      pidDrive = PID_DRIVE_MIN;
 
-  // send to motor
-  motorSet(motor, pidDrive);
+    // send to motor
+    motorSet(motorLeft, pidDrive);
 
-  // Run at 50Hz
-  wait1Msec(25);
+    // Run at 50Hz
+  }
+}
+void driveRightPID() {
+  float pidError;
+  float pidLastError;
+  float pidIntegral;
+  float pidDerivative;
+  float pidDrive;
+  pidLastError = 0;
+  pidIntegral = 0;
+  while (encoderPIDenabled = true) {
+    float encoderCalcValue = (encoderValueRight * 31.9024 / 360);
+    // convert to a universal unit, in this case centimeters because science
+    // 31.9024 is avg circumfrence of omniwheel, 360 due to how the optical
+    // shaft encoder counts
+    // sensor scale becuase why not
+    // encoder target becuase i kinda need that
+    // glenn IS the code
+    // derek IS the coder
+
+    // mathy stuff
+
+    // calculate error
+    pidError = encoderCalcValue - encoderTargetRight;
+
+    // integral - if Ki is not 0
+    if (pid_Ki != 0) {
+      // If we are inside controlable window then integrate the error
+      if (abs(pidError) < PID_INTEGRAL_LIMIT)
+        pidIntegral = pidIntegral + pidError;
+      else
+        pidIntegral = 0;
+    } else
+      pidIntegral = 0;
+
+    // calculate the derivative
+    pidDerivative = pidError - pidLastError;
+    pidLastError = pidError;
+
+    // calculate drive
+    pidDrive =
+        (pid_Kp * pidError) + (pid_Ki * pidIntegral) + (pid_Kd * pidDerivative);
+
+    // limit drive
+    if (pidDrive > PID_DRIVE_MAX)
+      pidDrive = PID_DRIVE_MAX;
+    if (pidDrive < PID_DRIVE_MIN)
+      pidDrive = PID_DRIVE_MIN;
+
+    // send to motor
+    motorSet(motorRight, pidDrive);
+
+    // Run at 50Hz
+  }
 }
 /* motors:
 driveLeft
@@ -128,6 +198,23 @@ chainBar
 claw
 */
 void autonomous() {
-  //encoderPID(encoder, target(cm), motor)
-  encoderPID(encoderGet(leftencoder), 12, driveLeft)
+  TaskHandle driveTaskHandleLeft = taskRunLoop(driveLeftPID, 25);
+  TaskHandle driveTaskHandleRight = taskRunLoop(driveRightPID, 25);
+
+  //init all the important stuff, it shouldnt change throughout the code
+  encoderPIDenabled = true; // when you do not want the drive powered, encoderPIDenabled must be false
+  encoderValueLeft = encoderGet(leftencoder); //this gives the read value of the optical shaft encoder
+  motorLeft = driveLeft; //the motor the pid is calculating for
+  encoderValueRight = encoderGet(rightencoder);
+  motorRight = driveRight;
+  //testing the target, it stays at target until reset
+  encoderTargetLeft = 12; //target, in cm
+  encoderTargetRight = 12;
+  //this will stay at 12 cm, until a reset
+  encoderReset();
+  encoderTargetLeft = -6;
+  encoderTargetRight = 6;
+  //should turn counter-clockwise? not sure, gota test
+  taskDelete(driveTaskHandleLeft);
+  taskDelete(driveTaskHandleRight);
 }
