@@ -51,7 +51,7 @@ void updateDrive (int chassisControlLeft, int chassisControlRight, int liftContr
   motorSet(2, (chassisControlRight * fineControl));
   motorSet(3, (chassisControlLeft * fineControl));
   //lift control
-  motorSet(6, (liftControl);
+  motorSet(6, (liftControl));
   motorSet(7, (liftControl));
 
 }
@@ -125,6 +125,12 @@ void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainbarBtnUp, int c
   }
 }
 
+void lcdText() {
+  lcdSetBacklight(uart1, true);
+  lcdSetText(uart1, 1, "i want to");
+  lcdSetText(uart1, 2, "sudo rm -rf myself");
+}
+
 /*port map DESIRED
 port 1 = **scrubbed**
 port 2 = drive left side (y-cable to power expander)
@@ -148,6 +154,7 @@ claw = seccondaryLeftBumper(2,5)
 */
 
 void operatorControl() {
+  lcdText();
   while (isEnabled()) {
     delay(20);
     //chassisControl chassisControlLeft, chassisControlRight, liftControl
