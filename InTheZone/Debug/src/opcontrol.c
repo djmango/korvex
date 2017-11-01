@@ -52,7 +52,7 @@ void updateDrive (int chassisControlLeft, int chassisControlRight, int liftContr
   motorSet(3, (joystickGetAnalog(1,3) * fineControl));
   //lift control
   motorSet(6, (joystickGetAnalog(2,3)));
-  motorSet(7, -(joystickGetAnalog(2,3)));
+  motorSet(7, (joystickGetAnalog(2,3)));
 
 }
 void fineControlToggle (int fineBtn) {
