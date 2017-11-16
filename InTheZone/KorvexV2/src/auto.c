@@ -139,20 +139,25 @@ void LcdSetAutonomous(int value) {
   if (AutonLevel == 0) {
     int button;
     lcdSetText(uart1, 1, "Select Side");
-    lcdSetText(uart1, 2, "Blue - Disable - Red");
+    lcdSetText(uart1, 2, "Blue - D - Red");
     // side selection
     while (AutonLevel == 0) {
       // this function blocks until button is pressed
       button = getLcdButtons();
       // Display and select the autonomous routine
-      if (button == kButtonLeft)
+      if (button == kButtonLeft) {
+        AutonLevel = 1;
         LcdSetAutonomous(0);
-      AutonLevel = 1;
-
-      if (button == kButtonRight)
+        lcdSetText(uart1, 2, "left");
+      }
+      if (button == kButtonRight) {
+        AutonLevel = 1;
+        lcdSetText(uart1, 2, "right");
         LcdSetAutonomous(2);
-      AutonLevel = 1;
 
+      } else {
+        AutonLevel = 0;
+      }
       // Don't hog the cpu !
       taskDelay(10);
     }
@@ -245,7 +250,7 @@ void LcdAutonomousSelection() {
   // PROS seems to need a delay
   taskDelay(2000);
 
-  while (!isEnabled()) {
+  while (AutonLevel != 2) {
     // this function blocks until button is pressed
     button = getLcdButtons();
 
@@ -262,8 +267,6 @@ void LcdAutonomousSelection() {
     // Don't hog the cpu !
     taskDelay(10);
   }
-
-  lcdSetText(uart1, 2, "Running....     ");
 }
 /*-----------------------------------------------------------------------------*/
 /*  Reset all encoders */
@@ -289,7 +292,6 @@ void driveLeftPID() {
     // convert to a universal unit, in this case centimeters because science
     // 31.9024 is avg circumfrence of omniwheel, 360 due to how the optical
     // shaft encoder counts
-    // sensor scale becuase why not
     // encoder target becuase i kinda need that
     // glenn IS the code
     // derek IS the coder
@@ -345,7 +347,6 @@ void driveRightPID() {
     // convert to a universal unit, in this case centimeters because science
     // 31.9024 is avg circumfrence of omniwheel, 360 due to how the optical
     // shaft encoder counts
-    // sensor scale becuase why not
     // encoder target becuase i kinda need that
     // glenn IS the code
     // derek IS the coder
@@ -397,7 +398,7 @@ void dr4bRightPID() {
   pidLastError = 0;
   pidIntegral = 0;
   while (PIDenabledDr4b == true) {
-    float potCalcValue = (potValueRightDr4b * 31.9024 / 360);
+    float potCalcValue = (potValueRightDr4b);
     // convert to a universal unit, in this case centimeters because science
     // 31.9024 is avg circumfrence of omniwheel, 360 due to how the optical
     // shaft encoder counts
@@ -453,7 +454,7 @@ void dr4bLeftPID() {
   pidLastError = 0;
   pidIntegral = 0;
   while (PIDenabledDr4b == true) {
-    float potCalcValue = (potValueLeftDr4b * 31.9024 / 360);
+    float potCalcValue = (potValueLeftDr4b);
     // convert to a universal unit, in this case centimeters because science
     // 31.9024 is avg circumfrence of omniwheel, 360 due to how the optical
     // shaft encoder counts
@@ -525,13 +526,13 @@ void autonomous() {
   encoderTargetRight = 0;
   TaskHandle driveTaskHandleLeft = taskRunLoop(driveLeftPID, 25);
   TaskHandle driveTaskHandleRight = taskRunLoop(driveRightPID, 25);
-  TaskHandle dr4bTaskHandleLeft = taskRunLoop(dr4bLeftPID, 25);
-  TaskHandle dr4bTaskHandleRight = taskRunLoop(dr4bRightPID, 25);
+  // TaskHandle dr4bTaskHandleLeft = taskRunLoop(dr4bLeftPID, 25);
+  // TaskHandle dr4bTaskHandleRight = taskRunLoop(dr4bRightPID, 25);
   LcdAutonomousSelection();
   switch (MyAutonomous) {
   case 0: // blue left
     // init all the important stuff, it shouldnt change throughout the code
-    PIDenabledDrive = false;
+    PIDenabledDrive = true;
     // when you do not want the drive powered PIDenabledDrive must be
     // false
     encoderValueLeft = encoderGet(leftencoder);
@@ -541,18 +542,22 @@ void autonomous() {
     encoderValueRight = encoderGet(rightencoder);
     motorDriveRight = driveRight;
     // dr4b stuff, same format
-    PIDenabledDr4b = false;
-    potValueLeftDr4b = analogRead(1);
-    potValueRightDr4b = analogRead(2);
-    motorDr4bLeft = dr4bLeft;
-    motorDr4bRight = dr4bRight;
+    // PIDenabledDr4b = true;
+    // potValueLeftDr4b = analogRead(3);
+    // potValueRightDr4b = analogRead(4);
+    // motorDr4bLeft = dr4bLeft;
+    // motorDr4bRight = dr4bRight;
+    motorSet(dr4bLeft) = 127;
+    motorSet(dr4bRight) = 127;
     // testing the target, it stays at target until reset
-    encoderTargetLeft = 96; // target, in cm
-    encoderTargetRight = 96;
+    encoderTargetLeft = 12; // target, in cm
+    encoderTargetRight = 12;
     // this will stay at 12 cm, until a reset
-    // motorSet(mobileGoal, 127);
-    // wait(2000);
-    // motorSet(mobileGoal, 0);
+    motorSet(mobileGoal, 127);
+    wait(2000);
+    motorSet(mobileGoal, 0);
+    motorSet(dr4bLeft) = 10;
+    motorSet(dr4bRight) = 10;
     // mobo thingy
     encoderResetAll();
     encoderTargetLeft = -6;
@@ -572,6 +577,6 @@ void autonomous() {
   }
   taskDelete(driveTaskHandleLeft);
   taskDelete(driveTaskHandleRight);
-  taskDelete(dr4bTaskHandleLeft);
-  taskDelete(dr4bTaskHandleRight);
+  // taskDelete(dr4bTaskHandleLeft);
+  // taskDelete(dr4bTaskHandleRight);
 }
