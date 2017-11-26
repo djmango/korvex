@@ -37,8 +37,8 @@ void initializeIO() {
  * can be implemented in this task if desired.
  */
 void initialize() {
-  leftencoder = encoderInit (1, 2, true);
-  rightencoder = encoderInit (3, 4, false);
+  leftencoder = encoderInit (2, 3, true);
+  rightencoder = encoderInit (4, 5, true);
   lcdInit(uart1);
   lcdClear(uart1);
 }

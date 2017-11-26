@@ -18,7 +18,7 @@
 // vars
 
 // drive pid floats
-float pidKpDriveO = 1;
+float pidKpDriveO = .1;
 float pidKiDriveO = 0;
 float pidKdDriveO = 0;
 bool driveIsPidEnabledO = false;
@@ -34,7 +34,7 @@ int driveEncoderValueLeft;
 int driveEncoderTargetLeft;
 
 // right drive values
-int drivedriveEncoderValueRight;
+int driveEncoderValueRight;
 int driveEncoderTargetRight;
 
 // right dr4b values
@@ -45,6 +45,8 @@ int dr4bRightPotTarget;
 int dr4bLeftPotValue;
 int dr4bLeftPotTarget;
 
+//control modifiers
+bool isReverse = false;
 bool isFineControl = false;
 int fineControl = 1;
 
@@ -59,6 +61,7 @@ void encoderResetAllO() {
   encoderReset(leftencoder);
   encoderReset(rightencoder);
 }
+
 /*-----------------------------------------------------------------------------*/
 /*  Calculate error and drive for left drive */
 /*-----------------------------------------------------------------------------*/
@@ -71,7 +74,7 @@ void driveLeftPIDO() {
   pidLastError = 0;
   pidIntegral = 0;
   while (driveIsPidEnabledO == true) {
-    float encoderCalcValue = (driveEncoderValueLeft * 31.9024 / 360);
+    float encoderCalcValue = (encoderGet(leftencoder) * 31.9024 / 360);
     // convert to a universal unit, in this case centimeters because science
     // 31.9024 is avg circumfrence of omniwheel, 360 due to how the optical
     // shaft encoder counts
@@ -102,19 +105,19 @@ void driveLeftPIDO() {
     // calculate drive
     pidDrive = (pidKpDriveO * pidError) + (pidKiDriveO * pidIntegral) +
                (pidKdDriveO * pidDerivative);
-
+    pidDrive = pidDrive * -1;
     // limit drive
     if (pidDrive > PID_DRIVE_MAX)
       pidDrive = PID_DRIVE_MAX;
     if (pidDrive < PID_DRIVE_MIN)
       pidDrive = PID_DRIVE_MIN;
-
     // send to motor
-    motorSet(dr4bLeft, pidDrive);
-    delay(25);
+    motorSet(driveLeft, pidDrive);
+    delay(50);
     // Run at 50Hz
   }
 }
+
 /*-----------------------------------------------------------------------------*/
 /*  Calculate error and drive for right drive */
 /*-----------------------------------------------------------------------------*/
@@ -127,7 +130,7 @@ void driveRightPIDO() {
   pidLastError = 0;
   pidIntegral = 0;
   while (driveIsPidEnabledO == true) {
-    float encoderCalcValue = (drivedriveEncoderValueRight * 31.9024 / 360);
+    float encoderCalcValue = (encoderGet(rightencoder) * 31.9024 / 360);
     // convert to a universal unit, in this case centimeters because science
     // 31.9024 is avg circumfrence of omniwheel, 360 due to how the optical
     // shaft encoder counts
@@ -158,6 +161,8 @@ void driveRightPIDO() {
     // calculate drive
     pidDrive = (pidKpDriveO * pidError) + (pidKiDriveO * pidIntegral) +
                (pidKdDriveO * pidDerivative);
+    pidDrive = pidDrive * -1;
+    // printf("right drive  %d\n", pidDrive);
     // limit drive
     if (pidDrive > PID_DRIVE_MAX)
       pidDrive = PID_DRIVE_MAX;
@@ -165,10 +170,11 @@ void driveRightPIDO() {
       pidDrive = PID_DRIVE_MIN;
     // send to motor
     motorSet(driveRight, pidDrive);
-    delay(25);
+    delay(50);
     // Run at 50Hz
   }
 }
+
 /*-----------------------------------------------------------------------------*/
 /*  Calculate error and drive for right dr4b */
 /*-----------------------------------------------------------------------------*/
@@ -233,6 +239,7 @@ void dr4bRightPIDO() {
     // Run at 50Hz
   }
 }
+
 /*-----------------------------------------------------------------------------*/
 /*  Calculate error and drive for left dr4b */
 /*-----------------------------------------------------------------------------*/
@@ -292,6 +299,9 @@ void dr4bLeftPIDO() {
   }
 }
 
+/*-----------------------------------------------------------------------------*/
+/*  Drive and lift control */
+/*-----------------------------------------------------------------------------*/
 void updateDrive(int chassisControlLeft, int chassisControlRight,
                  int liftControl) {
   //chassis control
@@ -301,7 +311,11 @@ void updateDrive(int chassisControlLeft, int chassisControlRight,
   motorSet(dr4bLeft, (liftControl));
   motorSet(dr4bRight, (liftControl));
 }
-void fineControlToggle(int fineBtn) {
+
+/*-----------------------------------------------------------------------------*/
+/*  Toggle fine control for drive */
+/*-----------------------------------------------------------------------------*/
+void fineControlToggle(int fineBtn, int reverseBtn) {
   // fine control toggle
   if (fineBtn == 1 && isFineControl == false) { // toggle it on
     isFineControl = true;
@@ -311,7 +325,20 @@ void fineControlToggle(int fineBtn) {
     isFineControl = false;
     fineControl = 1;
   }
+  //reverse toggle
+    if (fineBtn == 1 && isReverse == false) { // toggle it on
+    isReverse = true;
+    fineControl = -1;
+  }
+  if (fineBtn == 1 && isReverse == true) { // toggle it off
+    isReverse = false;
+    fineControl = 1;
+  }
 }
+
+/*-----------------------------------------------------------------------------*/
+/*  Mobile goal control */
+/*-----------------------------------------------------------------------------*/
 void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown,
                        int moboTiltBtnUp, int moboTiltBtnDown) {
   // mobo lift control
@@ -335,6 +362,10 @@ void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown,
     motorSet(5, 0);
   }
 }
+
+/*-----------------------------------------------------------------------------*/
+/*  Cone handler control */
+/*-----------------------------------------------------------------------------*/
 void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainbarBtnUp,
                         int chainbarBtnDown) {
   motorSet(chainBar, (joystickGetAnalog(2, 3)));
@@ -367,6 +398,9 @@ void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainbarBtnUp,
   }
 }
 
+/*-----------------------------------------------------------------------------*/
+/*  Funky messages for the lcd */
+/*-----------------------------------------------------------------------------*/
 void lcdText() {
   lcdSetBacklight(uart1, true);
   lcdSetText(uart1, 1, "i want to");
@@ -407,58 +441,42 @@ void lcdText() {
 
 /*control arguement names
    chassisControl chassisControlLeft, chassisControlRight, liftControl
-   fineControlToggle fineBtn
+   fineControlToggle fineBtn, reverseBtn
    mobileGoalControl moboLiftBtn, moboTiltBtn
    coneHandlerControl clawBtn, chainbarBtn
  */
-
-/* TODO VERY IMPORTANT
-alright im writing this now because im going to forget later
-so ive pinpointed the pid issue to a task run issue, because the motor is
-not getting the correct power value. possible solutions are to increase time
-before
-reset or initiate with rest of the loop, normaly function.
- */
 void operatorControl() {
-  // driveIsPidEnabledO = true;
-  // int driveEncoderValueLeft = encoderGet(leftencoder);
-  // int driveEncoderValueRight = encoderGet(rightencoder);
   lcdText();
-  // dr4b stuff, same format
-  // dr4bIsPidEnabled = true; // enable dr4b pid
-  // dr4bLeftPotValue = analogRead(3);
-  // dr4bRightPotValue = analogRead(4); // potentiometer reads, respective to side
-  // TaskHandle dr4bTaskHandleLeft = taskRunLoop(dr4bLeftPIDO, 50);
-  // TaskHandle dr4bTaskHandleRight = taskRunLoop(dr4bRightPIDO, 50);
-  // TaskHandle driveTaskHandleLeft = taskRunLoop(driveLeftPIDO, 50);
-  // TaskHandle driveTaskHandleRight = taskRunLoop(driveRightPIDO, 50);
-
-  // dr4bLeftPotTarget = 4000;
-  // dr4bRightPotTarget = 4000;
-  // dr4bIsDebugEnabled = true;
+  // encoderResetAllO();
+  // driveIsPidEnabledO = true;
+  // TaskHandle driveTaskHandleLeft = taskRunLoop(driveLeftPIDO, 25);
+  // TaskHandle driveTaskHandleRight = taskRunLoop(driveRightPIDO, 25);
   while (isEnabled()) {
-    /*
-      if (joystickGetAnalog(2, 2) > 25 ||
-          joystickGetAnalog(2, 2) <
-              25) { // if joystick is out of deadzone, change target
-        dr4bRightPotTarget = dr4bRightPotTarget + (joystickGetAnalog(2, 2) / 20);
-      }
-      if (joystickGetAnalog(2, 2) > 25 || joystickGetAnalog(2, 2) < 25) {
-        dr4bLeftPotTarget = dr4bLeftPotTarget + (joystickGetAnalog(2, 2) / 20);
-      }
-      if (dr4bRightPotTarget > (analogRead(4) + PID_DRIVE_MAX))
-        dr4bRightPotTarget = (analogRead(4) + PID_DRIVE_MAX);
-      if (dr4bLeftPotTarget < (analogRead(3) - PID_DRIVE_MIN))
-        dr4bLeftPotTarget = (analogRead(3) - PID_DRIVE_MIN);
-      //drive stuff
-
+    // printf("left drive  %d\n", encoderGet(leftencoder));
+    // printf("right drive  %d\n", encoderGet(rightencoder));
+    /* dr4b stuff
+        if (joystickGetAnalog(2, 2) > 25 ||
+            joystickGetAnalog(2, 2) <
+                25) { // if joystick is out of deadzone, change target
+          dr4bRightPotTarget = dr4bRightPotTarget + (joystickGetAnalog(2, 2) / 20);
+        }
+        if (joystickGetAnalog(2, 2) > 25 || joystickGetAnalog(2, 2) < 25) {
+          dr4bLeftPotTarget = dr4bLeftPotTarget + (joystickGetAnalog(2, 2) / 20);
+        }
+        if (dr4bRightPotTarget > (analogRead(4) + PID_DRIVE_MAX))
+          dr4bRightPotTarget = (analogRead(4) + PID_DRIVE_MAX);
+        if (dr4bLeftPotTarget < (analogRead(3) - PID_DRIVE_MIN))
+          dr4bLeftPotTarget = (analogRead(3) - PID_DRIVE_MIN);
+        */
+      
+    /*drive stuff
       if (joystickGetAnalog(1, 3) > 25 || joystickGetAnalog(1, 3) < 25)
       { // if joystick is out of deadzone, change target
         driveEncoderTargetLeft = driveEncoderTargetLeft + (joystickGetAnalog(1, 3) / 20);
       }
       else
       {
-        encoderResetAllO();
+        //encoderResetAllO();
         driveEncoderTargetLeft = 0;
       }
 
@@ -468,23 +486,13 @@ void operatorControl() {
       }
       else
       {
-        encoderResetAllO();
-            driveEncoderTargetRight = 0;
-      }
-    */
-    updateDrive(joystickGetAnalog(1, 3), joystickGetAnalog(1, 2),
-                joystickGetAnalog(2, 2));
-    fineControlToggle(joystickGetDigital(1, 7, JOY_DOWN));
-    mobileGoalControl(
-        joystickGetDigital(1, 6, JOY_UP), joystickGetDigital(1, 6, JOY_DOWN),
-        joystickGetDigital(2, 8, JOY_UP), joystickGetDigital(2, 8, JOY_DOWN));
-    coneHandlerControl(
-        joystickGetDigital(2, 5, JOY_UP), joystickGetDigital(2, 5, JOY_DOWN),
-        joystickGetDigital(2, 7, JOY_DOWN), joystickGetDigital(2, 7, JOY_UP));
+        //encoderResetAllO();
+        driveEncoderTargetRight = 0;
+      }*/
+    updateDrive(joystickGetAnalog(1, 3), joystickGetAnalog(1, 2), joystickGetAnalog(2, 2));
+    fineControlToggle(joystickGetDigital(1, 7, JOY_DOWN), joystickGetDigital(1,7, JOY_UP));
+    mobileGoalControl( joystickGetDigital(1, 6, JOY_UP), joystickGetDigital(1, 6, JOY_DOWN), joystickGetDigital(2, 8, JOY_UP), joystickGetDigital(2, 8, JOY_DOWN));
+    coneHandlerControl(joystickGetDigital(2, 5, JOY_UP), joystickGetDigital(2, 5, JOY_DOWN), joystickGetDigital(2, 7, JOY_DOWN), joystickGetDigital(2, 7, JOY_UP));
     delay(20);
   }
-  // taskDelete(dr4bTaskHandleLeft);
-  // taskDelete(dr4bTaskHandleRight);
-  // taskDelete(driveTaskHandleLeft);
-  // taskDelete(driveTaskHandleRight);
 }

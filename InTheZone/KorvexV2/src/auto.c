@@ -1,14 +1,5 @@
 /** @file auto.c
  * @brief File for autonomous code
- *
- * This file should contain the user autonomous() function and any functions
- * related to it.
- *
- * Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/
- *
- * PROS contains FreeRTOS (http://www.freertos.org) whose source code may be
- * obtained from http://sourceforge.net/projects/freertos/files/ or on request.
  */
 
 #include "main.h"
@@ -32,7 +23,7 @@
  *
  * The autonomous task may exit, unlike operatorControl() which should never
  * exit. If it does
- * so, the robot will await a switch to another mode or disable/enable cycle.
+ * so, the robot will adelay a switch to another mode or disable/enable cycle.
  */
 
 // defs
@@ -61,25 +52,25 @@
 // vars
 
 // drive pid floats
-float pidKpDrive = 2.0;
-float pidKiDrive = 0.04;
-float pidKdDrive = 0.05;
-bool PIDenabledDrive = false;
+float pidKpDrive = 1;
+float pidKiDrive = 0;
+float pidKdDrive = 0.01;
+bool driveIsPidEnabledA = false;
 
 // dr4b pid floats
-float pidKpDr4b = 1.9;
-float pidKiDr4b = 0.06;
-float pidKdDr4b = 0.08;
+float pidKpDr4b = 1;
+float pidKiDr4b = 0;
+float pidKdDr4b = 0;
 bool PIDenabledDr4b = false;
 
 // left drive values
-int encoderValueLeft;
-int encoderTargetLeft;
+int driveEncoderValueLeft;
+int driveEncoderTargetLeft;
 int motorDriveLeft;
 
 // right drive values
-int encoderValueRight;
-int encoderTargetRight;
+int driveEncoderValueRight;
+int driveEncoderTargetRight;
 int motorDriveRight;
 
 // right dr4b values
@@ -107,7 +98,7 @@ int getLcdButtons() { // thanks jpearman
   //    must be released before a new button is detected.
   // 2. Robot competition state changes
 
-  // Wait for all buttons to be released
+  // delay for all buttons to be released
   while (lcdReadButtons(uart1) != kButtonNone) {
     // check competition state, bail if it changes
     if (vexCompetitionState != competitionState)
@@ -268,6 +259,7 @@ void LcdAutonomousSelection() {
     taskDelay(10);
   }
 }
+
 /*-----------------------------------------------------------------------------*/
 /*  Reset all encoders */
 /*-----------------------------------------------------------------------------*/
@@ -276,6 +268,7 @@ void encoderResetAll() {
   encoderReset(leftencoder);
   encoderReset(rightencoder);
 }
+
 /*-----------------------------------------------------------------------------*/
 /*  Calculate error and drive for left drive */
 /*-----------------------------------------------------------------------------*/
@@ -287,28 +280,29 @@ void driveLeftPID() {
   float pidDrive;
   pidLastError = 0;
   pidIntegral = 0;
-  while (PIDenabledDrive == true) {
-    float encoderCalcValue = (encoderValueLeft * 31.9024 / 360);
+  while (driveIsPidEnabledA == true)
+  {
+    float encoderCalcValue = (encoderGet(leftencoder) * 31.9024 / 360);
     // convert to a universal unit, in this case centimeters because science
-    // 31.9024 is avg circumfrence of omniwheel, 360 due to how the optical
-    // shaft encoder counts
+    // 31.9024 is avg circumfrence of omniwheel, 360 due to how the optical shaft encoder counts
     // encoder target becuase i kinda need that
-    // glenn IS the code
     // derek IS the coder
 
     // mathy stuff
 
     // calculate error
-    pidError = encoderCalcValue - encoderTargetLeft;
+    pidError = encoderCalcValue - driveEncoderTargetLeft;
 
     // integral - if Ki is not 0
-    if (pidKiDrive != 0) {
+    if (pidKiDrive != 0)
+    {
       // If we are inside controlable window then integrate the error
       if (abs(pidError) < PID_INTEGRAL_LIMIT)
         pidIntegral = pidIntegral + pidError;
       else
         pidIntegral = 0;
-    } else
+    }
+    else
       pidIntegral = 0;
 
     // calculate the derivative
@@ -318,19 +312,19 @@ void driveLeftPID() {
     // calculate drive
     pidDrive = (pidKpDrive * pidError) + (pidKiDrive * pidIntegral) +
                (pidKdDrive * pidDerivative);
-
+    pidDrive = pidDrive * -1;
     // limit drive
     if (pidDrive > PID_DRIVE_MAX)
       pidDrive = PID_DRIVE_MAX;
     if (pidDrive < PID_DRIVE_MIN)
       pidDrive = PID_DRIVE_MIN;
-
     // send to motor
-    motorSet(motorDriveLeft, pidDrive);
-
+    motorSet(driveLeft, pidDrive);
+    delay(50);
     // Run at 50Hz
   }
 }
+
 /*-----------------------------------------------------------------------------*/
 /*  Calculate error and drive for right drive */
 /*-----------------------------------------------------------------------------*/
@@ -342,28 +336,29 @@ void driveRightPID() {
   float pidDrive;
   pidLastError = 0;
   pidIntegral = 0;
-  while (PIDenabledDrive == true) {
-    float encoderCalcValue = (encoderValueRight * 31.9024 / 360);
+  while (driveIsPidEnabledA == true)
+  {
+    float encoderCalcValue = (encoderGet(rightencoder) * 31.9024 / 360);
     // convert to a universal unit, in this case centimeters because science
-    // 31.9024 is avg circumfrence of omniwheel, 360 due to how the optical
-    // shaft encoder counts
+    // 31.9024 is avg circumfrence of omniwheel, 360 due to how the optical shaft encoder counts
     // encoder target becuase i kinda need that
-    // glenn IS the code
     // derek IS the coder
 
     // mathy stuff
 
     // calculate error
-    pidError = encoderCalcValue - encoderTargetRight;
+    pidError = encoderCalcValue - driveEncoderTargetRight;
 
     // integral - if Ki is not 0
-    if (pidKiDrive != 0) {
+    if (pidKiDrive != 0)
+    {
       // If we are inside controlable window then integrate the error
       if (abs(pidError) < PID_INTEGRAL_LIMIT)
         pidIntegral = pidIntegral + pidError;
       else
         pidIntegral = 0;
-    } else
+    }
+    else
       pidIntegral = 0;
 
     // calculate the derivative
@@ -373,19 +368,20 @@ void driveRightPID() {
     // calculate drive
     pidDrive = (pidKpDrive * pidError) + (pidKiDrive * pidIntegral) +
                (pidKdDrive * pidDerivative);
-
+    pidDrive = pidDrive * -1;
+    // printf("right drive  %d\n", pidDrive);
     // limit drive
     if (pidDrive > PID_DRIVE_MAX)
       pidDrive = PID_DRIVE_MAX;
     if (pidDrive < PID_DRIVE_MIN)
       pidDrive = PID_DRIVE_MIN;
-
     // send to motor
-    motorSet(motorDriveRight, pidDrive);
-
+    motorSet(driveRight, pidDrive);
+    delay(50);
     // Run at 50Hz
   }
 }
+
 /*-----------------------------------------------------------------------------*/
 /*  Calculate error and drive for right dr4b */
 /*-----------------------------------------------------------------------------*/
@@ -442,6 +438,7 @@ void dr4bRightPID() {
     // Run at 50Hz
   }
 }
+
 /*-----------------------------------------------------------------------------*/
 /*  Calculate error and drive for left dr4b */
 /*-----------------------------------------------------------------------------*/
@@ -498,85 +495,39 @@ void dr4bLeftPID() {
     // Run at 50Hz
   }
 }
+
 /* motors:
-driveLeft
-driveRight
-mobileGoal
-dr4bLeft
-dr4bRight
-chainBar
-claw
+  driveLeft
+  driveRight
+  mobileGoal
+  dr4bLeft
+  dr4bRight
+  chainBar
+  claw
 */
 
 /* port map DESIRED
-port 1 = **scrubbed**
-port 2 = drive left side (y-cable to power expander)
-port 3 = drive right side (y-cable to power expander)
-port 4 = mobile goal lift (y-cable)
-port 5 = free
-port 6 = dr4b left (y-cable)
-port 7 = dr4b right (y-cable)
-port 8 = chain bar (y-cable)
-port 9 = claw (direct)
-port 10 = **scrubbed**
+  port 1 = **scrubbed**
+  port 2 = drive left side (y-cable to power expander)
+  port 3 = drive right side (y-cable to power expander)
+  port 4 = mobile goal lift (y-cable)
+  port 5 = free
+  port 6 = dr4b left (y-cable)
+  port 7 = dr4b right (y-cable)
+  port 8 = chain bar (y-cable)
+  port 9 = claw (direct)
+  port 10 = **scrubbed**
 */
 
 void autonomous() {
-  encoderTargetLeft = 0;
-  encoderTargetRight = 0;
+  encoderResetAll();
+  driveIsPidEnabledA = true;
   TaskHandle driveTaskHandleLeft = taskRunLoop(driveLeftPID, 25);
   TaskHandle driveTaskHandleRight = taskRunLoop(driveRightPID, 25);
-  // TaskHandle dr4bTaskHandleLeft = taskRunLoop(dr4bLeftPID, 25);
-  // TaskHandle dr4bTaskHandleRight = taskRunLoop(dr4bRightPID, 25);
-  LcdAutonomousSelection();
-  switch (MyAutonomous) {
-  case 0: // blue left
-    // init all the important stuff, it shouldnt change throughout the code
-    PIDenabledDrive = true;
-    // when you do not want the drive powered PIDenabledDrive must be
-    // false
-    encoderValueLeft = encoderGet(leftencoder);
-    // this gives the read value of the optical shaft encoder
-    motorDriveLeft = driveLeft;
-    // the motor the pid is calculating for
-    encoderValueRight = encoderGet(rightencoder);
-    motorDriveRight = driveRight;
-    // dr4b stuff, same format
-    // PIDenabledDr4b = true;
-    // potValueLeftDr4b = analogRead(3);
-    // potValueRightDr4b = analogRead(4);
-    // motorDr4bLeft = dr4bLeft;
-    // motorDr4bRight = dr4bRight;
-    motorSet(dr4bLeft) = 127;
-    motorSet(dr4bRight) = 127;
-    // testing the target, it stays at target until reset
-    encoderTargetLeft = 12; // target, in cm
-    encoderTargetRight = 12;
-    // this will stay at 12 cm, until a reset
-    motorSet(mobileGoal, 127);
-    wait(2000);
-    motorSet(mobileGoal, 0);
-    motorSet(dr4bLeft) = 10;
-    motorSet(dr4bRight) = 10;
-    // mobo thingy
-    encoderResetAll();
-    encoderTargetLeft = -6;
-    encoderTargetRight = 6;
-    // should turn counter-clockwise? not sure, gota test
-    break;
-  case 1: // blue right
-    break;
-  case 2: // blue something
-    break;
-  case 3: // red left
-    break;
-  case 4: // red right
-    break;
-  case 5: // red something
-    break;
-  }
-  taskDelete(driveTaskHandleLeft);
-  taskDelete(driveTaskHandleRight);
-  // taskDelete(dr4bTaskHandleLeft);
-  // taskDelete(dr4bTaskHandleRight);
+  driveEncoderTargetLeft = 96;
+  driveEncoderTargetRight = 96;
+  delay(1500);
+  motorSet(mobileGoal, 127);
+  delat(300);
+  motorSet(mobileGoal, 0);
 }
