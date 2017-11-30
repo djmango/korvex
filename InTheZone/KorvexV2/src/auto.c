@@ -54,7 +54,7 @@
 // drive pid floats
 float pidKpDrive = 1;
 float pidKiDrive = 0;
-float pidKdDrive = 0.01;
+float pidKdDrive = 0.1;
 bool driveIsPidEnabledA = false;
 
 // dr4b pid floats
@@ -280,7 +280,7 @@ void driveLeftPID() {
   float pidDrive;
   pidLastError = 0;
   pidIntegral = 0;
-  while (driveIsPidEnabledA == true)
+  while (driveIsPidEnabledA == true && isAutonomous() == true)
   {
     float encoderCalcValue = (encoderGet(leftencoder) * 31.9024 / 360);
     // convert to a universal unit, in this case centimeters because science
@@ -336,7 +336,7 @@ void driveRightPID() {
   float pidDrive;
   pidLastError = 0;
   pidIntegral = 0;
-  while (driveIsPidEnabledA == true)
+  while (driveIsPidEnabledA == true && isAutonomous() == true)
   {
     float encoderCalcValue = (encoderGet(rightencoder) * 31.9024 / 360);
     // convert to a universal unit, in this case centimeters because science
@@ -496,6 +496,16 @@ void dr4bLeftPID() {
   }
 }
 
+/*-----------------------------------------------------------------------------*/
+/*  Funky messages for the lcd */
+/*-----------------------------------------------------------------------------*/
+void lcdTextA()
+{
+  lcdSetBacklight(uart1, true);
+  lcdSetText(uart1, 1, "it works");
+  lcdSetText(uart1, 2, "i  swear");
+}
+
 /* motors:
   driveLeft
   driveRight
@@ -520,14 +530,69 @@ void dr4bLeftPID() {
 */
 
 void autonomous() {
+  lcdTextA();
   encoderResetAll();
   driveIsPidEnabledA = true;
   TaskHandle driveTaskHandleLeft = taskRunLoop(driveLeftPID, 25);
   TaskHandle driveTaskHandleRight = taskRunLoop(driveRightPID, 25);
+  //drive through cones to mobile goal
   driveEncoderTargetLeft = 96;
   driveEncoderTargetRight = 96;
   delay(1500);
+  //drop mobile goal intake
   motorSet(mobileGoal, 127);
-  delat(300);
+  delay(300);
+  //drive into mobile goal
   motorSet(mobileGoal, 0);
+  encoderResetAll();
+  driveEncoderTargetLeft = 20;
+  driveEncoderTargetRight = 20;
+  delay(300);
+  //pick up mobile goal
+  motorSet(mobileGoal, -127);
+  delay(400);
+  //turn 180
+  encoderResetAll();
+  motorSet(mobileGoal, 0);
+  driveEncoderTargetLeft = -20;
+  driveEncoderTargetRight = 20;
+  delay(300);
+  //move back to the bar
+  encoderResetAll();
+  driveEncoderTargetLeft = 120;
+  driveEncoderTargetRight = 120;
+  delay(1600);
+  //turn 45 degrees
+  encoderResetAll();
+  driveEncoderTargetLeft = -10;
+  driveEncoderTargetRight = 10;
+  delay(300);
+  //forward to line up with middle of zone
+  encoderResetAll();
+  driveEncoderTargetLeft = 30;
+  driveEncoderTargetRight = 30;
+  delay(500);
+  //turn 175 to angle for drop
+  encoderResetAll();
+  driveEncoderTargetLeft = -30;
+  driveEncoderTargetRight = 30;
+  delay(500);
+  //drive into zone
+  encoderResetAll();
+  driveEncoderTargetLeft = 30;
+  driveEncoderTargetRight = 30;
+  delay(500);
+  //drop mobile goal
+  motorSet(mobileGoal, 127);
+  delay(300);
+  motorSet(mobileGoal, 0);
+  delay(500);
+  //drive out
+  encoderResetAll();
+  driveEncoderTargetLeft = -70;
+  driveEncoderTargetRight = -70;
+  delay(700);
+  driveIsPidEnabledA = false;
+  taskDelete(driveTaskHandleLeft);
+  taskDelete(driveTaskHandleRight);
 }

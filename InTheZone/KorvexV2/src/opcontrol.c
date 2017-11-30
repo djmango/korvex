@@ -73,7 +73,7 @@ void driveLeftPIDO() {
   float pidDrive;
   pidLastError = 0;
   pidIntegral = 0;
-  while (driveIsPidEnabledO == true) {
+  while (driveIsPidEnabledO == true && isAutonomous() == false)  {
     float encoderCalcValue = (encoderGet(leftencoder) * 31.9024 / 360);
     // convert to a universal unit, in this case centimeters because science
     // 31.9024 is avg circumfrence of omniwheel, 360 due to how the optical
@@ -129,7 +129,7 @@ void driveRightPIDO() {
   float pidDrive;
   pidLastError = 0;
   pidIntegral = 0;
-  while (driveIsPidEnabledO == true) {
+  while (driveIsPidEnabledO == true && isAutonomous() == false) {
     float encoderCalcValue = (encoderGet(rightencoder) * 31.9024 / 360);
     // convert to a universal unit, in this case centimeters because science
     // 31.9024 is avg circumfrence of omniwheel, 360 due to how the optical
@@ -302,8 +302,7 @@ void dr4bLeftPIDO() {
 /*-----------------------------------------------------------------------------*/
 /*  Drive and lift control */
 /*-----------------------------------------------------------------------------*/
-void updateDrive(int chassisControlLeft, int chassisControlRight,
-                 int liftControl) {
+void updateDrive(int chassisControlLeft, int chassisControlRight, int liftControl) {
   //chassis control
   motorSet(driveRight, (chassisControlRight * fineControl));
   motorSet(driveLeft, (chassisControlLeft * fineControl));
@@ -326,11 +325,11 @@ void fineControlToggle(int fineBtn, int reverseBtn) {
     fineControl = 1;
   }
   //reverse toggle
-    if (fineBtn == 1 && isReverse == false) { // toggle it on
+    if (reverseBtn == 1 && isReverse == false) { // toggle it on
     isReverse = true;
     fineControl = -1;
   }
-  if (fineBtn == 1 && isReverse == true) { // toggle it off
+  if (reverseBtn == 1 && isReverse == true) { // toggle it off
     isReverse = false;
     fineControl = 1;
   }
@@ -448,7 +447,7 @@ void lcdText() {
 void operatorControl() {
   lcdText();
   // encoderResetAllO();
-  // driveIsPidEnabledO = true;
+  //driveIsPidEnabledO = false;
   // TaskHandle driveTaskHandleLeft = taskRunLoop(driveLeftPIDO, 25);
   // TaskHandle driveTaskHandleRight = taskRunLoop(driveRightPIDO, 25);
   while (isEnabled()) {
@@ -469,7 +468,7 @@ void operatorControl() {
           dr4bLeftPotTarget = (analogRead(3) - PID_DRIVE_MIN);
         */
       
-    /*drive stuff
+    /* drive stuff
       if (joystickGetAnalog(1, 3) > 25 || joystickGetAnalog(1, 3) < 25)
       { // if joystick is out of deadzone, change target
         driveEncoderTargetLeft = driveEncoderTargetLeft + (joystickGetAnalog(1, 3) / 20);
