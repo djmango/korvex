@@ -5,44 +5,58 @@ A assemblage of the code work here at korvex
 
 In order to simplify changes to the operator control program, I decided to switch to arguments for input, both digital and analog. This allows us to make quick changes without complication. It also allows for everybody on the team to fully understand the code, and be able to modify it if necessary.
 
-### Global Variables
+### Control Modifiers
 ```c
-int isFineControl = false;
-int fineControl = 1;
+//control modifiers
+bool isReverse = false;
+bool isFineControl = false;
+float fineControl = 1;
 ```
-These are the fine control variables. It allows for us to toggle a lower increment in acceleration, allowing for more precise movement.
+These are the control modifiers. It allows for us to toggle a lower increment in acceleration, or reverse the drive, allowing for more precise and adjustable controls.
 
 ### Update Drive
 ```c
-void updateDrive (int chassisControlLeft, int chassisControlRight, int liftControl) {
+void updateDrive(int chassisControlLeft, int chassisControlRight, int liftControl) {
   //chassis control
-  motorSet(2, (chassisControlRight * fineControl));
-  motorSet(3, (chassisControlLeft * fineControl));
+  if (isReverse == true) { //if in reverse, invert and switch sides for normal turning
+    motorSet(driveLeft, (chassisControlRight * -1));
+    motorSet(driveRight, (chassisControlLeft * -1));
+  }
+  else if (isReverse == false) { //if in normal operator, do not invert
+    motorSet(driveRight, (chassisControlRight));
+    motorSet(driveLeft, (chassisControlLeft));
+  }
   //lift control
-  motorSet(6, (liftControl);
-  motorSet(7, (liftControl));
-
+  motorSet(dr4bLeft, (liftControl));
+  motorSet(dr4bRight, (liftControl));
 }
 ```
-This is the first function that is argument based. It sets the motors to the speed of the input, and multiplies it by the fine control variable, which is .5 when toggled on and 1 when off.
+This is the first function that is argument based. It sets the motors to the speed of the input, and checks if the bot is in reverse. If so, it swaps the sides so clockwise and counterclockwise turning is not swapped, and input values negated.
 
 ### Fine Control Toggle
 ```c
-void fineControlToggle (int fineBtn) {
+void fineControlToggle(int fineBtn, int fineBtn2, int reverseBtn, int reverseBtn2) {
   // fine control toggle
-  if (fineBtn == 1 &&
-      isFineControl == false) { // toggle it on
+  if (fineBtn == 1) { // toggle it on
     isFineControl = true;
     fineControl = .5;
   }
-  if (fineBtn == 1 &&
-      isFineControl == true) { // toggle it off
+  if (fineBtn2 == 1) { // toggle it off
     isFineControl = false;
+    fineControl = 1;
+  }
+  //reverse toggle
+    if (reverseBtn == 1) { // toggle it on
+    isReverse = true;
+    fineControl = -1;
+  }
+  if (reverseBtn2 == 1) { // toggle it off
+    isReverse = false;
     fineControl = 1;
   }
 }
 ```
-This toggles fine control on and off. When toggled on, it sets the corresponding variable to .5. The input is set by an argument.
+This toggles fine control and reverse on and off. When toggled, it sets the corresponding bool to the desired value. The input is set by an argument.
 
 ### Mobile Goal Control
 ```c
@@ -57,17 +71,6 @@ void mobileGoalControl (int moboLiftBtnUp, int moboLiftBtnDown, int moboTiltBtnU
   if (moboLiftBtnUp == 0 &&
       moboLiftBtnDown == 0) {
     motorSet(4, 0);
-  }
-  //mobo tilt control
-  if (moboTiltBtnUp == 1) {
-    motorSet(5, 127);
-  }
-  if (moboTiltBtnDown == 1) {
-    motorSet(5, -127);
-  }
-  if (moboTiltBtnUp == 0 &&
-      moboTiltBtnDown == 0) {
-    motorSet(5, 0);
   }
 }
 ```
@@ -90,7 +93,7 @@ void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainbarBtnUp, int c
       chainbarBtnDown == 0) {
     // dont move
     motorSet(8, 0);
-  }*/
+  }
   // claw control
   if (clawBtnUp == 1) {
     // move up
@@ -171,8 +174,8 @@ void recordDrive() { // Record driver input while allowing driver control
 	 cache[2][DriveTimer] = joystickGetAnalog(1, 4); // Get analog value of vertical axis of left stick, joystick 1
 	 cache[3][DriveTimer] = joystickGetDigital(1,5,JOY_UP); // Get boolean value of upper right bumper
 	 cache[4][DriveTimer] = joystickGetDigital(1,5,JOY_DOWN); // Get boolean value of lower right bumper
-   cache[5][DriveTimer] = joystickGetDigital(1,6,JOY_UP); // Get boolean value of upper left bumper
-	 cache[6][DriveTimer] = joystickGetDigital(1,6,JOY_DOWN); // Get boolean value of lower left bumper*/
+   	 cache[5][DriveTimer] = joystickGetDigital(1,6,JOY_UP); // Get boolean value of upper left bumper
+	 cache[6][DriveTimer] = joystickGetDigital(1,6,JOY_DOWN); // Get boolean value of lower left bumper
 }
 ```
 The recordDrive function is how the data is stored. It allows the data to be stored while also allowing driver control over the robot. The delay is for redundancy. Cache[1] specifies that I am recording the analog Y axis input of the right stick on the first controller. The [DriveTimer] is to store what time the data is recorded, so that it can be replayed in the same order and frequency.
