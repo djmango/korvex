@@ -5,9 +5,10 @@
 #define driveLeft 2
 #define driveRight 3
 #define mobileGoal 4
+#define chainBar 5
 #define dr4bLeft 6
 #define dr4bRight 7
-#define chainBar 8
+#define chainBar2 8
 #define claw 9
 
 // pid defs
@@ -23,6 +24,12 @@ float pidKiDriveO = 0;
 float pidKdDriveO = 0;
 bool driveIsPidEnabledO = false;
 
+// chain pid floats
+float pidKpChianO = 1;
+float pidKiChainO = 0;
+float pidKdChainO = 0;
+bool chainIsPidEnabled = false;
+
 // dr4b pid floats
 float pidKpDr4bO = 1;
 float pidKiDr4bO = 0;
@@ -37,6 +44,10 @@ int driveEncoderTargetLeft;
 int driveEncoderValueRight;
 int driveEncoderTargetRight;
 
+//chain values
+int chainEncoderValue;
+int chainEncoderTarget;
+
 // right dr4b values
 int dr4bRightPotValue;
 int dr4bRightPotTarget;
@@ -48,7 +59,7 @@ int dr4bLeftPotTarget;
 //control modifiers
 bool isReverse = false;
 bool isFineControl = false;
-int fineControl = 1;
+float fineControl = 1;
 
 bool dr4bIsDebugEnabled = false; //if enabled print logs to console
 // functions
@@ -78,9 +89,7 @@ void driveLeftPIDO() {
     // convert to a universal unit, in this case centimeters because science
     // 31.9024 is avg circumfrence of omniwheel, 360 due to how the optical
     // shaft encoder counts
-    // sensor scale becuase why not
     // encoder target becuase i kinda need that
-    // glenn IS the code
     // derek IS the coder
 
     // mathy stuff
@@ -134,9 +143,7 @@ void driveRightPIDO() {
     // convert to a universal unit, in this case centimeters because science
     // 31.9024 is avg circumfrence of omniwheel, 360 due to how the optical
     // shaft encoder counts
-    // sensor scale becuase why not
     // encoder target becuase i kinda need that
-    // glenn IS the code
     // derek IS the coder
 
     // mathy stuff
@@ -170,6 +177,60 @@ void driveRightPIDO() {
       pidDrive = PID_DRIVE_MIN;
     // send to motor
     motorSet(driveRight, pidDrive);
+    delay(50);
+    // Run at 50Hz
+  }
+}
+
+/*-----------------------------------------------------------------------------*/
+/*  Calculate error and drive for chainbar */
+/*-----------------------------------------------------------------------------*/
+void chainPIDO() {
+  float pidError;
+  float pidLastError;
+  float pidIntegral;
+  float pidDerivative;
+  float pidDrive;
+  pidLastError = 0;
+  pidIntegral = 0;
+  while (chainIsPidEnabled == true && isAutonomous() == false)
+  {
+    float encoderCalcValue = (encoderGet(chainencoder));
+    // shaft encoder counts, direct, no need for conversion
+    // encoder target becuase i kinda need that
+    // derek IS the coder
+
+    // mathy stuff
+
+    // calculate error
+    pidError = encoderCalcValue - chainEncoderTarget;
+
+    // integral - if Ki is not 0
+    if (pidKiDriveO != 0)
+    {
+      // If we are inside controlable window then integrate the error
+      if (abs(pidError) < PID_INTEGRAL_LIMIT)
+        pidIntegral = pidIntegral + pidError;
+      else
+        pidIntegral = 0;
+    }
+    else
+      pidIntegral = 0;
+
+    // calculate the derivative
+    pidDerivative = pidError - pidLastError;
+    pidLastError = pidError;
+
+    // calculate drive
+    pidDrive = (pidKpDriveO * pidError) + (pidKiDriveO * pidIntegral) + (pidKdDriveO * pidDerivative);
+    pidDrive = pidDrive * -1;
+    // limit drive
+    if (pidDrive > PID_DRIVE_MAX)
+      pidDrive = PID_DRIVE_MAX;
+    if (pidDrive < PID_DRIVE_MIN)
+      pidDrive = PID_DRIVE_MIN;
+    // send to motor
+    motorSet(chainBar, pidDrive);
     delay(50);
     // Run at 50Hz
   }
@@ -304,8 +365,14 @@ void dr4bLeftPIDO() {
 /*-----------------------------------------------------------------------------*/
 void updateDrive(int chassisControlLeft, int chassisControlRight, int liftControl) {
   //chassis control
-  motorSet(driveRight, (chassisControlRight * fineControl));
-  motorSet(driveLeft, (chassisControlLeft * fineControl));
+  if (isReverse == true) { //if in reverse, invert and switch sides for normal turning
+    motorSet(driveLeft, (chassisControlRight * -1));
+    motorSet(driveRight, (chassisControlLeft * -1));
+  }
+  else if (isReverse == false) { //if in normal operator, do not invert
+    motorSet(driveRight, (chassisControlRight));
+    motorSet(driveLeft, (chassisControlLeft));
+  }
   //lift control
   motorSet(dr4bLeft, (liftControl));
   motorSet(dr4bRight, (liftControl));
@@ -314,22 +381,22 @@ void updateDrive(int chassisControlLeft, int chassisControlRight, int liftContro
 /*-----------------------------------------------------------------------------*/
 /*  Toggle fine control for drive */
 /*-----------------------------------------------------------------------------*/
-void fineControlToggle(int fineBtn, int reverseBtn) {
+void fineControlToggle(int fineBtn, int fineBtn2, int reverseBtn, int reverseBtn2) {
   // fine control toggle
-  if (fineBtn == 1 && isFineControl == false) { // toggle it on
+  if (fineBtn == 1) { // toggle it on
     isFineControl = true;
     fineControl = .5;
   }
-  if (fineBtn == 1 && isFineControl == true) { // toggle it off
+  if (fineBtn2 == 1) { // toggle it off
     isFineControl = false;
     fineControl = 1;
   }
   //reverse toggle
-    if (reverseBtn == 1 && isReverse == false) { // toggle it on
+    if (reverseBtn == 1) { // toggle it on
     isReverse = true;
     fineControl = -1;
   }
-  if (reverseBtn == 1 && isReverse == true) { // toggle it off
+  if (reverseBtn2 == 1) { // toggle it off
     isReverse = false;
     fineControl = 1;
   }
@@ -367,7 +434,7 @@ void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown,
 /*-----------------------------------------------------------------------------*/
 void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainbarBtnUp,
                         int chainbarBtnDown) {
-  motorSet(chainBar, (joystickGetAnalog(2, 3)));
+  motorSet(chainBar2, (joystickGetAnalog(2, 3)));
   /* chain bar control
      if (chainbarBtnUp == 1) {
      // move up
@@ -447,9 +514,10 @@ void lcdText() {
 void operatorControl() {
   lcdText();
   // encoderResetAllO();
-  //driveIsPidEnabledO = false;
+  // driveIsPidEnabledO = false;
   // TaskHandle driveTaskHandleLeft = taskRunLoop(driveLeftPIDO, 25);
   // TaskHandle driveTaskHandleRight = taskRunLoop(driveRightPIDO, 25);
+  TaskHandle chaintaskHandle = taskRunLoop(chainPIDO, 25);
   while (isEnabled()) {
     // printf("left drive  %d\n", encoderGet(leftencoder));
     // printf("right drive  %d\n", encoderGet(rightencoder));
@@ -487,9 +555,17 @@ void operatorControl() {
       {
         //encoderResetAllO();
         driveEncoderTargetRight = 0;
-      }*/
+      } */
+    
+    //chain target set
+    chainIsPidEnabled = true;
+    if (joystickGetAnalog(2, 2) > 25 || joystickGetAnalog(2, 2) < 25)
+    { // if joystick is out of deadzone, change target
+      chainEncoderTarget = chainEncoderTarget + (joystickGetAnalog(2, 2) / 20);
+    }
+    //argument based control scheme
     updateDrive(joystickGetAnalog(1, 3), joystickGetAnalog(1, 2), joystickGetAnalog(2, 2));
-    fineControlToggle(joystickGetDigital(1, 7, JOY_DOWN), joystickGetDigital(1,7, JOY_UP));
+    fineControlToggle(joystickGetDigital(1, 7, JOY_DOWN), joystickGetDigital(1, 7, JOY_UP), joystickGetDigital(1, 8, JOY_DOWN), joystickGetDigital(1, 8, JOY_UP));
     mobileGoalControl( joystickGetDigital(1, 6, JOY_UP), joystickGetDigital(1, 6, JOY_DOWN), joystickGetDigital(2, 8, JOY_UP), joystickGetDigital(2, 8, JOY_DOWN));
     coneHandlerControl(joystickGetDigital(2, 5, JOY_UP), joystickGetDigital(2, 5, JOY_DOWN), joystickGetDigital(2, 7, JOY_DOWN), joystickGetDigital(2, 7, JOY_UP));
     delay(20);

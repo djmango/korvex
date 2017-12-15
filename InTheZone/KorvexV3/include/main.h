@@ -93,9 +93,6 @@ void initialize();
  * This task should never exit; it should end with some kind of infinite loop, even if empty.
  */
 void operatorControl();
-Encoder leftencoder;
-Encoder rightencoder;
-Encoder chainencoder;
 // End C++ export structure
 #ifdef __cplusplus
 }

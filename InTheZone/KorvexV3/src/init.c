@@ -11,6 +11,7 @@
  */
 
 #include "main.h"
+#include "korvexlib.h"
 
 /*
  * Runs pre-initialization code. This function will be started in kernel mode one time while the
@@ -37,4 +38,9 @@ void initializeIO() {
  * can be implemented in this task if desired.
  */
 void initialize() {
+  leftencoder = encoderInit (2, 3, true);
+  rightencoder = encoderInit (4, 5, true);
+  chainencoder = encoderInit(6, 7, false);
+  lcdInit(uart1);
+  lcdClear(uart1);
 }

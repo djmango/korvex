@@ -34,11 +34,11 @@
 #define dr4bLeft 6
 #define dr4bRight 7
 #define chainBar 8
-#define claw 9
+#define claw 8
 
 // pid defs
-#define PID_DRIVE_MAX 127
-#define PID_DRIVE_MIN (-127)
+int PID_DRIVE_MAX = 127;
+int PID_DRIVE_MIN = -127;
 #define PID_INTEGRAL_LIMIT 50
 
 // lcd defs
@@ -52,16 +52,22 @@
 // vars
 
 // drive pid floats
-float pidKpDrive = 1;
+float pidKpDrive = 6.5;
 float pidKiDrive = 0;
-float pidKdDrive = 0.1;
+float pidKdDrive = 1;
 bool driveIsPidEnabledA = false;
+
+// chian pid floats
+float pidKpChian = 1;
+float pidKiChain = 0;
+float pidKdChain = 0;
+bool chainIsPidEnabledA = false;
 
 // dr4b pid floats
 float pidKpDr4b = 1;
 float pidKiDr4b = 0;
 float pidKdDr4b = 0;
-bool PIDenabledDr4b = false;
+bool dr4bIsPidEnabledA = false;
 
 // left drive values
 int driveEncoderValueLeft;
@@ -72,6 +78,10 @@ int motorDriveLeft;
 int driveEncoderValueRight;
 int driveEncoderTargetRight;
 int motorDriveRight;
+
+//chain values
+int chainEncoderValue;
+int chainEncoderTarget;
 
 // right dr4b values
 int potValueRightDr4b;
@@ -310,9 +320,9 @@ void driveLeftPID() {
     pidLastError = pidError;
 
     // calculate drive
-    pidDrive = (pidKpDrive * pidError) + (pidKiDrive * pidIntegral) +
-               (pidKdDrive * pidDerivative);
+    pidDrive = (pidKpDrive * pidError) + (pidKiDrive * pidIntegral) + (pidKdDrive * pidDerivative);
     pidDrive = pidDrive * -1;
+    // printf("left drive  %d\n", pidDrive);
     // limit drive
     if (pidDrive > PID_DRIVE_MAX)
       pidDrive = PID_DRIVE_MAX;
@@ -366,10 +376,9 @@ void driveRightPID() {
     pidLastError = pidError;
 
     // calculate drive
-    pidDrive = (pidKpDrive * pidError) + (pidKiDrive * pidIntegral) +
-               (pidKdDrive * pidDerivative);
+    pidDrive = (pidKpDrive * pidError) + (pidKiDrive * pidIntegral) + (pidKdDrive * pidDerivative);
     pidDrive = pidDrive * -1;
-    // printf("right drive  %d\n", pidDrive);
+    // printf("right drive %d\n", pidDrive);
     // limit drive
     if (pidDrive > PID_DRIVE_MAX)
       pidDrive = PID_DRIVE_MAX;
@@ -383,6 +392,59 @@ void driveRightPID() {
 }
 
 /*-----------------------------------------------------------------------------*/
+/*  Calculate error and drive for chainbar */
+/*-----------------------------------------------------------------------------*/
+void chainPID() {
+  float pidError;
+  float pidLastError;
+  float pidIntegral;
+  float pidDerivative;
+  float pidDrive;
+  pidLastError = 0;
+  pidIntegral = 0;
+  while (chainIsPidEnabledA == true && isAutonomous() == true)
+  {
+    float encoderCalcValue = (encoderGet(chainencoder));
+    // shaft encoder counts, direct, no need for conversion
+    // encoder target becuase i kinda need that
+    // derek IS the coder
+
+    // mathy stuff
+
+    // calculate error
+    pidError = encoderCalcValue - chainEncoderTarget;
+
+    // integral - if Ki is not 0
+    if (pidKiDrive != 0)
+    {
+      // If we are inside controlable window then integrate the error
+      if (abs(pidError) < PID_INTEGRAL_LIMIT)
+        pidIntegral = pidIntegral + pidError;
+      else
+        pidIntegral = 0;
+    }
+    else
+      pidIntegral = 0;
+
+    // calculate the derivative
+    pidDerivative = pidError - pidLastError;
+    pidLastError = pidError;
+
+    // calculate drive
+    pidDrive = (pidKpDrive * pidError) + (pidKiDrive * pidIntegral) + (pidKdDrive * pidDerivative);
+    pidDrive = pidDrive * -1;
+    // limit drive
+    if (pidDrive > PID_DRIVE_MAX)
+      pidDrive = PID_DRIVE_MAX;
+    if (pidDrive < PID_DRIVE_MIN)
+      pidDrive = PID_DRIVE_MIN;
+    // send to motor
+    motorSet(chainBar, pidDrive);
+    delay(50);
+    // Run at 50Hz
+  }
+}
+/*-----------------------------------------------------------------------------*/
 /*  Calculate error and drive for right dr4b */
 /*-----------------------------------------------------------------------------*/
 void dr4bRightPID() {
@@ -393,7 +455,7 @@ void dr4bRightPID() {
   float pidDrive;
   pidLastError = 0;
   pidIntegral = 0;
-  while (PIDenabledDr4b == true) {
+  while (dr4bIsPidEnabledA == true) {
     float potCalcValue = (potValueRightDr4b);
     // convert to a universal unit, in this case centimeters because science
     // 31.9024 is avg circumfrence of omniwheel, 360 due to how the optical
@@ -450,7 +512,7 @@ void dr4bLeftPID() {
   float pidDrive;
   pidLastError = 0;
   pidIntegral = 0;
-  while (PIDenabledDr4b == true) {
+  while (dr4bIsPidEnabledA == true) {
     float potCalcValue = (potValueLeftDr4b);
     // convert to a universal unit, in this case centimeters because science
     // 31.9024 is avg circumfrence of omniwheel, 360 due to how the optical
@@ -532,67 +594,96 @@ void lcdTextA()
 void autonomous() {
   lcdTextA();
   encoderResetAll();
+  int auton = 0;
   driveIsPidEnabledA = true;
   TaskHandle driveTaskHandleLeft = taskRunLoop(driveLeftPID, 25);
   TaskHandle driveTaskHandleRight = taskRunLoop(driveRightPID, 25);
-  //drive through cones to mobile goal
-  driveEncoderTargetLeft = 96;
-  driveEncoderTargetRight = 96;
-  delay(1500);
-  //drop mobile goal intake
-  motorSet(mobileGoal, 127);
-  delay(300);
-  //drive into mobile goal
-  motorSet(mobileGoal, 0);
-  encoderResetAll();
-  driveEncoderTargetLeft = 20;
-  driveEncoderTargetRight = 20;
-  delay(300);
-  //pick up mobile goal
-  motorSet(mobileGoal, -127);
-  delay(400);
-  //turn 180
-  encoderResetAll();
-  motorSet(mobileGoal, 0);
-  driveEncoderTargetLeft = -20;
-  driveEncoderTargetRight = 20;
-  delay(300);
-  //move back to the bar
-  encoderResetAll();
-  driveEncoderTargetLeft = 120;
-  driveEncoderTargetRight = 120;
-  delay(1600);
-  //turn 45 degrees
-  encoderResetAll();
-  driveEncoderTargetLeft = -10;
-  driveEncoderTargetRight = 10;
-  delay(300);
-  //forward to line up with middle of zone
-  encoderResetAll();
-  driveEncoderTargetLeft = 30;
-  driveEncoderTargetRight = 30;
-  delay(500);
-  //turn 175 to angle for drop
-  encoderResetAll();
-  driveEncoderTargetLeft = -30;
-  driveEncoderTargetRight = 30;
-  delay(500);
-  //drive into zone
-  encoderResetAll();
-  driveEncoderTargetLeft = 30;
-  driveEncoderTargetRight = 30;
-  delay(500);
-  //drop mobile goal
-  motorSet(mobileGoal, 127);
-  delay(300);
-  motorSet(mobileGoal, 0);
-  delay(500);
-  //drive out
-  encoderResetAll();
-  driveEncoderTargetLeft = -70;
-  driveEncoderTargetRight = -70;
-  delay(700);
-  driveIsPidEnabledA = false;
-  taskDelete(driveTaskHandleLeft);
-  taskDelete(driveTaskHandleRight);
+  // auton0 is red left, auton1 is run awayyyyy
+  switch (auton) {
+  case 0 :
+    //begin foldout
+    encoderResetAll();
+    motorSet(claw, 50);
+    PID_DRIVE_MAX = 80;
+    PID_DRIVE_MIN = 80;
+    motorSet(dr4bLeft, -127);
+    motorSet(dr4bRight, -127);
+    delay(200);
+    //drive through cones to mobile goal
+    driveEncoderTargetLeft = 90;
+    driveEncoderTargetRight = 90;
+    motorSet(mobileGoal, -127);
+    delay(800);
+    //drop mobile goal intake
+    motorSet(mobileGoal, 0);
+    motorSet(dr4bLeft, 0);
+    motorSet(dr4bRight, 0);
+    delay(500);
+    //drive into mobile goal
+    encoderResetAll();
+    PID_DRIVE_MAX = 127;
+    PID_DRIVE_MIN = 127;
+    driveEncoderTargetLeft = 50;
+    driveEncoderTargetRight = 50;
+    delay(2000);
+    //pick up mobile goal
+    motorSet(mobileGoal, 127);
+    delay(600);
+    //turn 180
+    encoderResetAll();
+    motorSet(mobileGoal, 0);
+    driveEncoderTargetLeft = 50;
+    driveEncoderTargetRight = -50;
+    delay(2000);
+    //move back to the bar
+    encoderResetAll();
+    driveEncoderTargetLeft = 140;
+    driveEncoderTargetRight = 140;
+    delay(2000);
+    //turn 45 degrees
+    encoderResetAll();
+    driveEncoderTargetLeft = -10;
+    driveEncoderTargetRight = 10;
+    delay(1000);
+    //forward to line up with middle of zone
+    encoderResetAll();
+    driveEncoderTargetLeft = 30;
+    driveEncoderTargetRight = 30;
+    delay(1000);
+    //turn 175 to angle for drop
+    encoderResetAll();
+    driveEncoderTargetLeft = -30;
+    driveEncoderTargetRight = 30;
+    delay(1000);
+    //drive into zone
+    encoderResetAll();
+    driveEncoderTargetLeft = 30;
+    driveEncoderTargetRight = 30;
+    delay(1000);
+    //drop mobile goal
+    motorSet(mobileGoal, -127);
+    delay(600);
+    motorSet(mobileGoal, 0);
+    delay(600);
+    //drive out
+    encoderResetAll();
+    driveEncoderTargetLeft = -70;
+    driveEncoderTargetRight = -70;
+    delay(700);
+    driveIsPidEnabledA = false;
+    taskDelete(driveTaskHandleLeft);
+    taskDelete(driveTaskHandleRight);
+    break;
+  case 1 :
+    //drive through cones to mobile goal
+    driveEncoderTargetLeft = 900;
+    driveEncoderTargetRight = 900;
+    delay(4000);
+    driveIsPidEnabledA = false;
+    taskDelete(driveTaskHandleLeft);
+    taskDelete(driveTaskHandleRight);
+    motorStopAll();
+  default:
+    break;
+  }
 }
