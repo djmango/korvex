@@ -42,7 +42,9 @@ void lcdTextA()
 
 void pidFeed()
 {
-
+  taskCreate(driveLeftPid, TASK_DEFAULT_STACK_SIZE, (driveLeftTarget, encoderGet(leftencoder) * 31.9024 / 360, 5, 0, 1), TASK_PRIORITY_DEFAULT);
+  driveLeftPid(driveLeftTarget, encoderGet(leftencoder) * 31.9024 / 360, 5, 0, 1);
+  driveRightPid(driveRightTarget, encoderGet(rightencoder) * 31.9024 / 360, 5, 0, 1);
 }
 
 /* motors:
@@ -69,6 +71,8 @@ void pidFeed()
 */
 
 void autonomous() {
+  drivePidIsEnabled = true;
+  TaskHandle pidFeedTaskhandle = taskRunLoop(pidFeed, 25);
   lcdTextA();
   int auton = 0;
   switch (auton) {
