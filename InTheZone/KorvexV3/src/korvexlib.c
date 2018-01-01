@@ -142,7 +142,7 @@ void dr4bLeftPid(int encoderTarget, float encoderCalcValue, int pidKp, int pidKi
 /*-----------------------------------------------------------------------------*/
 /*  An argument based encoder pid, for dr4b right */
 /*-----------------------------------------------------------------------------*/
-void driveRightPid(int encoderTarget, float encoderCalcValue, int pidKp, int pidKi, int pidKd) {
+void dr4bRightPid(int encoderTarget, float encoderCalcValue, int pidKp, int pidKi, int pidKd) {
   float pidError;
   float pidLastError;
   float pidIntegral;
@@ -188,8 +188,8 @@ void driveRightPid(int encoderTarget, float encoderCalcValue, int pidKp, int pid
 /*  in accordance to presets corresponding to the cones stacked                */
 /*-----------------------------------------------------------------------------*/
 void autoStacker(int coneIncrement, bool isPreload) { // cone increment will decide what function will run, each is specific to the height
-    int leftDr4bTarget
-    int rightDr4bTarget
+    int dr4bTarget; // sync targets for both sides of dr4b
+    int chainTarget; // chain target, i am assuming one encoder so makes no difference
     if (isPreload == false) { //if we are not stacking preload, assume we are stacking from ground
         switch (coneIncrement) {
         case 1: // stacking first cone
@@ -202,7 +202,7 @@ void autoStacker(int coneIncrement, bool isPreload) { // cone increment will dec
         switch (coneIncrement) {
         case 1:
             break;
-        default;
+        default:
             break;
         }
     }

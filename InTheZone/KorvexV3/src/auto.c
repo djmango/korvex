@@ -44,8 +44,8 @@ void pidFeed()
 {
   taskCreate(driveLeftPid, TASK_DEFAULT_STACK_SIZE, (driveLeftTarget, encoderGet(leftencoder) * 31.9024 / 360, 5, 0, 1), TASK_PRIORITY_DEFAULT);
   taskCreate(driveRightPid, TASK_DEFAULT_STACK_SIZE, (driveRightTarget, encoderGet(rightencoder) * 31.9024 / 360, 5, 0, 1), TASK_PRIORITY_DEFAULT);
-  // driveLeftPid(driveLeftTarget, encoderGet(leftencoder) * 31.9024 / 360, 5, 0, 1);
-  // driveRightPid(driveRightTarget, encoderGet(rightencoder) * 31.9024 / 360, 5, 0, 1);
+  taskCreate(dr4bLeftPid, TASK_DEFAULT_STACK_SIZE, (dr4bLeftTarget, encoderGet(rightencoder) * 31.9024 / 360, 5, 0, 1), TASK_PRIORITY_DEFAULT);
+  taskCreate(dr4bRightPid, TASK_DEFAULT_STACK_SIZE, (dr4bRightTarget, encoderGet(rightencoder) * 31.9024 / 360, 5, 0, 1), TASK_PRIORITY_DEFAULT); 
 }
 
 /* motors:
@@ -72,8 +72,6 @@ void pidFeed()
 */
 
 void autonomous() {
-  drivePidIsEnabled = true;
-  // TaskHandle pidFeedTaskhandle = taskRunLoop(pidFeed, 25);
   pidFeed();
   lcdTextA();
   int auton = 0;
