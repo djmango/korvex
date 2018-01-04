@@ -26,7 +26,7 @@ void updateDrive(int chassisControlLeft, int chassisControlRight, int liftContro
   }
   //lift control
   motorSet(dr4bLeft, (liftControl));
-  motorSet(dr4bRight, (liftControl));
+  motorSet(dr4bRight, (liftControl * -1));
 }
 
 /*-----------------------------------------------------------------------------*/
@@ -85,7 +85,7 @@ void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown,
 /*-----------------------------------------------------------------------------*/
 void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainbarBtnUp,
                         int chainbarBtnDown) {
-  motorSet(chainBar2, (joystickGetAnalog(2, 3)));
+  motorSet(chainBar, (joystickGetAnalog(2, 3) / 2 ));
   /* chain bar control
      if (chainbarBtnUp == 1) {
      // move up
@@ -103,15 +103,15 @@ void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainbarBtnUp,
   // claw control
   if (clawBtnUp == 1) {
     // move up
-    motorSet(9, 40);
+    motorSet(claw, 40);
   }
   if (clawBtnDown == 1) {
     // move down
-    motorSet(9, -40);
+    motorSet(claw, -40);
   }
   if (clawBtnUp == 0 && clawBtnDown == 0) {
     // dont move
-    motorSet(9, 0);
+    motorSet(claw, 0);
   }
 }
 
