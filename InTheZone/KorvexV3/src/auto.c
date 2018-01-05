@@ -5,6 +5,7 @@
 #include "main.h"
 #include "constants.h"
 #include "korvexlib.h"
+
 /*
  * Runs the user autonomous code. This function will be started in its own task
  * with the default
@@ -27,12 +28,9 @@
  * so, the robot will adelay a switch to another mode or disable/enable cycle.
  */
 
-
-
 /*-----------------------------------------------------------------------------*/
 /*  Funky messages for the lcd */
 /*-----------------------------------------------------------------------------*/
-
 void lcdTextA()
 {
   lcdSetBacklight(uart1, true);
@@ -40,12 +38,26 @@ void lcdTextA()
   lcdSetText(uart1, 2, "i  swear");
 }
 
-void pidFeed()
-{
-  taskCreate(driveLeftPid, TASK_DEFAULT_STACK_SIZE, (driveLeftTarget, encoderGet(leftencoder) * 31.9024 / 360, 5, 0, 1), TASK_PRIORITY_DEFAULT);
-  taskCreate(driveRightPid, TASK_DEFAULT_STACK_SIZE, (driveRightTarget, encoderGet(rightencoder) * 31.9024 / 360, 5, 0, 1), TASK_PRIORITY_DEFAULT);
-  taskCreate(dr4bLeftPid, TASK_DEFAULT_STACK_SIZE, (dr4bLeftTarget, encoderGet(rightencoder) * 31.9024 / 360, 5, 0, 1), TASK_PRIORITY_DEFAULT);
-  taskCreate(dr4bRightPid, TASK_DEFAULT_STACK_SIZE, (dr4bRightTarget, encoderGet(rightencoder) * 31.9024 / 360, 5, 0, 1), TASK_PRIORITY_DEFAULT); 
+void pidFeedA() {
+  taskCreate(
+      driveLeftPid, TASK_DEFAULT_STACK_SIZE,
+      (driveLeftTarget, encoderGet(leftencoder), 5, 0, 1),
+      TASK_PRIORITY_DEFAULT);
+  taskCreate(
+      driveRightPid, TASK_DEFAULT_STACK_SIZE,
+      (driveRightTarget, encoderGet(rightencoder), 5, 0, 1),
+      TASK_PRIORITY_DEFAULT);
+  taskCreate(
+      dr4bLeftPid, TASK_DEFAULT_STACK_SIZE,
+      (dr4bLeftTarget, encoderGet(dr4bleftencoder), 5, 0, 1),
+      TASK_PRIORITY_DEFAULT);
+  taskCreate(
+      dr4bRightPid, TASK_DEFAULT_STACK_SIZE,
+      (dr4bRightTarget, encoderGet(dr4brightencoder), 5, 0, 1),
+      TASK_PRIORITY_DEFAULT);
+  taskCreate(chainPid, TASK_DEFAULT_STACK_SIZE,
+      (chainTarget, encoderGet(chainencoder), 5, 0, 1),
+      TASK_PRIORITY_DEFAULT);
 }
 
 /* motors:
@@ -72,7 +84,7 @@ void pidFeed()
 */
 
 void autonomous() {
-  pidFeed();
+  pidFeedA();
   lcdTextA();
   int auton = 0;
   switch (auton) {

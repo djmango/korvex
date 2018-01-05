@@ -14,7 +14,7 @@ float fineControl = 1;
 /*-----------------------------------------------------------------------------*/
 /*  Drive and lift control */
 /*-----------------------------------------------------------------------------*/
-void updateDrive(int chassisControlLeft, int chassisControlRight, int liftControl) {
+void driveControl(int chassisControlLeft, int chassisControlRight) {
   //chassis control
   if (isReverse == true) { //if in reverse, invert and switch sides for normal turning
     motorSet(driveLeft, (chassisControlRight * -1));
@@ -24,9 +24,19 @@ void updateDrive(int chassisControlLeft, int chassisControlRight, int liftContro
     motorSet(driveRight, (chassisControlRight));
     motorSet(driveLeft, (chassisControlLeft));
   }
-  //lift control
-  motorSet(dr4bLeft, (liftControl));
-  motorSet(dr4bRight, (liftControl * -1));
+}
+
+void dr4bControl(int dr4bControl) {
+  // lift control
+  if (dr4bControl > 15 || dr4bControl < -15) // if driver is trying to control dr4b, disable autostacker and let them
+  {
+    autoStackerEnabled = false;;
+    dr4bLeftTarget = dr4bControl;
+    dr4bRightTarget = dr4bControl;
+  }
+  else {
+    autoStackerEnabled = true;
+  }
 }
 
 /*-----------------------------------------------------------------------------*/
@@ -56,8 +66,7 @@ void fineControlToggle(int fineBtn, int fineBtn2, int reverseBtn, int reverseBtn
 /*-----------------------------------------------------------------------------*/
 /*  Mobile goal control */
 /*-----------------------------------------------------------------------------*/
-void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown,
-                       int moboTiltBtnUp, int moboTiltBtnDown) {
+void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown) {
   // mobo lift control
   if (moboLiftBtnUp == 1) {
     motorSet(4, 127);
@@ -68,38 +77,22 @@ void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown,
   if (moboLiftBtnUp == 0 && moboLiftBtnDown == 0) {
     motorSet(4, 0);
   }
-  // mobo tilt control
-  if (moboTiltBtnUp == 1) {
-    motorSet(5, 127);
-  }
-  if (moboTiltBtnDown == 1) {
-    motorSet(5, -127);
-  }
-  if (moboTiltBtnUp == 0 && moboTiltBtnDown == 0) {
-    motorSet(5, 0);
-  }
 }
 
 /*-----------------------------------------------------------------------------*/
 /*  Cone handler control */
 /*-----------------------------------------------------------------------------*/
-void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainbarBtnUp,
-                        int chainbarBtnDown) {
+void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainControl) {
+  if (dr4bControl > 15 || dr4bControl < -15) // if driver is trying to control chain, disable autostacker and let them
+  {
+    autoStackerEnabled = false;
+    ;
+    dr4bLeftTarget = dr4bControl;
+    dr4bRightTarget = dr4bControl;
+  } else {
+    autoStackerEnabled = true;
+  }
   motorSet(chainBar, (joystickGetAnalog(2, 3) / 2 ));
-  /* chain bar control
-     if (chainbarBtnUp == 1) {
-     // move up
-     motorSet(8, 127);
-     }
-     if (chainbarBtnDown == 1) {
-     // move down
-     motorSet(8, -127);
-     }
-     if (chainbarBtnUp == 0 &&
-      chainbarBtnDown == 0) {
-     // dont move
-     motorSet(8, 0);
-     }*/
   // claw control
   if (clawBtnUp == 1) {
     // move up
@@ -122,6 +115,21 @@ void lcdText() {
   lcdSetBacklight(uart1, true);
   lcdSetText(uart1, 1, "i want to");
   lcdSetText(uart1, 2, "sudo rm -rf myself");
+}
+
+void pidFeed() {
+  taskCreate(
+      dr4bLeftPid, TASK_DEFAULT_STACK_SIZE,
+      (dr4bLeftTarget, encoderGet(dr4bleftencoder), 5, 0, 1),
+      TASK_PRIORITY_DEFAULT);
+  taskCreate(
+      dr4bRightPid, TASK_DEFAULT_STACK_SIZE,
+      (dr4bRightTarget, encoderGet(dr4brightencoder), 5, 0, 1),
+      TASK_PRIORITY_DEFAULT);
+  taskCreate(
+      chainPid, TASK_DEFAULT_STACK_SIZE,
+      (chainTarget, encoderGet(chainencoder), 5, 0, 1),
+      TASK_PRIORITY_DEFAULT);
 }
 
 /*port map DESIRED
@@ -157,19 +165,25 @@ void lcdText() {
  */
 
 /*control arguement names
-   chassisControl chassisControlLeft, chassisControlRight, liftControl
+   chassisControl chassisControlLeft, chassisControlRight
+   dr4bControl dr4bControl
    fineControlToggle fineBtn, reverseBtn
-   mobileGoalControl moboLiftBtn, moboTiltBtn
-   coneHandlerControl clawBtn, chainbarBtn
+   mobileGoalControl moboLiftBtnUp, moboLiftBtnDown
+   coneHandlerControl clawBtnUp, clawBtnDown, chainbarBtnUp, chainbarBtnDown
  */
+
 void operatorControl() {
   lcdText();
   while (isEnabled()) {
+    printf("right dr4b  %d\n", encoderGet(dr4brightencoder));
+    printf("left dr4b  %d\n", encoderGet(dr4bleftencoder));
+    printf("chain  %d\n", encoderGet(chainencoder));
     //argument based control scheme
-    updateDrive(joystickGetAnalog(1, 3), joystickGetAnalog(1, 2), joystickGetAnalog(2, 2));
+    driveControl(joystickGetAnalog(1, 3), joystickGetAnalog(1, 2));
+    dr4bControl(joystickGetAnalog(2, 2));
     fineControlToggle(joystickGetDigital(1, 7, JOY_DOWN), joystickGetDigital(1, 7, JOY_UP), joystickGetDigital(1, 8, JOY_UP), joystickGetDigital(1, 8, JOY_DOWN));
-    mobileGoalControl( joystickGetDigital(1, 6, JOY_UP), joystickGetDigital(1, 6, JOY_DOWN), joystickGetDigital(2, 8, JOY_UP), joystickGetDigital(2, 8, JOY_DOWN));
-    coneHandlerControl(joystickGetDigital(2, 5, JOY_UP), joystickGetDigital(2, 5, JOY_DOWN), joystickGetDigital(2, 7, JOY_DOWN), joystickGetDigital(2, 7, JOY_UP));
+    mobileGoalControl( joystickGetDigital(1, 6, JOY_UP), joystickGetDigital(1, 6, JOY_DOWN));
+    coneHandlerControl(joystickGetDigital(2, 5, JOY_UP), joystickGetDigital(2, 5, JOY_DOWN), joystickGetAnalog(2, 3));
     delay(20);
   }
 }

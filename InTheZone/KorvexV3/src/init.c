@@ -38,11 +38,11 @@ void initializeIO() {
  * can be implemented in this task if desired.
  */
 void initialize() {
-  leftencoder = encoderInit (2, 3, true);
-  rightencoder = encoderInit (4, 5, true);
-  chainencoder = encoderInit(6, 7, false);
-  dr4bleftencoder = encoderInit(8, 10, false);
-  dr4brightencoder = encoderInit(11, 12, false);
+  leftencoder = encoderInit(2, 3, true);
+  rightencoder = encoderInit(4, 5, true);
+  dr4bleftencoder = encoderInit(6, 7, false);
+  dr4brightencoder = encoderInit(8, 9, true);
+  chainencoder = encoderInit(11, 12, false);
   lcdInit(uart1);
   lcdClear(uart1);
 }

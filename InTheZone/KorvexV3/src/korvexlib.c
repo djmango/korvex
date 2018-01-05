@@ -184,26 +184,68 @@ void dr4bRightPid(int encoderTarget, float encoderCalcValue, int pidKp, int pidK
 }
 
 /*-----------------------------------------------------------------------------*/
+/*  An argument based encoder pid, for dr4b right */
+/*-----------------------------------------------------------------------------*/
+void chainPid(int encoderTarget, float encoderCalcValue, int pidKp, int pidKi, int pidKd) {
+  float pidError;
+  float pidLastError;
+  float pidIntegral;
+  float pidDerivative;
+  int pidDrive;
+  pidLastError = 0;
+  pidIntegral = 0;
+  while (true) {
+    // calculate error
+    pidError = encoderCalcValue - encoderTarget;
+
+    // integral - if Ki is not 0
+    if (pidKi != 0) {
+      // If we are inside controlable window then integrate the error
+      if (abs(pidError) < PID_INTEGRAL_LIMIT)
+        pidIntegral = pidIntegral + pidError;
+      else
+        pidIntegral = 0;
+    } else
+      pidIntegral = 0;
+
+    // calculate the derivative
+    pidDerivative = pidError - pidLastError;
+    pidLastError = pidError;
+
+    // calculate drive
+    pidDrive =
+        (pidKp * pidError) + (pidKi * pidIntegral) + (pidKd * pidDerivative);
+    // limit drive
+    if (pidDrive > PID_DRIVE_MAX)
+      pidDrive = PID_DRIVE_MAX;
+    if (pidDrive < PID_DRIVE_MIN)
+      pidDrive = PID_DRIVE_MIN;
+    // send back
+    motorSet(chainBar, pidDrive);
+    delay(50);
+    // Run at 50Hz
+  }
+}
+
+/*-----------------------------------------------------------------------------*/
 /*  An argument based pid autostacker, which sets the targets of each system,  */
 /*  in accordance to presets corresponding to the cones stacked                */
 /*-----------------------------------------------------------------------------*/
-void autoStacker(int coneIncrement, bool isPreload) { // cone increment will decide what function will run, each is specific to the height
-    int dr4bTarget; // sync targets for both sides of dr4b
-    int chainTarget; // chain target, i am assuming one encoder so makes no difference
-    if (isPreload == false) { //if we are not stacking preload, assume we are stacking from ground
-        switch (coneIncrement) {
-        case 1: // stacking first cone
-            break;
-        default:
-            break;
+void autoStacker(int coneIncrement, bool isDriverload) { // cone increment will decide what function will run, each is specific to the height
+    if (isDriverload == false) { // if we are not stacking driver load, assume we are stacking from ground
+      switch (coneIncrement) {
+      case 1: // stacking first cone
+        break;
+      default:
+        break;
       }
     }
-    if (isPreload == true) { //if we are stacking preloads, use the correct set of presets
-        switch (coneIncrement) {
-        case 1:
-            break;
-        default:
-            break;
-        }
+    if (isDriverload == true) { // if we are stacking driver loads, use the corresponding set of presets
+      switch (coneIncrement) {
+      case 1:
+        break;
+      default:
+        break;
+      }
     }
 }
