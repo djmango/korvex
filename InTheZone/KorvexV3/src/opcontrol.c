@@ -117,19 +117,26 @@ void lcdText() {
   lcdSetText(uart1, 2, "sudo rm -rf myself");
 }
 
+/*-----------------------------------------------------------------------------*/
+/*  Update encoder values */
+/*-----------------------------------------------------------------------------*/
+void pidUpdate() {
+  dr4bLeftValue = encoderGet(dr4bleftencoder);
+  dr4bRightValue = encoderGet(dr4brightencoder);
+  chainValue = encoderGet(chainencoder);
+}
+
+/*-----------------------------------------------------------------------------*/
+/*  Pulls all the tasks for pid together */
+/*-----------------------------------------------------------------------------*/
 void pidFeed() {
-  taskCreate(
-      dr4bLeftPid, TASK_DEFAULT_STACK_SIZE,
-      (dr4bLeftTarget, encoderGet(dr4bleftencoder), 5, 0, 1),
-      TASK_PRIORITY_DEFAULT);
-  taskCreate(
-      dr4bRightPid, TASK_DEFAULT_STACK_SIZE,
-      (dr4bRightTarget, encoderGet(dr4brightencoder), 5, 0, 1),
-      TASK_PRIORITY_DEFAULT);
-  taskCreate(
-      chainPid, TASK_DEFAULT_STACK_SIZE,
-      (chainTarget, encoderGet(chainencoder), 5, 0, 1),
-      TASK_PRIORITY_DEFAULT);
+  taskRunLoop(pidUpdate, 20);
+  taskCreate(dr4bLeftPid, TASK_DEFAULT_STACK_SIZE, (5, 0, 1),
+             TASK_PRIORITY_DEFAULT);
+  taskCreate(dr4bRightPid, TASK_DEFAULT_STACK_SIZE, (5, 0, 1),
+             TASK_PRIORITY_DEFAULT);
+  taskCreate(chainPid, TASK_DEFAULT_STACK_SIZE, (5, 0, 1),
+             TASK_PRIORITY_DEFAULT);
 }
 
 /*port map DESIRED
@@ -174,10 +181,11 @@ void pidFeed() {
 
 void operatorControl() {
   lcdText();
+  pidFeed();
   while (isEnabled()) {
-    printf("right dr4b  %d\n", encoderGet(dr4brightencoder));
-    printf("left dr4b  %d\n", encoderGet(dr4bleftencoder));
-    printf("chain  %d\n", encoderGet(chainencoder));
+    // printf("right dr4b  %d\n", encoderGet(dr4brightencoder));
+    // printf("left dr4b  %d\n", encoderGet(dr4bleftencoder));
+    // printf("chain  %d\n", encoderGet(chainencoder));
     //argument based control scheme
     driveControl(joystickGetAnalog(1, 3), joystickGetAnalog(1, 2));
     dr4bControl(joystickGetAnalog(2, 2));

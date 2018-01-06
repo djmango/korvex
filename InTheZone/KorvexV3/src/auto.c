@@ -39,25 +39,21 @@ void lcdTextA()
 }
 
 void pidFeedA() {
-  taskCreate(
-      driveLeftPid, TASK_DEFAULT_STACK_SIZE,
-      (driveLeftTarget, encoderGet(leftencoder), 5, 0, 1),
-      TASK_PRIORITY_DEFAULT);
-  taskCreate(
-      driveRightPid, TASK_DEFAULT_STACK_SIZE,
-      (driveRightTarget, encoderGet(rightencoder), 5, 0, 1),
-      TASK_PRIORITY_DEFAULT);
-  taskCreate(
-      dr4bLeftPid, TASK_DEFAULT_STACK_SIZE,
-      (dr4bLeftTarget, encoderGet(dr4bleftencoder), 5, 0, 1),
-      TASK_PRIORITY_DEFAULT);
-  taskCreate(
-      dr4bRightPid, TASK_DEFAULT_STACK_SIZE,
-      (dr4bRightTarget, encoderGet(dr4brightencoder), 5, 0, 1),
-      TASK_PRIORITY_DEFAULT);
-  taskCreate(chainPid, TASK_DEFAULT_STACK_SIZE,
-      (chainTarget, encoderGet(chainencoder), 5, 0, 1),
-      TASK_PRIORITY_DEFAULT);
+  driveLeftValue = encoderGet(leftencoder);
+  taskCreate(driveLeftPid, TASK_DEFAULT_STACK_SIZE, (5, 0, 1),
+             TASK_PRIORITY_DEFAULT);
+  driveRightValue = encoderGet(rightencoder);
+  taskCreate(driveRightPid, TASK_DEFAULT_STACK_SIZE, (5, 0, 1),
+             TASK_PRIORITY_DEFAULT);
+  dr4bLeftValue = encoderGet(dr4bleftencoder);
+  taskCreate(dr4bLeftPid, TASK_DEFAULT_STACK_SIZE, (5, 0, 1),
+             TASK_PRIORITY_DEFAULT);
+  dr4bRightValue = encoderGet(dr4brightencoder);
+  taskCreate(dr4bRightPid, TASK_DEFAULT_STACK_SIZE, (5, 0, 1),
+             TASK_PRIORITY_DEFAULT);
+  chainValue = encoderGet(chainencoder);
+  taskCreate(chainPid, TASK_DEFAULT_STACK_SIZE, (5, 0, 1),
+             TASK_PRIORITY_DEFAULT);
 }
 
 /* motors:

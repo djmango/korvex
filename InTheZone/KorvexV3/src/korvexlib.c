@@ -1,104 +1,13 @@
 #include "main.h"
 #include "constants.h"
+#include "korvexlib.h"
 
 /*-----------------------------------------------------------------------------*/
 /*  An argument based encoder pid, for drive left */
 /*-----------------------------------------------------------------------------*/
-void driveLeftPid(int encoderTarget, float encoderCalcValue, int pidKp, int pidKi, int pidKd)
-{
-    float pidError;
-    float pidLastError;
-    float pidIntegral;
-    float pidDerivative;
-    int pidDrive;
-    pidLastError = 0;
-    pidIntegral = 0;
-    while (true)
-    {
-        // calculate error
-        pidError = encoderCalcValue - encoderTarget;
-
-        // integral - if Ki is not 0
-        if (pidKi != 0)
-        {
-            // If we are inside controlable window then integrate the error
-            if (abs(pidError) < PID_INTEGRAL_LIMIT)
-                pidIntegral = pidIntegral + pidError;
-            else
-                pidIntegral = 0;
-        }
-        else
-            pidIntegral = 0;
-
-        // calculate the derivative
-        pidDerivative = pidError - pidLastError;
-        pidLastError = pidError;
-
-        // calculate drive
-        pidDrive = (pidKp * pidError) + (pidKi * pidIntegral) + (pidKd * pidDerivative);
-        // limit drive
-        if (pidDrive > PID_DRIVE_MAX)
-            pidDrive = PID_DRIVE_MAX;
-        if (pidDrive < PID_DRIVE_MIN)
-            pidDrive = PID_DRIVE_MIN;
-        // send back
-        motorSet(driveLeft, pidDrive);
-        delay(50);
-        // Run at 50Hz
-    }
-}
-
-/*-----------------------------------------------------------------------------*/
-/*  An argument based encoder pid, for drive right */
-/*-----------------------------------------------------------------------------*/
-void driveRightPid(int encoderTarget, float encoderCalcValue, int pidKp, int pidKi, int pidKd)
-{
-    float pidError;
-    float pidLastError;
-    float pidIntegral;
-    float pidDerivative;
-    int pidDrive;
-    pidLastError = 0;
-    pidIntegral = 0;
-    while (true)
-    {
-        // calculate error
-        pidError = encoderCalcValue - encoderTarget;
-
-        // integral - if Ki is not 0
-        if (pidKi != 0)
-        {
-            // If we are inside controlable window then integrate the error
-            if (abs(pidError) < PID_INTEGRAL_LIMIT)
-                pidIntegral = pidIntegral + pidError;
-            else
-                pidIntegral = 0;
-        }
-        else
-            pidIntegral = 0;
-
-        // calculate the derivative
-        pidDerivative = pidError - pidLastError;
-        pidLastError = pidError;
-
-        // calculate drive
-        pidDrive = (pidKp * pidError) + (pidKi * pidIntegral) + (pidKd * pidDerivative);
-        // limit drive
-        if (pidDrive > PID_DRIVE_MAX)
-            pidDrive = PID_DRIVE_MAX;
-        if (pidDrive < PID_DRIVE_MIN)
-            pidDrive = PID_DRIVE_MIN;
-        // send back
-        motorSet(driveRight, pidDrive);
-        delay(50);
-        // Run at 50Hz
-    }
-}
-
-/*-----------------------------------------------------------------------------*/
-/*  An argument based encoder pid, for dr4b left */
-/*-----------------------------------------------------------------------------*/
-void dr4bLeftPid(int encoderTarget, float encoderCalcValue, int pidKp, int pidKi, int pidKd) {
+void driveLeftPid(int pidKp, int pidKi, int pidKd) {
+  int encoderTarget;
+  float encoderCalcValue;
   float pidError;
   float pidLastError;
   float pidIntegral;
@@ -107,6 +16,104 @@ void dr4bLeftPid(int encoderTarget, float encoderCalcValue, int pidKp, int pidKi
   pidLastError = 0;
   pidIntegral = 0;
   while (true) {
+    encoderTarget = driveLeftTarget;
+    encoderCalcValue = driveLeftValue;
+    // calculate error
+    pidError = encoderCalcValue - encoderTarget;
+
+    // integral - if Ki is not 0
+    if (pidKi != 0) {
+      // If we are inside controlable window then integrate the error
+      if (abs(pidError) < PID_INTEGRAL_LIMIT)
+        pidIntegral = pidIntegral + pidError;
+      else
+        pidIntegral = 0;
+    } else
+      pidIntegral = 0;
+
+    // calculate the derivative
+    pidDerivative = pidError - pidLastError;
+    pidLastError = pidError;
+
+    // calculate drive
+    pidDrive =
+        (pidKp * pidError) + (pidKi * pidIntegral) + (pidKd * pidDerivative);
+    // limit drive
+    if (pidDrive > PID_DRIVE_MAX)
+      pidDrive = PID_DRIVE_MAX;
+    if (pidDrive < PID_DRIVE_MIN)
+      pidDrive = PID_DRIVE_MIN;
+    // send back
+    motorSet(driveLeft, pidDrive);
+    delay(50);
+    // Run at 50Hz
+  }
+}
+
+/*-----------------------------------------------------------------------------*/
+/*  An argument based encoder pid, for drive right */
+/*-----------------------------------------------------------------------------*/
+void driveRightPid(int pidKp, int pidKi, int pidKd) {
+  int encoderTarget;
+  float encoderCalcValue;
+  float pidError;
+  float pidLastError;
+  float pidIntegral;
+  float pidDerivative;
+  int pidDrive;
+  pidLastError = 0;
+  pidIntegral = 0;
+  while (true) {
+    encoderTarget = driveRightTarget;
+    encoderCalcValue = driveRightValue;
+    // calculate error
+    pidError = encoderCalcValue - encoderTarget;
+
+    // integral - if Ki is not 0
+    if (pidKi != 0) {
+      // If we are inside controlable window then integrate the error
+      if (abs(pidError) < PID_INTEGRAL_LIMIT)
+        pidIntegral = pidIntegral + pidError;
+      else
+        pidIntegral = 0;
+    } else
+      pidIntegral = 0;
+
+    // calculate the derivative
+    pidDerivative = pidError - pidLastError;
+    pidLastError = pidError;
+
+    // calculate drive
+    pidDrive =
+        (pidKp * pidError) + (pidKi * pidIntegral) + (pidKd * pidDerivative);
+    // limit drive
+    if (pidDrive > PID_DRIVE_MAX)
+      pidDrive = PID_DRIVE_MAX;
+    if (pidDrive < PID_DRIVE_MIN)
+      pidDrive = PID_DRIVE_MIN;
+    // send back
+    motorSet(driveRight, pidDrive);
+    delay(50);
+    // Run at 50Hz
+  }
+}
+
+/*-----------------------------------------------------------------------------*/
+/*  An argument based encoder pid, for dr4b left */
+/*-----------------------------------------------------------------------------*/
+void dr4bLeftPid(int pidKp, int pidKi, int pidKd) {
+  int encoderTarget;
+  float encoderCalcValue;
+  float pidError;
+  float pidLastError;
+  float pidIntegral;
+  float pidDerivative;
+  int pidDrive;
+  pidLastError = 0;
+  pidIntegral = 0;
+  while (true) {
+    encoderTarget = dr4bLeftTarget;
+    encoderCalcValue = dr4bLeftValue;
     // calculate error
     pidError = encoderCalcValue - encoderTarget;
 
@@ -142,7 +149,9 @@ void dr4bLeftPid(int encoderTarget, float encoderCalcValue, int pidKp, int pidKi
 /*-----------------------------------------------------------------------------*/
 /*  An argument based encoder pid, for dr4b right */
 /*-----------------------------------------------------------------------------*/
-void dr4bRightPid(int encoderTarget, float encoderCalcValue, int pidKp, int pidKi, int pidKd) {
+void dr4bRightPid(int pidKp, int pidKi, int pidKd) {
+  int encoderTarget;
+  float encoderCalcValue;
   float pidError;
   float pidLastError;
   float pidIntegral;
@@ -151,6 +160,8 @@ void dr4bRightPid(int encoderTarget, float encoderCalcValue, int pidKp, int pidK
   pidLastError = 0;
   pidIntegral = 0;
   while (true) {
+    encoderTarget = dr4bRightTarget;
+    encoderCalcValue = dr4bRightValue;
     // calculate error
     pidError = encoderCalcValue - encoderTarget;
 
@@ -186,7 +197,9 @@ void dr4bRightPid(int encoderTarget, float encoderCalcValue, int pidKp, int pidK
 /*-----------------------------------------------------------------------------*/
 /*  An argument based encoder pid, for dr4b right */
 /*-----------------------------------------------------------------------------*/
-void chainPid(int encoderTarget, float encoderCalcValue, int pidKp, int pidKi, int pidKd) {
+void chainPid(int pidKp, int pidKi, int pidKd) {
+  int encoderTarget;
+  float encoderCalcValue;
   float pidError;
   float pidLastError;
   float pidIntegral;
@@ -195,6 +208,8 @@ void chainPid(int encoderTarget, float encoderCalcValue, int pidKp, int pidKi, i
   pidLastError = 0;
   pidIntegral = 0;
   while (true) {
+    encoderTarget = chainTarget;
+    encoderCalcValue = chainValue;
     // calculate error
     pidError = encoderCalcValue - encoderTarget;
 
