@@ -7,7 +7,7 @@
 /*-----------------------------------------------------------------------------*/
 void driveLeftPid(int pidKp, int pidKi, int pidKd) {
   int encoderTarget;
-  float encoderCalcValue;
+  int encoderCalcValue;
   float pidError;
   float pidLastError;
   float pidIntegral;
@@ -55,7 +55,7 @@ void driveLeftPid(int pidKp, int pidKi, int pidKd) {
 /*-----------------------------------------------------------------------------*/
 void driveRightPid(int pidKp, int pidKi, int pidKd) {
   int encoderTarget;
-  float encoderCalcValue;
+  int encoderCalcValue;
   float pidError;
   float pidLastError;
   float pidIntegral;
@@ -101,9 +101,9 @@ void driveRightPid(int pidKp, int pidKi, int pidKd) {
 /*-----------------------------------------------------------------------------*/
 /*  An argument based encoder pid, for dr4b left */
 /*-----------------------------------------------------------------------------*/
-void dr4bLeftPid(int pidKp, int pidKi, int pidKd) {
+void dr4bLeftPid(float pidKp, float pidKi, float pidKd) {
   int encoderTarget;
-  float encoderCalcValue;
+  int encoderCalcValue;
   float pidError;
   float pidLastError;
   float pidIntegral;
@@ -114,6 +114,8 @@ void dr4bLeftPid(int pidKp, int pidKi, int pidKd) {
   while (true) {
     encoderTarget = dr4bLeftTarget;
     encoderCalcValue = dr4bLeftValue;
+    printf("left value %d\n", encoderGet(dr4bleftencoder));
+    printf("left target %d\n", encoderTarget);
     // calculate error
     pidError = encoderCalcValue - encoderTarget;
 
@@ -134,6 +136,7 @@ void dr4bLeftPid(int pidKp, int pidKi, int pidKd) {
     // calculate drive
     pidDrive =
         (pidKp * pidError) + (pidKi * pidIntegral) + (pidKd * pidDerivative);
+    pidDrive = pidDrive * -1;
     // limit drive
     if (pidDrive > PID_DRIVE_MAX)
       pidDrive = PID_DRIVE_MAX;
@@ -141,7 +144,8 @@ void dr4bLeftPid(int pidKp, int pidKi, int pidKd) {
       pidDrive = PID_DRIVE_MIN;
     // send back
     motorSet(dr4bLeft, pidDrive);
-    delay(50);
+    printf("left drive %d\n", pidDrive);
+    delay(100);
     // Run at 50Hz
   }
 }
@@ -149,9 +153,9 @@ void dr4bLeftPid(int pidKp, int pidKi, int pidKd) {
 /*-----------------------------------------------------------------------------*/
 /*  An argument based encoder pid, for dr4b right */
 /*-----------------------------------------------------------------------------*/
-void dr4bRightPid(int pidKp, int pidKi, int pidKd) {
+void dr4bRightPid(float pidKp, float pidKi, float pidKd) {
   int encoderTarget;
-  float encoderCalcValue;
+  int encoderCalcValue;
   float pidError;
   float pidLastError;
   float pidIntegral;
@@ -162,6 +166,8 @@ void dr4bRightPid(int pidKp, int pidKi, int pidKd) {
   while (true) {
     encoderTarget = dr4bRightTarget;
     encoderCalcValue = dr4bRightValue;
+    printf("right target %d\n", encoderTarget);
+    printf("right value %d\n", encoderGet(dr4brightencoder));
     // calculate error
     pidError = encoderCalcValue - encoderTarget;
 
@@ -189,7 +195,8 @@ void dr4bRightPid(int pidKp, int pidKi, int pidKd) {
       pidDrive = PID_DRIVE_MIN;
     // send back
     motorSet(dr4bRight, pidDrive);
-    delay(50);
+    printf("right drive  %d\n", pidDrive);
+    delay(100);
     // Run at 50Hz
   }
 }
@@ -197,9 +204,9 @@ void dr4bRightPid(int pidKp, int pidKi, int pidKd) {
 /*-----------------------------------------------------------------------------*/
 /*  An argument based encoder pid, for dr4b right */
 /*-----------------------------------------------------------------------------*/
-void chainPid(int pidKp, int pidKi, int pidKd) {
+void chainPid(float pidKp, float pidKi, float pidKd) {
   int encoderTarget;
-  float encoderCalcValue;
+  int encoderCalcValue;
   float pidError;
   float pidLastError;
   float pidIntegral;
@@ -236,7 +243,7 @@ void chainPid(int pidKp, int pidKi, int pidKd) {
     if (pidDrive < PID_DRIVE_MIN)
       pidDrive = PID_DRIVE_MIN;
     // send back
-    motorSet(chainBar, pidDrive);
+    // motorSet(chainBar, pidDrive);
     delay(50);
     // Run at 50Hz
   }

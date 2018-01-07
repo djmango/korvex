@@ -6,9 +6,8 @@
 #define driveRight 3
 #define mobileGoal 4
 #define chainBar 5
-#define dr4bLeft 6
 #define dr4bRight 7
-#define chainBar2 8
+#define dr4bLeft 8
 #define claw 9
 
 // pid defs
@@ -374,7 +373,7 @@ void updateDrive(int chassisControlLeft, int chassisControlRight, int liftContro
     motorSet(driveLeft, (chassisControlLeft));
   }
   //lift control
-  motorSet(dr4bLeft, (liftControl));
+  motorSet(dr4bLeft, (liftControl * -1));
   motorSet(dr4bRight, (liftControl));
 }
 
@@ -434,21 +433,7 @@ void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown,
 /*-----------------------------------------------------------------------------*/
 void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainbarBtnUp,
                         int chainbarBtnDown) {
-  motorSet(chainBar2, (joystickGetAnalog(2, 3)));
-  /* chain bar control
-     if (chainbarBtnUp == 1) {
-     // move up
-     motorSet(8, 127);
-     }
-     if (chainbarBtnDown == 1) {
-     // move down
-     motorSet(8, -127);
-     }
-     if (chainbarBtnUp == 0 &&
-      chainbarBtnDown == 0) {
-     // dont move
-     motorSet(8, 0);
-     }*/
+  motorSet(chainBar, (joystickGetAnalog(2, 3)));
   // claw control
   if (clawBtnUp == 1) {
     // move up
@@ -513,56 +498,7 @@ void lcdText() {
  */
 void operatorControl() {
   lcdText();
-  // encoderResetAllO();
-  // driveIsPidEnabledO = false;
-  // TaskHandle driveTaskHandleLeft = taskRunLoop(driveLeftPIDO, 25);
-  // TaskHandle driveTaskHandleRight = taskRunLoop(driveRightPIDO, 25);
-  TaskHandle chaintaskHandle = taskRunLoop(chainPIDO, 25);
   while (isEnabled()) {
-    // printf("left drive  %d\n", encoderGet(leftencoder));
-    // printf("right drive  %d\n", encoderGet(rightencoder));
-    /* dr4b stuff
-        if (joystickGetAnalog(2, 2) > 25 ||
-            joystickGetAnalog(2, 2) <
-                25) { // if joystick is out of deadzone, change target
-          dr4bRightPotTarget = dr4bRightPotTarget + (joystickGetAnalog(2, 2) / 20);
-        }
-        if (joystickGetAnalog(2, 2) > 25 || joystickGetAnalog(2, 2) < 25) {
-          dr4bLeftPotTarget = dr4bLeftPotTarget + (joystickGetAnalog(2, 2) / 20);
-        }
-        if (dr4bRightPotTarget > (analogRead(4) + PID_DRIVE_MAX))
-          dr4bRightPotTarget = (analogRead(4) + PID_DRIVE_MAX);
-        if (dr4bLeftPotTarget < (analogRead(3) - PID_DRIVE_MIN))
-          dr4bLeftPotTarget = (analogRead(3) - PID_DRIVE_MIN);
-        */
-      
-    /* drive stuff
-      if (joystickGetAnalog(1, 3) > 25 || joystickGetAnalog(1, 3) < 25)
-      { // if joystick is out of deadzone, change target
-        driveEncoderTargetLeft = driveEncoderTargetLeft + (joystickGetAnalog(1, 3) / 20);
-      }
-      else
-      {
-        //encoderResetAllO();
-        driveEncoderTargetLeft = 0;
-      }
-
-      if (joystickGetAnalog(1, 2) > 25 || joystickGetAnalog(1, 2) < 25)
-      {
-        driveEncoderTargetRight = driveEncoderTargetRight + (joystickGetAnalog(1, 2) / 20);
-      }
-      else
-      {
-        //encoderResetAllO();
-        driveEncoderTargetRight = 0;
-      } */
-    
-    //chain target set
-    chainIsPidEnabled = true;
-    if (joystickGetAnalog(2, 2) > 25 || joystickGetAnalog(2, 2) < 25)
-    { // if joystick is out of deadzone, change target
-      chainEncoderTarget = chainEncoderTarget + (joystickGetAnalog(2, 2) / 20);
-    }
     //argument based control scheme
     updateDrive(joystickGetAnalog(1, 3), joystickGetAnalog(1, 2), joystickGetAnalog(2, 2));
     fineControlToggle(joystickGetDigital(1, 7, JOY_DOWN), joystickGetDigital(1, 7, JOY_UP), joystickGetDigital(1, 8, JOY_DOWN), joystickGetDigital(1, 8, JOY_UP));

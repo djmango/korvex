@@ -33,11 +33,11 @@ void driveLeftPid(int pidKp, int pidKi, int pidKd);
 void driveRightPid(int pidKp, int pidKi, int pidKd);
 
 // dr4b pids
-void dr4bLeftPid(int pidKp, int pidKi, int pidKd);
-void dr4bRightPid(int pidKp, int pidKi, int pidKd);
+void dr4bLeftPid(float pidKp, float pidKi, float pidKd);
+void dr4bRightPid(float pidKp, float pidKi, float pidKd);
 
 // chain pid
-void chainPid(int pidKp, int pidKi, int pidKd);
+void chainPid(float pidKp, float pidKi, float pidKd);
 
 // ext
 void autoStacker(int coneIncrement, bool isDriverload);

@@ -31,8 +31,8 @@ void dr4bControl(int dr4bControl) {
   if (dr4bControl > 15 || dr4bControl < -15) // if driver is trying to control dr4b, disable autostacker and let them
   {
     autoStackerEnabled = false;;
-    dr4bLeftTarget = dr4bControl;
-    dr4bRightTarget = dr4bControl;
+    dr4bLeftTarget = dr4bLeftTarget + (dr4bControl / 100);
+    dr4bRightTarget = dr4bRightTarget + (dr4bControl / 100);
   }
   else {
     autoStackerEnabled = true;
@@ -83,16 +83,13 @@ void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown) {
 /*  Cone handler control */
 /*-----------------------------------------------------------------------------*/
 void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainControl) {
-  if (dr4bControl > 15 || dr4bControl < -15) // if driver is trying to control chain, disable autostacker and let them
+  if (chainControl > 15 || chainControl < -15) // if driver is trying to control chain, disable autostacker and let them
   {
     autoStackerEnabled = false;
-    ;
-    dr4bLeftTarget = dr4bControl;
-    dr4bRightTarget = dr4bControl;
+    chainTarget = chainTarget + (chainControl / 100);
   } else {
     autoStackerEnabled = true;
   }
-  motorSet(chainBar, (joystickGetAnalog(2, 3) / 2 ));
   // claw control
   if (clawBtnUp == 1) {
     // move up
@@ -124,19 +121,27 @@ void pidUpdate() {
   dr4bLeftValue = encoderGet(dr4bleftencoder);
   dr4bRightValue = encoderGet(dr4brightencoder);
   chainValue = encoderGet(chainencoder);
+  delay(25);
 }
+
+void dr4bLeftPidUpdate(int nothinghere) { dr4bLeftPid(2, 0, 5); }
+void dr4bRightPidUpdate(int nothinghere) { dr4bRightPid(2, 0, 5); }
 
 /*-----------------------------------------------------------------------------*/
 /*  Pulls all the tasks for pid together */
 /*-----------------------------------------------------------------------------*/
 void pidFeed() {
   taskRunLoop(pidUpdate, 20);
-  taskCreate(dr4bLeftPid, TASK_DEFAULT_STACK_SIZE, (5, 0, 1),
+  taskCreate(dr4bLeftPidUpdate, TASK_DEFAULT_STACK_SIZE, 0,
              TASK_PRIORITY_DEFAULT);
-  taskCreate(dr4bRightPid, TASK_DEFAULT_STACK_SIZE, (5, 0, 1),
+  taskCreate(dr4bRightPidUpdate, TASK_DEFAULT_STACK_SIZE, 0,
              TASK_PRIORITY_DEFAULT);
-  taskCreate(chainPid, TASK_DEFAULT_STACK_SIZE, (5, 0, 1),
-             TASK_PRIORITY_DEFAULT);
+  // taskCreate(dr4bLeftPid, TASK_DEFAULT_STACK_SIZE, (1, 0, .1),
+  //            TASK_PRIORITY_DEFAULT);
+  // taskCreate(dr4bRightPid, TASK_DEFAULT_STACK_SIZE, (1, 0, .1),
+  //            TASK_PRIORITY_DEFAULT);
+  // taskCreate(chainPid, TASK_DEFAULT_STACK_SIZE, (1, 0, 1),
+  //            TASK_PRIORITY_DEFAULT);
 }
 
 /*port map DESIRED
