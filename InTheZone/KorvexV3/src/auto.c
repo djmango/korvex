@@ -38,24 +38,6 @@ void lcdTextA()
   lcdSetText(uart1, 2, "i  swear");
 }
 
-void pidFeedA() {
-  driveLeftValue = encoderGet(leftencoder);
-  taskCreate(driveLeftPid, TASK_DEFAULT_STACK_SIZE, (5, 0, 1),
-             TASK_PRIORITY_DEFAULT);
-  driveRightValue = encoderGet(rightencoder);
-  taskCreate(driveRightPid, TASK_DEFAULT_STACK_SIZE, (5, 0, 1),
-             TASK_PRIORITY_DEFAULT);
-  dr4bLeftValue = encoderGet(dr4bleftencoder);
-  taskCreate(dr4bLeftPid, TASK_DEFAULT_STACK_SIZE, (5, 0, 1),
-             TASK_PRIORITY_DEFAULT);
-  dr4bRightValue = encoderGet(dr4brightencoder);
-  taskCreate(dr4bRightPid, TASK_DEFAULT_STACK_SIZE, (5, 0, 1),
-             TASK_PRIORITY_DEFAULT);
-  chainValue = encoderGet(chainencoder);
-  taskCreate(chainPid, TASK_DEFAULT_STACK_SIZE, (5, 0, 1),
-             TASK_PRIORITY_DEFAULT);
-}
-
 /* motors:
   driveLeft
   driveRight
@@ -80,7 +62,6 @@ void pidFeedA() {
 */
 
 void autonomous() {
-  pidFeedA();
   lcdTextA();
   int auton = 0;
   switch (auton) {

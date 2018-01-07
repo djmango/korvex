@@ -38,8 +38,8 @@ void initializeIO() {
  * can be implemented in this task if desired.
  */
 void initialize() {
-  leftencoder = encoderInit(2, 3, true);
-  rightencoder = encoderInit(4, 5, true);
+  leftencoder = encoderInit(2, 3, false);
+  rightencoder = encoderInit(4, 5, false);
   dr4bleftencoder = encoderInit(6, 7, false);
   dr4brightencoder = encoderInit(8, 9, true);
   chainencoder = encoderInit(11, 12, false);

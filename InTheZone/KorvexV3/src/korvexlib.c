@@ -17,7 +17,7 @@ void driveLeftPid(int pidKp, int pidKi, int pidKd) {
   pidIntegral = 0;
   while (true) {
     encoderTarget = driveLeftTarget;
-    encoderCalcValue = driveLeftValue;
+    encoderCalcValue = encoderGet(leftencoder);
     // calculate error
     pidError = encoderCalcValue - encoderTarget;
 
@@ -65,7 +65,9 @@ void driveRightPid(int pidKp, int pidKi, int pidKd) {
   pidIntegral = 0;
   while (true) {
     encoderTarget = driveRightTarget;
-    encoderCalcValue = driveRightValue;
+    encoderCalcValue = encoderGet(rightencoder);
+    printf("rvalue %d\n", encoderCalcValue);
+    printf("rtarget %d\n", encoderTarget);
     // calculate error
     pidError = encoderCalcValue - encoderTarget;
 
@@ -92,6 +94,7 @@ void driveRightPid(int pidKp, int pidKi, int pidKd) {
     if (pidDrive < PID_DRIVE_MIN)
       pidDrive = PID_DRIVE_MIN;
     // send back
+    printf("rdrive %d\n", pidDrive);
     motorSet(driveRight, pidDrive);
     delay(50);
     // Run at 50Hz
@@ -99,164 +102,71 @@ void driveRightPid(int pidKp, int pidKi, int pidKd) {
 }
 
 /*-----------------------------------------------------------------------------*/
-/*  An argument based encoder pid, for dr4b left */
+/*  An argument based PD for the lift and chainbar. Konsts are hardcoded       */
 /*-----------------------------------------------------------------------------*/
-void dr4bLeftPid(float pidKp, float pidKi, float pidKd) {
-  int encoderTarget;
-  int encoderCalcValue;
-  float pidError;
-  float pidLastError;
-  float pidIntegral;
-  float pidDerivative;
-  int pidDrive;
-  pidLastError = 0;
-  pidIntegral = 0;
+void liftTo(int liftTarget, int chainTarget) {
+  int liftError = -1; // -1 is a place holder, so it doesnt exit instantly
+  int chainError = -1;
+  int liftDrive;
+  int chainDrive;
+  int liftLastError;
+  int chainLastError;
+  int liftP;
+  int chainP;
+  int liftD;
+  int chainD;
+  liftLastError = 0;
+  chainLastError = 0;
   while (true) {
-    encoderTarget = dr4bLeftTarget;
-    encoderCalcValue = dr4bLeftValue;
-    printf("left value %d\n", encoderGet(dr4bleftencoder));
-    printf("left target %d\n", encoderTarget);
-    // calculate error
-    pidError = encoderCalcValue - encoderTarget;
+    if (liftError == 0 && chainError == 0) {
+      return;
+    } else {
+      // calculate error
+      liftError =
+          (liftTarget -
+           ((encoderGet(dr4bleftencoder) + encoderGet(dr4brightencoder)) / 2));
+      chainError = (chainTarget - encoderGet(chainencoder));
 
-    // integral - if Ki is not 0
-    if (pidKi != 0) {
-      // If we are inside controlable window then integrate the error
-      if (abs(pidError) < PID_INTEGRAL_LIMIT)
-        pidIntegral = pidIntegral + pidError;
-      else
-        pidIntegral = 0;
-    } else
-      pidIntegral = 0;
+      // calculate PD
+      liftP = (liftError * 2);
+      liftD = ((liftError - liftLastError) * 2);
+      chainP = (chainError * 5);
+      chainD = ((chainError - chainLastError) * 5);
 
-    // calculate the derivative
-    pidDerivative = pidError - pidLastError;
-    pidLastError = pidError;
+      // calculate drive
+      liftDrive = (liftP + liftD);
+      chainDrive = (chainP + chainD);
 
-    // calculate drive
-    pidDrive =
-        (pidKp * pidError) + (pidKi * pidIntegral) + (pidKd * pidDerivative);
-    pidDrive = pidDrive * -1;
-    // limit drive
-    if (pidDrive > PID_DRIVE_MAX)
-      pidDrive = PID_DRIVE_MAX;
-    if (pidDrive < PID_DRIVE_MIN)
-      pidDrive = PID_DRIVE_MIN;
-    // send back
-    motorSet(dr4bLeft, pidDrive);
-    printf("left drive %d\n", pidDrive);
-    delay(100);
-    // Run at 50Hz
+      // limit drive
+      if (liftDrive > PID_DRIVE_MAX)
+        liftDrive = PID_DRIVE_MAX;
+      if (liftDrive < PID_DRIVE_MIN)
+        liftDrive = PID_DRIVE_MIN;
+      if (chainDrive > PID_DRIVE_MAX)
+        chainDrive = PID_DRIVE_MAX;
+      if (chainDrive < PID_DRIVE_MIN)
+        chainDrive = PID_DRIVE_MIN;
+
+      // set motor to drive
+      motorSet(dr4bLeft, (liftDrive * -1));
+      motorSet(dr4bRight, liftDrive);
+      motorSet(chainBar, chainDrive);
+      printf("lift error %d\n", liftError);
+      printf("lift drive %d\n", liftDrive);
+      delay(100);
+    }
   }
 }
 
 /*-----------------------------------------------------------------------------*/
-/*  An argument based encoder pid, for dr4b right */
-/*-----------------------------------------------------------------------------*/
-void dr4bRightPid(float pidKp, float pidKi, float pidKd) {
-  int encoderTarget;
-  int encoderCalcValue;
-  float pidError;
-  float pidLastError;
-  float pidIntegral;
-  float pidDerivative;
-  int pidDrive;
-  pidLastError = 0;
-  pidIntegral = 0;
-  while (true) {
-    encoderTarget = dr4bRightTarget;
-    encoderCalcValue = dr4bRightValue;
-    printf("right target %d\n", encoderTarget);
-    printf("right value %d\n", encoderGet(dr4brightencoder));
-    // calculate error
-    pidError = encoderCalcValue - encoderTarget;
-
-    // integral - if Ki is not 0
-    if (pidKi != 0) {
-      // If we are inside controlable window then integrate the error
-      if (abs(pidError) < PID_INTEGRAL_LIMIT)
-        pidIntegral = pidIntegral + pidError;
-      else
-        pidIntegral = 0;
-    } else
-      pidIntegral = 0;
-
-    // calculate the derivative
-    pidDerivative = pidError - pidLastError;
-    pidLastError = pidError;
-
-    // calculate drive
-    pidDrive =
-        (pidKp * pidError) + (pidKi * pidIntegral) + (pidKd * pidDerivative);
-    // limit drive
-    if (pidDrive > PID_DRIVE_MAX)
-      pidDrive = PID_DRIVE_MAX;
-    if (pidDrive < PID_DRIVE_MIN)
-      pidDrive = PID_DRIVE_MIN;
-    // send back
-    motorSet(dr4bRight, pidDrive);
-    printf("right drive  %d\n", pidDrive);
-    delay(100);
-    // Run at 50Hz
-  }
-}
-
-/*-----------------------------------------------------------------------------*/
-/*  An argument based encoder pid, for dr4b right */
-/*-----------------------------------------------------------------------------*/
-void chainPid(float pidKp, float pidKi, float pidKd) {
-  int encoderTarget;
-  int encoderCalcValue;
-  float pidError;
-  float pidLastError;
-  float pidIntegral;
-  float pidDerivative;
-  int pidDrive;
-  pidLastError = 0;
-  pidIntegral = 0;
-  while (true) {
-    encoderTarget = chainTarget;
-    encoderCalcValue = chainValue;
-    // calculate error
-    pidError = encoderCalcValue - encoderTarget;
-
-    // integral - if Ki is not 0
-    if (pidKi != 0) {
-      // If we are inside controlable window then integrate the error
-      if (abs(pidError) < PID_INTEGRAL_LIMIT)
-        pidIntegral = pidIntegral + pidError;
-      else
-        pidIntegral = 0;
-    } else
-      pidIntegral = 0;
-
-    // calculate the derivative
-    pidDerivative = pidError - pidLastError;
-    pidLastError = pidError;
-
-    // calculate drive
-    pidDrive =
-        (pidKp * pidError) + (pidKi * pidIntegral) + (pidKd * pidDerivative);
-    // limit drive
-    if (pidDrive > PID_DRIVE_MAX)
-      pidDrive = PID_DRIVE_MAX;
-    if (pidDrive < PID_DRIVE_MIN)
-      pidDrive = PID_DRIVE_MIN;
-    // send back
-    // motorSet(chainBar, pidDrive);
-    delay(50);
-    // Run at 50Hz
-  }
-}
-
-/*-----------------------------------------------------------------------------*/
-/*  An argument based pid autostacker, which sets the targets of each system,  */
+/*  An argument based autostacker, which sets the targets of each system,      */
 /*  in accordance to presets corresponding to the cones stacked                */
 /*-----------------------------------------------------------------------------*/
 void autoStacker(int coneIncrement, bool isDriverload) { // cone increment will decide what function will run, each is specific to the height
     if (isDriverload == false) { // if we are not stacking driver load, assume we are stacking from ground
       switch (coneIncrement) {
       case 1: // stacking first cone
+        liftTo(-100, 40);
         break;
       default:
         break;

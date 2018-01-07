@@ -16,13 +16,14 @@ float fineControl = 1;
 /*-----------------------------------------------------------------------------*/
 void driveControl(int chassisControlLeft, int chassisControlRight) {
   //chassis control
-  if (isReverse == true) { //if in reverse, invert and switch sides for normal turning
-    motorSet(driveLeft, (chassisControlRight * -1));
-    motorSet(driveRight, (chassisControlLeft * -1));
-  }
-  else if (isReverse == false) { //if in normal operator, do not invert
-    motorSet(driveRight, (chassisControlRight));
-    motorSet(driveLeft, (chassisControlLeft));
+  if (chassisControlLeft > 5 || chassisControlRight < -5 || chassisControlRight > 5 || chassisControlLeft < -5){
+    if (isReverse == true) { // if in reverse, invert and switch sides for normal turning
+      motorSet(driveLeft, (chassisControlRight * -1));
+      motorSet(driveRight, (chassisControlLeft * -1));
+    } else if (isReverse == false) { // if in normal operator, do not invert
+      motorSet(driveRight, (chassisControlRight));
+      motorSet(driveLeft, (chassisControlLeft));
+    }
   }
 }
 
@@ -31,8 +32,8 @@ void dr4bControl(int dr4bControl) {
   if (dr4bControl > 15 || dr4bControl < -15) // if driver is trying to control dr4b, disable autostacker and let them
   {
     autoStackerEnabled = false;;
-    dr4bLeftTarget = dr4bLeftTarget + (dr4bControl / 100);
-    dr4bRightTarget = dr4bRightTarget + (dr4bControl / 100);
+    motorSet(dr4bLeft, dr4bControl);
+    motorSet(dr4bRight, dr4bControl);
   }
   else {
     autoStackerEnabled = true;
@@ -86,7 +87,7 @@ void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainControl) {
   if (chainControl > 15 || chainControl < -15) // if driver is trying to control chain, disable autostacker and let them
   {
     autoStackerEnabled = false;
-    chainTarget = chainTarget + (chainControl / 100);
+    motorSet(chainBar, chainControl);
   } else {
     autoStackerEnabled = true;
   }
@@ -114,58 +115,6 @@ void lcdText() {
   lcdSetText(uart1, 2, "sudo rm -rf myself");
 }
 
-/*-----------------------------------------------------------------------------*/
-/*  Update encoder values */
-/*-----------------------------------------------------------------------------*/
-void pidUpdate() {
-  dr4bLeftValue = encoderGet(dr4bleftencoder);
-  dr4bRightValue = encoderGet(dr4brightencoder);
-  chainValue = encoderGet(chainencoder);
-  delay(25);
-}
-
-void dr4bLeftPidUpdate(int nothinghere) { dr4bLeftPid(2, 0, 5); }
-void dr4bRightPidUpdate(int nothinghere) { dr4bRightPid(2, 0, 5); }
-
-/*-----------------------------------------------------------------------------*/
-/*  Pulls all the tasks for pid together */
-/*-----------------------------------------------------------------------------*/
-void pidFeed() {
-  taskRunLoop(pidUpdate, 20);
-  taskCreate(dr4bLeftPidUpdate, TASK_DEFAULT_STACK_SIZE, 0,
-             TASK_PRIORITY_DEFAULT);
-  taskCreate(dr4bRightPidUpdate, TASK_DEFAULT_STACK_SIZE, 0,
-             TASK_PRIORITY_DEFAULT);
-  // taskCreate(dr4bLeftPid, TASK_DEFAULT_STACK_SIZE, (1, 0, .1),
-  //            TASK_PRIORITY_DEFAULT);
-  // taskCreate(dr4bRightPid, TASK_DEFAULT_STACK_SIZE, (1, 0, .1),
-  //            TASK_PRIORITY_DEFAULT);
-  // taskCreate(chainPid, TASK_DEFAULT_STACK_SIZE, (1, 0, 1),
-  //            TASK_PRIORITY_DEFAULT);
-}
-
-/*port map DESIRED
-   port 1 = **scrubbed**
-   port 2 = drive left side (y-cable to power expander)
-   port 3 = drive right side (y-cable to power expander)
-   port 4 = mobile goal lift (y-cable)
-   port 5 = free
-   port 6 = dr4b left (y-cable)
-   port 7 = dr4b right (y-cable)
-   port 8 = chain bar (direct)
-   port 9 = claw (direct)
-   port 10 = **scrubbed**
- */
-
-/*control map DESIRED
-   drive left side = mainLeftJoy(1,3)
-   drive right side = mainRightJoy(1,2)
-   mobile goal lift = seccondaryRightBumper(2,6)
-   dr4b = seccondaryRightJoy(2,3)
-   chain bar = seccondaryLeftJoy(2,2)
-   claw = seccondaryLeftBumper(2,5)
- */
-
 /*motor port names:
    driveLeft
    driveRight
@@ -186,11 +135,8 @@ void pidFeed() {
 
 void operatorControl() {
   lcdText();
-  pidFeed();
+  autoStacker(1, false);
   while (isEnabled()) {
-    // printf("right dr4b  %d\n", encoderGet(dr4brightencoder));
-    // printf("left dr4b  %d\n", encoderGet(dr4bleftencoder));
-    // printf("chain  %d\n", encoderGet(chainencoder));
     //argument based control scheme
     driveControl(joystickGetAnalog(1, 3), joystickGetAnalog(1, 2));
     dr4bControl(joystickGetAnalog(2, 2));
