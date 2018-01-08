@@ -119,7 +119,7 @@ void liftTo(int liftTarget, int chainTarget) {
   chainLastError = 0;
   while (true) {
     if (liftError == 0 && chainError == 0) {
-      return;
+      // return;
     } else {
       // calculate error
       liftError =
@@ -128,8 +128,8 @@ void liftTo(int liftTarget, int chainTarget) {
       chainError = (chainTarget - encoderGet(chainencoder));
 
       // calculate PD
-      liftP = (liftError * 2);
-      liftD = ((liftError - liftLastError) * 2);
+      liftP = (liftError * 10);
+      liftD = ((liftError - liftLastError) * 3);
       chainP = (chainError * 5);
       chainD = ((chainError - chainLastError) * 5);
 
@@ -138,21 +138,23 @@ void liftTo(int liftTarget, int chainTarget) {
       chainDrive = (chainP + chainD);
 
       // limit drive
-      if (liftDrive > PID_DRIVE_MAX)
-        liftDrive = PID_DRIVE_MAX;
-      if (liftDrive < PID_DRIVE_MIN)
-        liftDrive = PID_DRIVE_MIN;
+      // if (liftDrive > PID_DRIVE_MAX)
+      //   liftDrive = PID_DRIVE_MAX;
+      // if (liftDrive < PID_DRIVE_MIN)
+      //   liftDrive = PID_DRIVE_MIN;
       if (chainDrive > PID_DRIVE_MAX)
         chainDrive = PID_DRIVE_MAX;
       if (chainDrive < PID_DRIVE_MIN)
         chainDrive = PID_DRIVE_MIN;
 
       // set motor to drive
-      motorSet(dr4bLeft, (liftDrive * -1));
-      motorSet(dr4bRight, liftDrive);
+      motorSet(dr4bLeft, (liftDrive));
+      motorSet(dr4bRight, liftDrive * -1);
       motorSet(chainBar, chainDrive);
       printf("lift error %d\n", liftError);
       printf("lift drive %d\n", liftDrive);
+      printf("chain error %d\n", chainError);
+      printf("chain drive %d\n", chainDrive);
       delay(100);
     }
   }
@@ -166,7 +168,9 @@ void autoStacker(int coneIncrement, bool isDriverload) { // cone increment will 
     if (isDriverload == false) { // if we are not stacking driver load, assume we are stacking from ground
       switch (coneIncrement) {
       case 1: // stacking first cone
-        liftTo(-100, 40);
+        liftTo(50, 40);
+        delay(2000);
+        liftTo(70, 60);
         break;
       default:
         break;
