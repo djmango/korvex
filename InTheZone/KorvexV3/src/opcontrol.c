@@ -29,10 +29,10 @@ void driveControl(int chassisControlLeft, int chassisControlRight) {
 
 void dr4bControl(int dr4bControl) {
   // lift control
-  if (dr4bControl > 15 || dr4bControl < -15) // if driver is trying to control dr4b, disable autostacker and let them
+  if (dr4bControl > 5 || dr4bControl < -5) // if driver is trying to control dr4b, disable autostacker and let them
   {
     autoStackerEnabled = false;;
-    motorSet(dr4bLeft, dr4bControl);
+    motorSet(dr4bLeft, (dr4bControl * -1));
     motorSet(dr4bRight, dr4bControl);
   }
   else {
@@ -84,7 +84,7 @@ void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown) {
 /*  Cone handler control */
 /*-----------------------------------------------------------------------------*/
 void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainControl) {
-  if (chainControl > 15 || chainControl < -15) // if driver is trying to control chain, disable autostacker and let them
+  if (chainControl > 5 || chainControl < -5) // if driver is trying to control chain, disable autostacker and let them
   {
     autoStackerEnabled = false;
     motorSet(chainBar, chainControl);
@@ -103,6 +103,22 @@ void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainControl) {
   if (clawBtnUp == 0 && clawBtnDown == 0) {
     // dont move
     motorSet(claw, 0);
+  }
+}
+
+void autoStackControl(int incrementUpBtn, int incrementDownBtn, int driverloadBtn, int fieldloadBtn) {
+  if (driverloadBtn == 1) {
+    isDriverloadGlobal = true;
+  }
+  if (fieldloadBtn == 1) {
+    isDriverloadGlobal = false;
+  }
+  if (incrementUpBtn == 1) { 
+    coneIncrementGlobal = coneIncrementGlobal + 1;
+    autoStacker(coneIncrementGlobal, isDriverloadGlobal);
+  }
+  if (incrementDownBtn == 0) {
+    coneIncrementGlobal = 0;
   }
 }
 
@@ -135,7 +151,8 @@ void lcdText() {
 
 void operatorControl() {
   lcdText();
-  autoStacker(1, false);
+  coneIncrementGlobal = 0;
+  isDriverloadGlobal = false;
   while (isEnabled()) {
     //argument based control scheme
     driveControl(joystickGetAnalog(1, 3), joystickGetAnalog(1, 2));
@@ -143,6 +160,7 @@ void operatorControl() {
     fineControlToggle(joystickGetDigital(1, 7, JOY_DOWN), joystickGetDigital(1, 7, JOY_UP), joystickGetDigital(1, 8, JOY_UP), joystickGetDigital(1, 8, JOY_DOWN));
     mobileGoalControl( joystickGetDigital(1, 6, JOY_UP), joystickGetDigital(1, 6, JOY_DOWN));
     coneHandlerControl(joystickGetDigital(2, 5, JOY_UP), joystickGetDigital(2, 5, JOY_DOWN), joystickGetAnalog(2, 3));
+    autoStackControl(joystickGetDigital(2, 7, JOY_UP), joystickGetDigital(2, 7, JOY_DOWN), joystickGetDigital(2, 7, JOY_RIGHT), joystickGetDigital(2, 7, JOY_LEFT));
     delay(20);
   }
 }

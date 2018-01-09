@@ -104,7 +104,7 @@ void driveRightPid(int pidKp, int pidKi, int pidKd) {
 /*-----------------------------------------------------------------------------*/
 /*  An argument based PD for the lift and chainbar. Konsts are hardcoded       */
 /*-----------------------------------------------------------------------------*/
-void liftTo(int liftTarget, int chainTarget) {
+void liftTo(int liftTarget, int chainTarget, int waitTo) {
   int liftError = -1; // -1 is a place holder, so it doesnt exit instantly
   int chainError = -1;
   int liftDrive;
@@ -115,11 +115,12 @@ void liftTo(int liftTarget, int chainTarget) {
   int chainP;
   int liftD;
   int chainD;
+  int count = 0;
   liftLastError = 0;
   chainLastError = 0;
   while (true) {
-    if (liftError == 0 && chainError == 0) {
-      // return;
+    if (count == (waitTo / 100)) {
+      return;
     } else {
       // calculate error
       liftError =
@@ -128,24 +129,14 @@ void liftTo(int liftTarget, int chainTarget) {
       chainError = (chainTarget - encoderGet(chainencoder));
 
       // calculate PD
-      liftP = (liftError * 10);
+      liftP = (liftError * 8);
       liftD = ((liftError - liftLastError) * 3);
-      chainP = (chainError * 5);
-      chainD = ((chainError - chainLastError) * 5);
+      chainP = (chainError * (8));
+      chainD = ((chainError - chainLastError) * 9);
 
       // calculate drive
       liftDrive = (liftP + liftD);
       chainDrive = (chainP + chainD);
-
-      // limit drive
-      // if (liftDrive > PID_DRIVE_MAX)
-      //   liftDrive = PID_DRIVE_MAX;
-      // if (liftDrive < PID_DRIVE_MIN)
-      //   liftDrive = PID_DRIVE_MIN;
-      if (chainDrive > PID_DRIVE_MAX)
-        chainDrive = PID_DRIVE_MAX;
-      if (chainDrive < PID_DRIVE_MIN)
-        chainDrive = PID_DRIVE_MIN;
 
       // set motor to drive
       motorSet(dr4bLeft, (liftDrive));
@@ -155,6 +146,7 @@ void liftTo(int liftTarget, int chainTarget) {
       printf("lift drive %d\n", liftDrive);
       printf("chain error %d\n", chainError);
       printf("chain drive %d\n", chainDrive);
+      count = count + 1;
       delay(100);
     }
   }
@@ -168,9 +160,12 @@ void autoStacker(int coneIncrement, bool isDriverload) { // cone increment will 
     if (isDriverload == false) { // if we are not stacking driver load, assume we are stacking from ground
       switch (coneIncrement) {
       case 1: // stacking first cone
-        liftTo(50, 40);
-        delay(2000);
-        liftTo(70, 60);
+        liftTo(0, 0, 2000);
+        motorSet(claw, 40);
+        delay(100);
+        motorSet(claw, 0);
+        liftTo(0, 200, 2000);
+        delay(1000);
         break;
       default:
         break;
