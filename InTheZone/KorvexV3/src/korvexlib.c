@@ -120,6 +120,9 @@ void liftTo(int liftTarget, int chainTarget, int waitTo) {
   chainLastError = 0;
   while (true) {
     if (count == (waitTo / 100)) {
+      motorSet(dr4bLeft, 0);
+      motorSet(dr4bRight, 0);
+      motorSet(chainBar, 0);
       return;
     } else {
       // calculate error
@@ -131,8 +134,8 @@ void liftTo(int liftTarget, int chainTarget, int waitTo) {
       // calculate PD
       liftP = (liftError * 8);
       liftD = ((liftError - liftLastError) * 3);
-      chainP = (chainError * (8));
-      chainD = ((chainError - chainLastError) * 9);
+      chainP = (chainError * (4));
+      chainD = ((chainError - chainLastError) * 5);
 
       // calculate drive
       liftDrive = (liftP + liftD);
@@ -160,12 +163,22 @@ void autoStacker(int coneIncrement, bool isDriverload) { // cone increment will 
     if (isDriverload == false) { // if we are not stacking driver load, assume we are stacking from ground
       switch (coneIncrement) {
       case 1: // stacking first cone
-        liftTo(0, 0, 2000);
-        motorSet(claw, 40);
-        delay(100);
+        motorSet(claw, 30);
+        liftTo(0, 20, 1300);
+        motorSet(claw, -127);
+        delay(300);
+        motorSet(claw, -5);
+        liftTo(0, 360, 1000);
         motorSet(claw, 0);
-        liftTo(0, 200, 2000);
-        delay(1000);
+        break;
+      case 2:
+        motorSet(claw, 30);
+        liftTo(30, 30, 1200);
+        motorSet(claw, -90);
+        delay(500);
+        motorSet(claw, -5);
+        liftTo(0, 360, 1000);
+        motorSet(claw, 0);
         break;
       default:
         break;

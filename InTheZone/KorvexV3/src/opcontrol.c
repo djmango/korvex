@@ -117,8 +117,9 @@ void autoStackControl(int incrementUpBtn, int incrementDownBtn, int driverloadBt
     coneIncrementGlobal = coneIncrementGlobal + 1;
     autoStacker(coneIncrementGlobal, isDriverloadGlobal);
   }
-  if (incrementDownBtn == 0) {
-    coneIncrementGlobal = 0;
+  if (incrementDownBtn == 1 && incrementUpBtn == 0) {
+    coneIncrementGlobal = coneIncrementGlobal = coneIncrementGlobal - 1;
+    delay(100);
   }
 }
 
@@ -153,8 +154,10 @@ void operatorControl() {
   lcdText();
   coneIncrementGlobal = 0;
   isDriverloadGlobal = false;
+  // liftTo(0, 150, 100000);
   while (isEnabled()) {
     //argument based control scheme
+    printf("%d\n", coneIncrementGlobal);
     driveControl(joystickGetAnalog(1, 3), joystickGetAnalog(1, 2));
     dr4bControl(joystickGetAnalog(2, 2));
     fineControlToggle(joystickGetDigital(1, 7, JOY_DOWN), joystickGetDigital(1, 7, JOY_UP), joystickGetDigital(1, 8, JOY_UP), joystickGetDigital(1, 8, JOY_DOWN));
