@@ -66,9 +66,9 @@ void autonomous() {
   int auton = 0;
   switch (auton) {
   case 0 :
+    driveTo(50, 50, 100000);
     break;
   default :
     break;
   }
-
 }

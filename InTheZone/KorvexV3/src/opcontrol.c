@@ -30,7 +30,9 @@ void lcdText() {
  */
 
 void operatorControl() {
-  lcdText();
+  isReverse = false;
+  isFineControl = false;
+  fineControl = 1;
   coneIncrementGlobal = 0;
   isDriverloadGlobal = false;
   while (isEnabled()) {

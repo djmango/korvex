@@ -8,22 +8,15 @@ Encoder dr4brightencoder;
 
 // globals
 
-// drive globals
-bool drivePidIsEnabled;
-int driveLeftTarget;
-float driveLeftValue;
-int driveRightTarget;
-float driveRightValue;
-
 // auto stacker globals
 int coneIncrementGlobal;
 bool isDriverloadGlobal;
 bool autoStackerEnabled;
 
 // control modifiers
-bool isReverse = false;
-bool isFineControl = false;
-float fineControl = 1;
+bool isReverse;
+bool isFineControl;
+float fineControl;
 
 // opcontrol functions
 void driveControl(int chassisControlLeft, int chassisControlRight);
@@ -36,9 +29,8 @@ void autoStackControl(int incrementUpBtn, int incrementDownBtn,
                       int incrementResetBtn, int driverloadBtn,
                       int fieldloadBtn, int incrementUpNoFuncBtn);
 
-// drive pids
-void driveLeftPid(int pidKp, int pidKi, int pidKd);
-void driveRightPid(int pidKp, int pidKi, int pidKd);
+// drive control
+void driveTo(int leftTarget, int rightTarget, int waitTo);
 
 // lift control
 void liftTo(int liftTarget, int chainTarget, int waitTo);
