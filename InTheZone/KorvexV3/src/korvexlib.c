@@ -2,6 +2,127 @@
 #include "constants.h"
 #include "korvexlib.h"
 
+// functions
+
+/*-----------------------------------------------------------------------------*/
+/*  Drive and lift control */
+/*-----------------------------------------------------------------------------*/
+void driveControl(int chassisControlLeft, int chassisControlRight) {
+  // chassis control
+  if (isReverse ==
+      true) { // if in reverse, invert and switch sides for normal turning
+    motorSet(driveLeft, (chassisControlRight * -1));
+    motorSet(driveRight, (chassisControlLeft * -1));
+  } else if (isReverse == false) { // if in normal operator, do not invert
+    motorSet(driveRight, (chassisControlRight));
+    motorSet(driveLeft, (chassisControlLeft));
+  }
+}
+
+void dr4bControl(int dr4bControl) {
+  // lift control
+  if (dr4bControl > 5 || dr4bControl < -5) // if driver is trying to control dr4b, disable autostacker and let them
+  {
+    autoStackerEnabled = false;;
+    motorSet(dr4bLeft, (dr4bControl));
+    motorSet(dr4bRight, dr4bControl * -1);
+  }
+  else {
+    autoStackerEnabled = true;
+  }
+}
+
+/*-----------------------------------------------------------------------------*/
+/*  Toggle fine control for drive */
+/*-----------------------------------------------------------------------------*/
+void fineControlToggle(int fineBtn, int fineBtn2, int reverseBtn, int reverseBtn2) {
+  // fine control toggle
+  if (fineBtn == 1) { // toggle it on
+    isFineControl = true;
+    fineControl = .5;
+  }
+  if (fineBtn2 == 1) { // toggle it off
+    isFineControl = false;
+    fineControl = 1;
+  }
+  //reverse toggle
+    if (reverseBtn == 1) { // toggle it on
+    isReverse = true;
+    fineControl = -1;
+  }
+  if (reverseBtn2 == 1) { // toggle it off
+    isReverse = false;
+    fineControl = 1;
+  }
+}
+
+/*-----------------------------------------------------------------------------*/
+/*  Mobile goal control */
+/*-----------------------------------------------------------------------------*/
+void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown) {
+  // mobo lift control
+  if (moboLiftBtnUp == 1) {
+    motorSet(4, 127);
+  }
+  if (moboLiftBtnDown == 1) {
+    motorSet(4, -127);
+  }
+  if (moboLiftBtnUp == 0 && moboLiftBtnDown == 0) {
+    motorSet(4, 0);
+  }
+}
+
+/*-----------------------------------------------------------------------------*/
+/*  Cone handler control */
+/*-----------------------------------------------------------------------------*/
+void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainControl) {
+  if (chainControl > 5 || chainControl < -5) // if driver is trying to control chain, disable autostacker and let them
+  {
+    autoStackerEnabled = false;
+    motorSet(chainBar, chainControl * -1);
+  } else {
+    autoStackerEnabled = true;
+  }
+  // claw control
+  if (clawBtnUp == 1) {
+    // move up
+    motorSet(claw, -40);
+  }
+  if (clawBtnDown == 1) {
+    // move down
+    motorSet(claw, 40);
+  }
+  if (clawBtnUp == 0 && clawBtnDown == 0) {
+    // dont move
+    motorSet(claw, 0);
+  }
+}
+
+void autoStackControl(int incrementUpBtn, int incrementDownBtn, int incrementResetBtn, int driverloadBtn, int fieldloadBtn, int incrementUpNoFuncBtn) {
+  if (driverloadBtn == 1) {
+    isDriverloadGlobal = true;
+  }
+  if (fieldloadBtn == 1) {
+    isDriverloadGlobal = false;
+  }
+  if (incrementUpBtn == 1) { 
+    coneIncrementGlobal = coneIncrementGlobal + 1;
+    autoStacker(coneIncrementGlobal, isDriverloadGlobal);
+    delay(500);
+  }
+  if (incrementDownBtn == 1 && incrementUpBtn == 0) {
+    coneIncrementGlobal = coneIncrementGlobal = coneIncrementGlobal - 1;
+    delay(500);
+  }
+  if (incrementResetBtn == 1) {
+    coneIncrementGlobal = 0;
+  }
+  if (incrementUpNoFuncBtn == 1) {
+    coneIncrementGlobal = coneIncrementGlobal = coneIncrementGlobal + 1;
+    delay(500);
+  }
+}
+
 /*-----------------------------------------------------------------------------*/
 /*  An argument based encoder pid, for drive left */
 /*-----------------------------------------------------------------------------*/
@@ -134,8 +255,8 @@ void liftTo(int liftTarget, int chainTarget, int waitTo) {
       // calculate PD
       liftP = (liftError * 8);
       liftD = ((liftError - liftLastError) * 3);
-      chainP = (chainError * (4));
-      chainD = ((chainError - chainLastError) * 5);
+      chainP = (chainError * (2));
+      chainD = ((chainError - chainLastError) * 0);
 
       // calculate drive
       liftDrive = (liftP + liftD);
@@ -164,20 +285,65 @@ void autoStacker(int coneIncrement, bool isDriverload) { // cone increment will 
       switch (coneIncrement) {
       case 1: // stacking first cone
         motorSet(claw, 30);
-        liftTo(0, 20, 1300);
+        liftTo(0, 20, 1800);
         motorSet(claw, -127);
         delay(300);
         motorSet(claw, -5);
-        liftTo(0, 360, 1000);
+        liftTo(0, 350, 1000);
         motorSet(claw, 0);
         break;
       case 2:
         motorSet(claw, 30);
-        liftTo(30, 30, 1200);
+        liftTo(5, 40, 1700);
         motorSet(claw, -90);
-        delay(500);
-        motorSet(claw, -5);
-        liftTo(0, 360, 1000);
+        liftTo(5, 40, 600);
+        motorSet(claw, 5);
+        liftTo(0, 350, 1000);
+        motorSet(claw, 0);
+        break;
+      case 3:
+        motorSet(claw, 30);
+        liftTo(20, 85, 1700);
+        motorSet(claw, -90);
+        liftTo(20, 85, 500);
+        motorSet(claw, 5);
+        liftTo(0, 350, 1000);
+        motorSet(claw, 0);
+        break;
+      case 4:
+        motorSet(claw, 30);
+        liftTo(28, 100, 2000);
+        motorSet(claw, -90);
+        liftTo(28, 100, 500);
+        motorSet(claw, 5);
+        liftTo(0, 350, 1000);
+        motorSet(claw, 0);
+        break;
+      case 5:
+        motorSet(claw, 30);
+        liftTo(35, 75, 2200);
+        motorSet(claw, -90);
+        liftTo(35, 75, 500);
+        motorSet(claw, 5);
+        liftTo(0, 350, 1000);
+        motorSet(claw, 0);
+        break;
+      case 6:
+        motorSet(claw, 30);
+        liftTo(40, 105, 2400);
+        motorSet(claw, -90);
+        liftTo(40, 105, 500);
+        motorSet(claw, 5);
+        liftTo(0, 350, 1000);
+        motorSet(claw, 0);
+        break;
+      case 7:
+        motorSet(claw, 30);
+        liftTo(50, 125, 2400);
+        motorSet(claw, -90);
+        liftTo(50, 125, 500);
+        motorSet(claw, 5);
+        liftTo(0, 350, 1000);
         motorSet(claw, 0);
         break;
       default:
