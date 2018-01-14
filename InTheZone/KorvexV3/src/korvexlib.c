@@ -246,63 +246,64 @@ void autoStacker(int coneIncrement, bool isDriverload) { // cone increment will 
       switch (coneIncrement) {
       case 1: // stacking first cone
         motorSet(claw, 30);
-        liftTo(5, 45, 1700);
+        motorSet(claw, 30);
+        liftTo(4, 96, 2200);
         motorSet(claw, -90);
-        liftTo(5, 45, 600);
+        liftTo(4, 96, 600);
         motorSet(claw, 5);
         liftTo(0, 350, 1000);
         motorSet(claw, 0);
         break;
       case 2:
         motorSet(claw, 30);
-        liftTo(5, 40, 1700);
+        liftTo(5, 90, 2200);
         motorSet(claw, -90);
-        liftTo(5, 40, 600);
+        liftTo(5, 90, 600);
         motorSet(claw, 5);
         liftTo(0, 350, 1000);
         motorSet(claw, 0);
         break;
       case 3:
         motorSet(claw, 30);
-        liftTo(20, 85, 1700);
+        liftTo(10, 110, 2200);
         motorSet(claw, -90);
-        liftTo(20, 85, 500);
+        liftTo(10, 110, 500);
         motorSet(claw, 5);
         liftTo(0, 350, 1000);
         motorSet(claw, 0);
         break;
       case 4:
         motorSet(claw, 30);
-        liftTo(28, 100, 2000);
+        liftTo(20, 124, 3000);
         motorSet(claw, -90);
-        liftTo(28, 100, 500);
+        liftTo(20, 124, 500);
         motorSet(claw, 5);
         liftTo(0, 350, 1000);
         motorSet(claw, 0);
         break;
       case 5:
         motorSet(claw, 30);
-        liftTo(35, 75, 2200);
+        liftTo(25, 130, 2200);
         motorSet(claw, -90);
-        liftTo(35, 75, 500);
+        liftTo(25, 130, 500);
         motorSet(claw, 5);
         liftTo(0, 350, 1000);
         motorSet(claw, 0);
         break;
       case 6:
         motorSet(claw, 30);
-        liftTo(40, 105, 2400);
+        liftTo(30, 135, 2400);
         motorSet(claw, -90);
-        liftTo(40, 105, 500);
+        liftTo(30, 135, 500);
         motorSet(claw, 5);
         liftTo(0, 350, 1000);
         motorSet(claw, 0);
         break;
       case 7:
         motorSet(claw, 30);
-        liftTo(50, 125, 2400);
+        liftTo(50, 135, 2400);
         motorSet(claw, -90);
-        liftTo(50, 125, 500);
+        liftTo(50, 135, 500);
         motorSet(claw, 5);
         liftTo(0, 350, 1000);
         motorSet(claw, 0);
@@ -313,7 +314,68 @@ void autoStacker(int coneIncrement, bool isDriverload) { // cone increment will 
     }
     if (isDriverload == true) { // if we are stacking driver loads, use the corresponding set of presets
       switch (coneIncrement) {
-      case 1:
+      case 1: // stacking first cone
+        motorSet(claw, 30);
+        liftTo(5, 45, 1700);
+        motorSet(claw, -90);
+        liftTo(5, 45, 600);
+        motorSet(claw, 5);
+        liftTo(0, 200, 1000);
+        motorSet(claw, 0);
+        break;
+      case 2:
+        motorSet(claw, 30);
+        liftTo(5, 40, 1700);
+        motorSet(claw, -90);
+        liftTo(5, 40, 600);
+        motorSet(claw, 5);
+        liftTo(0, 200, 1000);
+        motorSet(claw, 0);
+        break;
+      case 3:
+        motorSet(claw, 30);
+        liftTo(20, 85, 1700);
+        motorSet(claw, -90);
+        liftTo(20, 85, 500);
+        motorSet(claw, 5);
+        liftTo(0, 200, 1000);
+        motorSet(claw, 0);
+        break;
+      case 4:
+        motorSet(claw, 30);
+        liftTo(28, 100, 2000);
+        motorSet(claw, -90);
+        liftTo(28, 100, 500);
+        motorSet(claw, 5);
+        liftTo(0, 200, 1000);
+        motorSet(claw, 0);
+        break;
+      case 5:
+        motorSet(claw, 30);
+        liftTo(35, 75, 2200);
+        motorSet(claw, -90);
+        liftTo(35, 75, 500);
+        motorSet(claw, 5);
+        liftTo(0, 200, 1000);
+        motorSet(claw, 0);
+        break;
+      case 6:
+        motorSet(claw, 30);
+        liftTo(40, 105, 2400);
+        motorSet(claw, -90);
+        liftTo(40, 105, 500);
+        motorSet(claw, 5);
+        liftTo(0, 200, 1000);
+        motorSet(claw, 0);
+        break;
+      case 7:
+        motorSet(claw, 30);
+        liftTo(50, 125, 2400);
+        motorSet(claw, -90);
+        liftTo(50, 125, 500);
+        motorSet(claw, 5);
+        liftTo(0, 200, 1000);
+        motorSet(claw, 0);
         break;
       default:
         break;

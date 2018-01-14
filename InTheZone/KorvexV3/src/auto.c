@@ -63,10 +63,26 @@ void lcdTextA()
 
 void autonomous() {
   lcdTextA();
-  int auton = 0;
+  int auton = 1;
   switch (auton) {
   case 0 :
-    driveTo(50, 50, 100000);
+    // lower mobile goal intake
+    liftTo(30, 0, 1800);
+    motorSet(mobileGoal, 127);
+    liftTo(30, 0, 1100);
+    motorSet(mobileGoal, 0);
+    // drive thru cones
+    driveTo(900, 900, 2300);
+    // intake and pickup mobile goal
+    driveTo(1600, 1650, 2000);
+    motorSet(mobileGoal, -127);
+    liftTo(60, 0, 1500);
+    motorSet(mobileGoal, 0);
+    // turn
+    driveTo(1350, 1800, 1000);
+    break;
+  case 1 :
+    driveTo(-2500, -2500, 5000);
     break;
   default :
     break;
