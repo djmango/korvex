@@ -30,6 +30,7 @@ void lcdText() {
  */
 
 void operatorControl() {
+  debugGlobal = true;
   isReverse = false;
   isFineControl = false;
   fineControl = 1;
@@ -37,9 +38,14 @@ void operatorControl() {
   isDriverloadGlobal = false;
   while (isEnabled()) {
     //argument based control scheme
-    printf("cc%d\n", coneIncrementGlobal);
-    printf("d%d\n", (encoderGet(dr4bleftencoder) + encoderGet(dr4brightencoder)) / 2);
-    printf("c%d\n", encoderGet(chainencoder));
+    if (debugGlobal == true) {
+      // printf("cc%d\n", coneIncrementGlobal);
+      // printf("d%d\n", (encoderGet(dr4bleftencoder) + encoderGet(dr4brightencoder)) / 2);
+      // printf("c%d\n", encoderGet(chainencoder));
+      // printf("ase%d\n", autoStackerEnabled);
+      printf("r%d\n", encoderGet(rightencoder));
+      printf("l%d\n", encoderGet(leftencoder));
+    }
     driveControl(joystickGetAnalog(1, 3), joystickGetAnalog(1, 2));
     dr4bControl(joystickGetAnalog(2, 2));
     fineControlToggle(joystickGetDigital(1, 7, JOY_DOWN), joystickGetDigital(1, 7, JOY_UP), joystickGetDigital(1, 8, JOY_UP), joystickGetDigital(1, 8, JOY_DOWN));

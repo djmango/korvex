@@ -18,6 +18,9 @@ bool isReverse;
 bool isFineControl;
 float fineControl;
 
+// debug enabler
+bool debugGlobal;
+
 // opcontrol functions
 void driveControl(int chassisControlLeft, int chassisControlRight);
 void dr4bControl(int dr4bControl);

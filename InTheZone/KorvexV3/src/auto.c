@@ -48,38 +48,41 @@ void lcdTextA()
   claw
 */
 
-/* port map DESIRED
-  port 1 = **scrubbed**
-  port 2 = drive left side (y-cable to power expander)
-  port 3 = drive right side (y-cable to power expander)
-  port 4 = mobile goal lift (y-cable)
-  port 5 = free
-  port 6 = dr4b left (y-cable)
-  port 7 = dr4b right (y-cable)
-  port 8 = chain bar (y-cable)
-  port 9 = claw (direct)
-  port 10 = **scrubbed**
-*/
-
 void autonomous() {
   lcdTextA();
-  int auton = 1;
+  debugGlobal = false;
+  int auton = 0;
   switch (auton) {
   case 0 :
     // lower mobile goal intake
-    liftTo(30, 0, 1800);
+    motorSet(claw, 30);
     motorSet(mobileGoal, 127);
-    liftTo(30, 0, 1100);
+    liftTo(20, 40, 1200);
+    // drive thru cones and into mobile goal
+    driveTo(500, 500, 1300);
+    motorSet(mobileGoal, 127);
+    delay(100);
     motorSet(mobileGoal, 0);
-    // drive thru cones
-    driveTo(900, 900, 2300);
-    // intake and pickup mobile goal
-    driveTo(1600, 1650, 2000);
+    driveTo(1000, 1000, 1200);
+    liftTo(40, 40, 1000);
     motorSet(mobileGoal, -127);
-    liftTo(60, 0, 1500);
+    liftTo(40, 40, 1000);
     motorSet(mobileGoal, 0);
-    // turn
-    driveTo(1350, 1800, 1000);
+    // stack
+    liftTo(0, 20, 400);
+    motorSet(claw, -90);
+    liftTo(0, 20, 200);
+    liftTo(0, 215, 700);
+    motorSet(claw, 5);
+    liftTo(0, 215, 800);
+    motorSet(claw, 0);
+    // backwards
+    driveTo(200, 200, 3000);
+    // driveTo(150, 450, 3000);
+    driveTo(600, 100, 3000);
+    motorSet(mobileGoal, 127);
+    liftTo(20, 40, 1200);
+    motorSet(mobileGoal, 0);
     break;
   case 1 :
     driveTo(-2500, -2500, 5000);
