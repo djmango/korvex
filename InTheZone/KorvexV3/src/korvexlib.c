@@ -146,7 +146,7 @@ void driveTo(int leftTarget, int rightTarget, int waitTo) {
       // calculate pd
       leftP = (leftError * .8);
       leftD = ((leftError - leftLastError) * .4);
-      rightP = (rightError * .6);
+      rightP = (rightError * .8);
       rightD = ((rightError - rightLastError) * .4);
 
       // store last error
@@ -254,9 +254,9 @@ void autoStacker(int coneIncrement, bool isDriverload) { // cone increment will 
         break;
       case 2:
         motorSet(claw, 30);
-        liftTo(10, 30, 2200);
+        liftTo(5, 30, 2200);
         motorSet(claw, -90);
-        liftTo(10, 30, 600);
+        liftTo(5, 30, 600);
         motorSet(claw, 5);
         liftTo(0, 125, 1000);
         motorSet(claw, 0);
@@ -264,9 +264,9 @@ void autoStacker(int coneIncrement, bool isDriverload) { // cone increment will 
         break;
       case 3:
         motorSet(claw, 30);
-        liftTo(15, 40, 2200);
+        liftTo(10, 45, 2200);
         motorSet(claw, -90);
-        liftTo(15, 40, 500);
+        liftTo(15, 45, 500);
         motorSet(claw, 5);
         liftTo(0, 125, 1000);
         motorSet(claw, 0);
@@ -284,9 +284,9 @@ void autoStacker(int coneIncrement, bool isDriverload) { // cone increment will 
         break;
       case 5:
         motorSet(claw, 30);
-        liftTo(35, 60, 2200);
+        liftTo(35, 65, 2200);
         motorSet(claw, -90);
-        liftTo(35, 60, 500);
+        liftTo(40, 65, 500);
         motorSet(claw, 5);
         liftTo(0, 125, 1000);
         motorSet(claw, 0);
@@ -304,9 +304,19 @@ void autoStacker(int coneIncrement, bool isDriverload) { // cone increment will 
         break;
       case 7:
         motorSet(claw, 30);
-        liftTo(55, 70, 2400);
+        liftTo(55, 65, 2400);
         motorSet(claw, -90);
-        liftTo(55, 70, 500);
+        liftTo(55, 65, 500);
+        motorSet(claw, 5);
+        liftTo(0, 125, 1000);
+        motorSet(claw, 0);
+        autoStackerEnabled = false;
+        break;
+      case 8:
+        motorSet(claw, 30);
+        liftTo(65, 65, 2400);
+        motorSet(claw, -90);
+        liftTo(65, 65, 500);
         motorSet(claw, 5);
         liftTo(0, 125, 1000);
         motorSet(claw, 0);
