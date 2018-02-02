@@ -103,7 +103,7 @@ void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown) {
 /*  Cone handler control */
 /*-----------------------------------------------------------------------------*/
 void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainControl) {
-  if (autoStackerEnabled == false) // if driver is trying to control chain, disable autostacker and let them
+  if (autoStackerEnabled == false) // if autostacker is operating, dont take input
   {
     motorSet(chainBar, chainControl * -1);
   }
@@ -169,8 +169,6 @@ void driveTo(int leftTarget, int rightTarget, int waitTo) {
       // calculate error
       leftError = (leftTarget - encoderGet(leftencoder));
       rightError = (rightTarget - encoderGet(rightencoder));
-      printf("%d\n", leftError);
-      printf("%d\n", rightError);
       // calculate pd
       leftP = (leftError * .8);
       leftD = ((leftError - leftLastError) * .4);
@@ -186,10 +184,10 @@ void driveTo(int leftTarget, int rightTarget, int waitTo) {
       rightDrive = (rightP + rightD);
 
       // set motor to drive
-      motorSet(driveLeft, leftDrive * 1);
-      motorSet(driveRight, rightDrive * 1);
-      motorSet(driveLeft2, leftDrive * 1);
-      motorSet(driveRight2, rightDrive * 1);
+      motorSet(driveLeft, leftDrive * -1);
+      motorSet(driveRight, rightDrive * -1);
+      motorSet(driveLeft2, leftDrive * -1);
+      motorSet(driveRight2, rightDrive * -1);
       count = count + 1;
       delay(100);
     }
@@ -197,7 +195,7 @@ void driveTo(int leftTarget, int rightTarget, int waitTo) {
 }
 
 /*-----------------------------------------------------------------------------*/
-/*  An argument based PD for the lift and chainbar. Konsts are hardcoded       */
+/*  An argument based pd for the lift and chainbar. Konsts are hardcoded       */
 /*-----------------------------------------------------------------------------*/
 void liftTo(int liftTarget, int chainTarget, int waitTo) {
   int liftError = -1; // -1 is a place holder, so it doesnt exit instantly
@@ -222,10 +220,10 @@ void liftTo(int liftTarget, int chainTarget, int waitTo) {
       chainError = (chainTarget - encoderGet(chainencoder));
 
       // calculate PD
-      liftP = (liftError * 8);
-      liftD = ((liftError - liftLastError) * 2);
-      chainP = (chainError * (2));
-      chainD = ((chainError - chainLastError) * 0);
+      liftP = (liftError * 5);
+      liftD = ((liftError - liftLastError) * 3);
+      chainP = (chainError * 2);
+      chainD = ((chainError - chainLastError) * 2);
 
       // store last error
       liftLastError = liftError;
@@ -237,7 +235,7 @@ void liftTo(int liftTarget, int chainTarget, int waitTo) {
 
       // set motor to drive
       motorSet(dr4b, liftDrive);
-      motorSet(chainBar, chainDrive);
+      motorSet(chainBar, chainDrive * -1);
       if (debugGlobal == true) {
         printf("lift error %d\n", liftError);
         printf("lift drive %d\n", liftDrive);
@@ -245,7 +243,7 @@ void liftTo(int liftTarget, int chainTarget, int waitTo) {
         printf("chain drive %d\n", chainDrive);
       }
       // keep drive enabled if in driver
-      if (isAutonomous == false) {
+      if (isAutonomous() == false) {
         driveControl(joystickGetAnalog(1, 3), joystickGetAnalog(1, 2));
         mobileGoalControl(joystickGetDigital(1, 6, JOY_UP),
                           joystickGetDigital(1, 6, JOY_DOWN));
@@ -266,84 +264,65 @@ void autoStacker(int coneIncrement, bool isDriverload) { // cone increment will 
       switch (coneIncrement) {
       case 1: // stacking first cone
         motorSet(claw, 30);
-        liftTo(0, 20, 2200);
-        motorSet(claw, -90);
-        liftTo(0, 20, 600);
-        motorSet(claw, 5);
-        liftTo(0, 215, 1000);
+        liftTo(0, 130, 1600);
+        motorSet(claw, -40);
+        liftTo(0, 130, 400);
+        motorSet(claw, 15);
+        liftTo(0, 10, 1000);
         motorSet(claw, 0);
         autoStackerEnabled = false;
         break;
       case 2:
         motorSet(claw, 30);
-        liftTo(5, 30, 2200);
-        motorSet(claw, -90);
-        liftTo(5, 30, 600);
-        motorSet(claw, 5);
-        liftTo(0, 125, 1000);
+        liftTo(0, 130, 1600);
+        motorSet(claw, -40);
+        liftTo(0, 130, 400);
+        motorSet(claw, 15);
+        liftTo(0, 10, 1000);
         motorSet(claw, 0);
         autoStackerEnabled = false;
         break;
       case 3:
         motorSet(claw, 30);
-        liftTo(10, 45, 2200);
-        motorSet(claw, -90);
-        liftTo(15, 45, 500);
-        motorSet(claw, 5);
-        liftTo(0, 125, 1000);
+        liftTo(5, 120, 1600);
+        motorSet(claw, -40);
+        liftTo(5, 120, 400);
+        motorSet(claw, 15);
+        liftTo(0, 10, 1000);
         motorSet(claw, 0);
         autoStackerEnabled = false;
         break;
       case 4:
         motorSet(claw, 30);
-        liftTo(25, 50, 3000);
-        motorSet(claw, -90);
-        liftTo(25, 50, 500);
-        motorSet(claw, 5);
-        liftTo(0, 125, 1000);
+        liftTo(25, 115, 1600);
+        motorSet(claw, -40);
+        liftTo(25, 115, 400);
+        motorSet(claw, 15);
+        liftTo(25, 40, 800);
         motorSet(claw, 0);
+        liftTo(0, 10, 500);
         autoStackerEnabled = false;
         break;
       case 5:
         motorSet(claw, 30);
-        liftTo(35, 65, 2200);
-        motorSet(claw, -90);
-        liftTo(40, 65, 500);
-        motorSet(claw, 5);
-        liftTo(0, 125, 1000);
+        liftTo(40, 115, 1600);
+        motorSet(claw, -40);
+        liftTo(40, 115, 400);
+        motorSet(claw, 15);
+        liftTo(40, 40, 1000);
         motorSet(claw, 0);
+        liftTo(0, 10, 500);
         autoStackerEnabled = false;
-        break;
       case 6:
         motorSet(claw, 30);
-        liftTo(45, 60, 2400);
-        motorSet(claw, -90);
-        liftTo(45, 60, 500);
-        motorSet(claw, 5);
-        liftTo(0, 125, 1000);
+        liftTo(50, 110, 1600);
+        motorSet(claw, -40);
+        liftTo(45, 110, 400);
+        motorSet(claw, 15);
+        liftTo(55, 40, 1000);
         motorSet(claw, 0);
+        liftTo(0, 10, 500);
         autoStackerEnabled = false;
-        break;
-      case 7:
-        motorSet(claw, 30);
-        liftTo(55, 65, 2400);
-        motorSet(claw, -90);
-        liftTo(55, 65, 500);
-        motorSet(claw, 5);
-        liftTo(0, 125, 1000);
-        motorSet(claw, 0);
-        autoStackerEnabled = false;
-        break;
-      case 8:
-        motorSet(claw, 30);
-        liftTo(65, 65, 2400);
-        motorSet(claw, -90);
-        liftTo(65, 65, 500);
-        motorSet(claw, 5);
-        liftTo(0, 125, 1000);
-        motorSet(claw, 0);
-        autoStackerEnabled = false;
-        break;
       default:
         autoStackerEnabled = false;
         break;
@@ -351,77 +330,8 @@ void autoStacker(int coneIncrement, bool isDriverload) { // cone increment will 
     }
     if (isDriverload == true) { // if we are stacking driver loads, use the corresponding set of presets
       switch (coneIncrement) {
-      case 1: // stacking first cone
-        motorSet(claw, 30);
-        liftTo(0, 45, 2700);
-        motorSet(claw, -90);
-        liftTo(0, 45, 600);
-        motorSet(claw, 5);
-        liftTo(0, 200, 1500);
-        motorSet(claw, 0);
-        autoStackerEnabled = false;
-        break;
-      case 2:
-        motorSet(claw, 30);
-        liftTo(5, 40, 1700);
-        motorSet(claw, -90);
-        liftTo(5, 40, 600);
-        motorSet(claw, 5);
-        liftTo(0, 200, 1000);
-        motorSet(claw, 0);
-        autoStackerEnabled = false;
-        break;
-      case 3:
-        motorSet(claw, 30);
-        liftTo(20, 85, 1700);
-        motorSet(claw, -90);
-        liftTo(20, 85, 500);
-        motorSet(claw, 5);
-        liftTo(0, 200, 1000);
-        motorSet(claw, 0);
-        autoStackerEnabled = false;
-        break;
-      case 4:
-        motorSet(claw, 30);
-        liftTo(28, 100, 2000);
-        motorSet(claw, -90);
-        liftTo(28, 100, 500);
-        motorSet(claw, 5);
-        liftTo(0, 200, 1000);
-        motorSet(claw, 0);
-        autoStackerEnabled = false;
-        break;
-      case 5:
-        motorSet(claw, 30);
-        liftTo(35, 75, 2200);
-        motorSet(claw, -90);
-        liftTo(35, 75, 500);
-        motorSet(claw, 5);
-        liftTo(0, 200, 1000);
-        motorSet(claw, 0);
-        autoStackerEnabled = false;
-        break;
-      case 6:
-        motorSet(claw, 30);
-        liftTo(40, 105, 2400);
-        motorSet(claw, -90);
-        liftTo(40, 105, 500);
-        motorSet(claw, 5);
-        liftTo(0, 200, 1000);
-        motorSet(claw, 0);
-        autoStackerEnabled = false;
-        break;
-      case 7:
-        motorSet(claw, 30);
-        liftTo(50, 125, 2400);
-        motorSet(claw, -90);
-        liftTo(50, 125, 500);
-        motorSet(claw, 5);
-        liftTo(0, 200, 1000);
-        motorSet(claw, 0);
-        autoStackerEnabled = false;
-        break;
       default:
+        autoStackerEnabled = false;
         break;
       }
     }

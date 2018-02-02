@@ -52,43 +52,133 @@ void autonomous() {
   lcdTextA();
   debugGlobal = false;
   int auton = 0;
+  int side = 0; // 0 is left 1 is right
+  if (analogRead(1) > 50) { // if pointing towards 5 pt (blue tape)
+    if (side == 0) { // 5 pt left
+      auton = 1;
+    }
+    if (side == 1) { // 5 pt right
+      auton = 0;
+    }
+  else {
+    auton = 8; // defence
+  }
+  }
   switch (auton) {
-  case 0 : // 5 point 1 cone left
+  case 0 : // 5 point 1 cone blue right
     encoderReset(rightencoder);
     encoderReset(leftencoder);
     encoderReset(chainencoder);
     encoderReset(dr4bencoder);
-    encoderReset(mobilegoalencoder);
     // lower mobile goal intake
-    motorSet(claw, 30);
-    motorSet(mobileGoal, -127);
-    liftTo(20, 40, 1000);
-    // drive thru cones and into mobile goal
-    driveTo(500, 500, 1700);
-    motorSet(mobileGoal, -127);
-    delay(100);
-    motorSet(mobileGoal, 0);
-    driveTo(900, 900, 1200);
-    liftTo(40, 40, 1000);
+    motorSet(claw, 127);
+    delay(300);
+    motorSet(claw, 20);
     motorSet(mobileGoal, 127);
-    liftTo(40, 40, 1000); // 6.2 secs in
+    liftTo(0, 120, 1200);
+    motorSet(mobileGoal, 0);
+    // drive thru cones and into mobile goal
+    driveTo(560, 520, 2300);
+    motorSet(mobileGoal, 90);
+    delay(400);
+    motorSet(mobileGoal, 0);
+    driveTo(850, 850, 1200);
+    motorSet(mobileGoal, -127);
+    liftTo(0, 130, 1500);
     motorSet(mobileGoal, 0);
     // stack
-    liftTo(0, 20, 400);
+    liftTo(0, 130, 400);
     motorSet(claw, -90);
-    liftTo(0, 20, 600);
-    motorSet(claw, 5);
-    liftTo(0, 215, 1200);
+    liftTo(0, 130, 400);
     motorSet(claw, 0);
     // backwards
-    driveTo(300, 300, 1200);
+    driveTo(200, 200, 2200);
     // turn and drop
-    driveTo(600, 0, 700);
-    motorSet(mobileGoal, -127);
-    liftTo(20, 215, 1400);
+    driveTo(400, 0, 800);
+    motorSet(mobileGoal, 127);
+    liftTo(0, 120, 1400);
     motorSet(mobileGoal, 0);
-    driveTo(600, -100, 1000);
+    driveTo(300, -300, 1000);
     break;
+  case 1: // 5 point 1 cone blue left
+    encoderReset(rightencoder);
+    encoderReset(leftencoder);
+    encoderReset(chainencoder);
+    encoderReset(dr4bencoder);
+    // lower mobile goal intake
+    motorSet(claw, 127);
+    delay(300);
+    motorSet(claw, 20);
+    motorSet(mobileGoal, 127);
+    liftTo(0, 120, 1200);
+    motorSet(mobileGoal, 0);
+    // drive thru cones and into mobile goal
+    driveTo(560, 520, 2300);
+    motorSet(mobileGoal, 90);
+    delay(400);
+    motorSet(mobileGoal, 0);
+    driveTo(850, 850, 1200);
+    motorSet(mobileGoal, -127);
+    liftTo(0, 130, 1500);
+    motorSet(mobileGoal, 0);
+    // stack
+    liftTo(0, 130, 400);
+    motorSet(claw, -90);
+    liftTo(0, 130, 400);
+    motorSet(claw, 0);
+    // backwards
+    driveTo(200, 200, 2200);
+    // turn and drop
+    driveTo(0, 400, 1500);
+    motorSet(mobileGoal, 127);
+    liftTo(0, 120, 1400);
+    motorSet(mobileGoal, 0);
+    driveTo(-300, 100, 1000);
+    break;
+  case 2: // 10 point 1 cone blue left
+    encoderReset(rightencoder);
+    encoderReset(leftencoder);
+    encoderReset(chainencoder);
+    encoderReset(dr4bencoder);
+    // lower mobile goal intake
+    motorSet(claw, 127);
+    delay(300);
+    motorSet(claw, 20);
+    motorSet(mobileGoal, 127);
+    liftTo(0, 120, 1200);
+    motorSet(mobileGoal, 0);
+    // drive thru cones and into mobile goal
+    driveTo(520, 520, 2000);
+    motorSet(mobileGoal, 90);
+    delay(400);
+    motorSet(mobileGoal, 0);
+    driveTo(900, 900, 1200);
+    motorSet(mobileGoal, -127);
+    liftTo(0, 130, 1500);
+    motorSet(mobileGoal, 0);
+    // stack
+    liftTo(0, 130, 400);
+    motorSet(claw, -90);
+    liftTo(0, 130, 400);
+    motorSet(claw, 0);
+    // backwards
+    driveTo(-300, 200, 3500);
+    // turn and drop
+    driveTo(200, 700, 1500);
+    motorSet(mobileGoal, 127);
+    liftTo(0, 120, 1400);
+    motorSet(mobileGoal, 0);
+    driveTo(-100, 100, 1000);
+    break;
+  case 8: // defence
+    driveTo(1000, 1000, 4000);
+    break;
+  case 9: // test
+    encoderReset(rightencoder);
+    encoderReset(leftencoder);
+    encoderReset(chainencoder);
+    encoderReset(dr4bencoder);
+    liftTo(10, 0, 100000);
   default :
     break;
   }

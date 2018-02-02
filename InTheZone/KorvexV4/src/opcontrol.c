@@ -29,17 +29,16 @@ void operatorControl() {
   while (isEnabled()) {
     //argument based control scheme
     if (debugGlobal == true) {
-      printf("cc%d\n", coneIncrementGlobal);
-      printf("d%d\n", encoderGet(dr4bencoder));
-      printf("c%d\n", encoderGet(chainencoder));
-      printf("ase%d\n", autoStackerEnabled);
-      printf("r%d\n", encoderGet(rightencoder));
-      printf("l%d\n", encoderGet(leftencoder));
+      // printf("cc%d\n", coneIncrementGlobal);
+      // printf("d%d\n", encoderGet(dr4bencoder));
+      // printf("c%d\n", encoderGet(chainencoder));
+      // printf("r%d\n", encoderGet(rightencoder));
+      // printf("l%d\n", encoderGet(leftencoder));
+      printf("pot%d\n", analogRead(1));
     }
     driveControl(joystickGetAnalog(1, 2), joystickGetAnalog(1, 3));
     dr4bControl(joystickGetAnalog(2, 2));
-    fineControlToggle(joystickGetDigital(1, 7, JOY_DOWN), joystickGetDigital(1, 7, JOY_UP), joystickGetDigital(1, 8, JOY_UP), joystickGetDigital(1, 8, JOY_DOWN));
-    mobileGoalControl( joystickGetDigital(1, 6, JOY_UP), joystickGetDigital(1, 6, JOY_DOWN));
+    mobileGoalControl(joystickGetDigital(1, 6, JOY_UP), joystickGetDigital(1, 6, JOY_DOWN));
     coneHandlerControl(joystickGetDigital(2, 5, JOY_UP), joystickGetDigital(2, 5, JOY_DOWN), joystickGetAnalog(2, 3));
     autoStackControl(joystickGetDigital(2, 7, JOY_UP), joystickGetDigital(2, 7, JOY_DOWN), joystickGetDigital(2,7, JOY_RIGHT), joystickGetDigital(2, 8, JOY_RIGHT), joystickGetDigital(2, 8, JOY_LEFT), joystickGetDigital(2, 8, JOY_UP));
     delay(20);
