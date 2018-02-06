@@ -195,6 +195,53 @@ void driveTo(int leftTarget, int rightTarget, int waitTo) {
 }
 
 /*-----------------------------------------------------------------------------*/
+/*  An argument based encoder pd, for drive, tuned for skills mode */
+/*-----------------------------------------------------------------------------*/
+void driveToSkills(int leftTarget, int rightTarget, int waitTo) {
+  int leftError;
+  int rightError;
+  int leftDrive;
+  int rightDrive;
+  int leftLastError = 0;
+  int rightLastError = 0;
+  int leftP;
+  int rightP;
+  int leftD;
+  int rightD;
+  int count = 0;
+  while (true) {
+    if (count == (waitTo / 100)) {
+      return;
+    } else {
+      // calculate error
+      leftError = (leftTarget - encoderGet(leftencoder));
+      rightError = (rightTarget - encoderGet(rightencoder));
+      // calculate pd
+      leftP = (leftError * 1);
+      leftD = ((leftError - leftLastError) * .4);
+      rightP = (rightError * 1);
+      rightD = ((rightError - rightLastError) * .4);
+
+      // store last error
+      leftLastError = leftError;
+      rightLastError = rightError;
+
+      // calculate drive
+      leftDrive = (leftP + leftD);
+      rightDrive = (rightP + rightD);
+
+      // set motor to drive
+      motorSet(driveLeft, leftDrive * -1);
+      motorSet(driveRight, rightDrive * -1);
+      motorSet(driveLeft2, leftDrive * -1);
+      motorSet(driveRight2, rightDrive * -1);
+      count = count + 1;
+      delay(100);
+    }
+  }
+}
+
+/*-----------------------------------------------------------------------------*/
 /*  An argument based pd for the lift and chainbar. Konsts are hardcoded       */
 /*-----------------------------------------------------------------------------*/
 void liftTo(int liftTarget, int chainTarget, int waitTo) {

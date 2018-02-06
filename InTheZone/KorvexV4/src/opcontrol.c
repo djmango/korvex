@@ -29,12 +29,11 @@ void operatorControl() {
   while (isEnabled()) {
     //argument based control scheme
     if (debugGlobal == true) {
-      // printf("cc%d\n", coneIncrementGlobal);
-      // printf("d%d\n", encoderGet(dr4bencoder));
-      // printf("c%d\n", encoderGet(chainencoder));
-      // printf("r%d\n", encoderGet(rightencoder));
-      // printf("l%d\n", encoderGet(leftencoder));
-      printf("pot%d\n", analogRead(1));
+      printf("cc%d\n", coneIncrementGlobal);
+      printf("d%d\n", encoderGet(dr4bencoder));
+      printf("c%d\n", encoderGet(chainencoder));
+      printf("r%d\n", encoderGet(rightencoder));
+      printf("l%d\n", encoderGet(leftencoder));
     }
     driveControl(joystickGetAnalog(1, 2), joystickGetAnalog(1, 3));
     dr4bControl(joystickGetAnalog(2, 2));

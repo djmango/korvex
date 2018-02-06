@@ -51,21 +51,10 @@ void lcdTextA()
 void autonomous() {
   lcdTextA();
   debugGlobal = false;
-  int auton = 0;
-  int side = 0; // 0 is left 1 is right
-  if (analogRead(1) > 50) { // if pointing towards 5 pt (blue tape)
-    if (side == 0) { // 5 pt left
-      auton = 1;
-    }
-    if (side == 1) { // 5 pt right
-      auton = 0;
-    }
-  else {
-    auton = 8; // defence
-  }
-  }
+  coneIncrementGlobal = 0;
+  int auton = 1;
   switch (auton) {
-  case 0 : // 5 point 1 cone blue right
+  case 0: // 5 point 1 cone blue left
     encoderReset(rightencoder);
     encoderReset(leftencoder);
     encoderReset(chainencoder);
@@ -78,46 +67,13 @@ void autonomous() {
     liftTo(0, 120, 1200);
     motorSet(mobileGoal, 0);
     // drive thru cones and into mobile goal
-    driveTo(560, 520, 2300);
+    driveTo(560, 520, 2000);
+    // final drop of mobo just in case
     motorSet(mobileGoal, 90);
-    delay(400);
+    delay(200);
     motorSet(mobileGoal, 0);
-    driveTo(850, 850, 1200);
-    motorSet(mobileGoal, -127);
-    liftTo(0, 130, 1500);
-    motorSet(mobileGoal, 0);
-    // stack
-    liftTo(0, 130, 400);
-    motorSet(claw, -90);
-    liftTo(0, 130, 400);
-    motorSet(claw, 0);
-    // backwards
-    driveTo(200, 200, 2200);
-    // turn and drop
-    driveTo(400, 0, 800);
-    motorSet(mobileGoal, 127);
-    liftTo(0, 120, 1400);
-    motorSet(mobileGoal, 0);
-    driveTo(300, -300, 1000);
-    break;
-  case 1: // 5 point 1 cone blue left
-    encoderReset(rightencoder);
-    encoderReset(leftencoder);
-    encoderReset(chainencoder);
-    encoderReset(dr4bencoder);
-    // lower mobile goal intake
-    motorSet(claw, 127);
-    delay(300);
-    motorSet(claw, 20);
-    motorSet(mobileGoal, 127);
-    liftTo(0, 120, 1200);
-    motorSet(mobileGoal, 0);
-    // drive thru cones and into mobile goal
-    driveTo(560, 520, 2300);
-    motorSet(mobileGoal, 90);
-    delay(400);
-    motorSet(mobileGoal, 0);
-    driveTo(850, 850, 1200);
+    // drive into mobo and pickup
+    driveTo(900, 900, 1400);
     motorSet(mobileGoal, -127);
     liftTo(0, 130, 1500);
     motorSet(mobileGoal, 0);
@@ -135,7 +91,105 @@ void autonomous() {
     motorSet(mobileGoal, 0);
     driveTo(-300, 100, 1000);
     break;
-  case 2: // 10 point 1 cone blue left
+  case 1: // 5 point 1 cone blue right
+    encoderReset(rightencoder);
+    encoderReset(leftencoder);
+    encoderReset(chainencoder);
+    encoderReset(dr4bencoder);
+    // lower mobile goal intake
+    motorSet(claw, 127);
+    delay(300);
+    motorSet(claw, 20);
+    motorSet(mobileGoal, 127);
+    liftTo(0, 120, 1200);
+    motorSet(mobileGoal, 0);
+    // drive thru cones and into mobile goal
+    driveTo(560, 520, 2000);
+    // final drop of mobo just in case
+    motorSet(mobileGoal, 90);
+    delay(200);
+    motorSet(mobileGoal, 0);
+    // drive into mobo and pickup
+    driveTo(900, 900, 1400);
+    motorSet(mobileGoal, -127);
+    liftTo(0, 130, 1500);
+    motorSet(mobileGoal, 0);
+    // stack
+    liftTo(0, 130, 400);
+    motorSet(claw, -90);
+    liftTo(0, 130, 400);
+    motorSet(claw, 0);
+    // backwards
+    driveTo(200, 200, 2200);
+    // turn and drop
+    driveTo(400, 0, 800);
+    motorSet(mobileGoal, 127);
+    liftTo(0, 120, 1400);
+    motorSet(mobileGoal, 0);
+    driveTo(300, -300, 1000);
+    break;
+  case 2: // 5 point 1 cone red left
+    encoderReset(rightencoder);
+    encoderReset(leftencoder);
+    encoderReset(chainencoder);
+    encoderReset(dr4bencoder);
+    // lower mobile goal intake
+    motorSet(claw, 127);
+    delay(300);
+    motorSet(claw, 20);
+    motorSet(mobileGoal, 127);
+    liftTo(0, 120, 1200);
+    motorSet(mobileGoal, 0);
+    // drive thru cones and into mobile goal
+    driveTo(440, 480, 1800);
+    // final drop of mobo just in case
+    motorSet(mobileGoal, 90);
+    delay(200);
+    motorSet(mobileGoal, 0);
+    // drive into mobo and pickup
+    driveTo(900, 900, 2200);
+    motorSet(mobileGoal, -127);
+    liftTo(0, 130, 1500);
+    motorSet(mobileGoal, 0);
+    // stack
+    liftTo(0, 130, 400);
+    motorSet(claw, -90);
+    liftTo(0, 130, 400);
+    motorSet(claw, 0);
+    // backwards
+    driveTo(200, 200, 2200);
+    // turn and drop
+    driveTo(0, 400, 1500);
+    motorSet(mobileGoal, 127);
+    liftTo(0, 120, 1400);
+    motorSet(mobileGoal, 0);
+    driveTo(-300, 100, 1000);
+    break;
+  case 3: // left tricky stationary
+    encoderReset(rightencoder);
+    encoderReset(leftencoder);
+    encoderReset(chainencoder);
+    encoderReset(dr4bencoder);
+    // grab cone
+    motorSet(claw, 127);
+    liftTo(0, 120, 300);
+    motorSet(claw, 20);
+    // turn to face stationary
+    driveTo(535, 100, 2000);
+    // move closer to stationary
+    driveTo(700, 225, 1500);
+    // lift
+    liftTo(75, 100, 2000);
+    // final position with stationary
+    driveTo(855, 380, 1500);
+    motorSet(claw, -40);
+    delay(400);
+    motorSet(claw, 0);
+    liftTo(30, 130, 1000);
+    driveTo(700, 250, 1000);
+    liftTo(0, 10, 1000);
+    break;
+  case 4: // 10 point 1 cone blue left
     encoderReset(rightencoder);
     encoderReset(leftencoder);
     encoderReset(chainencoder);
