@@ -37,6 +37,7 @@ void autoStackControl(int incrementUpBtn, int incrementDownBtn,
 
 // drive control
 void driveTo(int leftTarget, int rightTarget, int waitTo);
+void driveToSkills(int leftTarget, int rightTarget, int waitTo);
 
 // lift control
 void liftTo(int liftTarget, int chainTarget, int waitTo);

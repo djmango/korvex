@@ -52,7 +52,7 @@ void autonomous() {
   lcdTextA();
   debugGlobal = false;
   coneIncrementGlobal = 0;
-  int auton = 1;
+  int auton = 7; // 1-6 reserved for auton, 7 skills, 8 defence, 9 test
   switch (auton) {
   case 0: // 5 point 1 cone blue left
     encoderReset(rightencoder);
@@ -223,6 +223,43 @@ void autonomous() {
     liftTo(0, 120, 1400);
     motorSet(mobileGoal, 0);
     driveTo(-100, 100, 1000);
+    break;
+  case 7: // skills
+    encoderReset(rightencoder);
+    encoderReset(leftencoder);
+    // lower mobile goal intake
+    motorSet(mobileGoal, 127);
+    delay(1000);
+    motorSet(mobileGoal, 0);
+    // drive into mobile goal
+    driveToSkills(520, 520, 1800);
+    // pickup mobile goal and drive back
+    motorSet(mobileGoal, -127);
+    delay(400);
+    driveToSkills(-370, -370, 1800);
+    motorSet(mobileGoal, 0);
+    // turn to start line up with 20pt
+    driveToSkills(170, -170, 1000);
+    // drive to line up with 20 pt
+    driveToSkills(290, 290, 1400);
+    // turn to face 20 pt
+    driveToSkills(160, -160, 1000);
+    // drive into 20 pt
+    driveToSkills(450, 450, 2500);
+    // lower mobile goal intake
+    motorSet(mobileGoal, 127);
+    // driveToSkills(150, 150, 1500); // note future self. if this doesnt work, swap
+    delay(1500);
+    motorSet(mobileGoal, 0);
+    // raise mobile goal intake
+    driveToSkills(-100, -100, 1000);
+    motorSet(mobileGoal, -127);
+    delay(200);
+    motorSet(mobileGoal, -127);
+    // driveToSkills(-500, -500, 1800);
+    delay(1800);
+    motorSet(mobileGoal, 0);
+    driveToSkills(-400, -400, 3000);
     break;
   case 8: // defence
     driveTo(1000, 1000, 4000);

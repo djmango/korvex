@@ -20,7 +20,7 @@ void lcdText() {
  */
 
 void operatorControl() {
-  debugGlobal = true;
+  debugGlobal = false;
   isReverse = false;
   isFineControl = false;
   fineControl = 1;

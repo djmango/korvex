@@ -209,6 +209,9 @@ void driveToSkills(int leftTarget, int rightTarget, int waitTo) {
   int leftD;
   int rightD;
   int count = 0;
+  // offset the targets, for easier readability
+  leftTarget = encoderGet(leftencoder) + leftTarget;
+  rightTarget = encoderGet(rightencoder) + rightTarget;
   while (true) {
     if (count == (waitTo / 100)) {
       return;
@@ -217,10 +220,10 @@ void driveToSkills(int leftTarget, int rightTarget, int waitTo) {
       leftError = (leftTarget - encoderGet(leftencoder));
       rightError = (rightTarget - encoderGet(rightencoder));
       // calculate pd
-      leftP = (leftError * 1);
-      leftD = ((leftError - leftLastError) * .4);
-      rightP = (rightError * 1);
-      rightD = ((rightError - rightLastError) * .4);
+      leftP = (leftError * 1.5);
+      leftD = ((leftError - leftLastError) * 1.6);
+      rightP = (rightError * 1.5);
+      rightD = ((rightError - rightLastError) * 1.6);
 
       // store last error
       leftLastError = leftError;
@@ -229,6 +232,12 @@ void driveToSkills(int leftTarget, int rightTarget, int waitTo) {
       // calculate drive
       leftDrive = (leftP + leftD);
       rightDrive = (rightP + rightD);
+
+      // if we are in debug mode, print error
+      if (debugGlobal == true) {
+        printf("lErr%d\n", leftError);
+        printf("rErr%d\n", rightError);
+      }
 
       // set motor to drive
       motorSet(driveLeft, leftDrive * -1);
