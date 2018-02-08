@@ -52,7 +52,7 @@ void autonomous() {
   lcdTextA();
   debugGlobal = false;
   coneIncrementGlobal = 0;
-  int auton = 7; // 1-6 reserved for auton, 7 skills, 8 defence, 9 test
+  int auton = 7; // 1-6 reserved for auton, 7 skills, 9 defence, 10 test
   switch (auton) {
   case 0: // 5 point 1 cone blue left
     encoderReset(rightencoder);
@@ -233,6 +233,56 @@ void autonomous() {
     motorSet(mobileGoal, 0);
     // drive into mobile goal
     driveToSkills(520, 520, 1800);
+    // pickup mobile goal
+    motorSet(mobileGoal, -127);
+    delay(400);
+    // turn 180 degrees
+    driveToSkills(-300, 300, 1400);
+    motorSet(mobileGoal, 0);
+    // drive back
+    driveToSkills(610, 610, 2000);
+    // lower mobile goal intake, drop 1st mobile goal in 10 pt
+    motorSet(mobileGoal, 127);
+    delay(1000);
+    motorSet(mobileGoal, 0);
+    driveToSkills(-150, -150, 1500);
+    // turn
+    driveToSkills(150, -150, 800);
+    // drive to line up with 2nd mobile goal
+    driveToSkills(150, 150, 1200);
+    // turn to line up with 2nd mobile goal
+    driveToSkills(80, -80, 1400);
+    // drive into mobile goal
+    driveToSkills(700, 700, 2500);
+    // pick up 2nd mobile goal and drive back
+    motorSet(mobileGoal, -127);
+    delay(400);
+    driveToSkills(-700, -700, 2200);
+    motorSet(mobileGoal, 0);
+    // turn to line up with 5 pt line
+    driveToSkills(255, -255, 1600);
+    // drive to line up drop of 2nd mobile goal
+    driveToSkills(400, 400, 1400);
+    // turn to drop off 2nd mobile goal
+    driveToSkills(160, -160, 1200);
+    // drive forward to drop off 2nd mobile goal
+    driveToSkills(150, 150, 1000);
+    // lower mobile goal intake, drop 1st mobile goal in 10 pt
+    motorSet(mobileGoal, 127);
+    delay(1000);
+    motorSet(mobileGoal, 0);
+    driveToSkills(-150, -150, 1500);
+
+    break;
+  case 8: // 20 pt skills, barely works
+    encoderReset(rightencoder);
+    encoderReset(leftencoder);
+    // lower mobile goal intake
+    motorSet(mobileGoal, 127);
+    delay(1000);
+    motorSet(mobileGoal, 0);
+    // drive into mobile goal
+    driveToSkills(520, 520, 1800);
     // pickup mobile goal and drive back
     motorSet(mobileGoal, -127);
     delay(400);
@@ -261,15 +311,16 @@ void autonomous() {
     motorSet(mobileGoal, 0);
     driveToSkills(-400, -400, 3000);
     break;
-  case 8: // defence
+  case 9: // defence
     driveTo(1000, 1000, 4000);
     break;
-  case 9: // test
+  case 10: // test
     encoderReset(rightencoder);
     encoderReset(leftencoder);
     encoderReset(chainencoder);
     encoderReset(dr4bencoder);
-    liftTo(10, 0, 100000);
+    driveToSkills(200, 200, 5000);
+    driveToSkills(-200, -200, 5000);
   default :
     break;
   }

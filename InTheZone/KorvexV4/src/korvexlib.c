@@ -195,7 +195,7 @@ void driveTo(int leftTarget, int rightTarget, int waitTo) {
 }
 
 /*-----------------------------------------------------------------------------*/
-/*  An argument based encoder pd, for drive, tuned for skills mode */
+/*  An argument based encoder pid, for drive, tuned for skills mode */
 /*-----------------------------------------------------------------------------*/
 void driveToSkills(int leftTarget, int rightTarget, int waitTo) {
   int leftError;
@@ -206,6 +206,8 @@ void driveToSkills(int leftTarget, int rightTarget, int waitTo) {
   int rightLastError = 0;
   int leftP;
   int rightP;
+  float leftI;
+  float rightI;
   int leftD;
   int rightD;
   int count = 0;
@@ -219,24 +221,34 @@ void driveToSkills(int leftTarget, int rightTarget, int waitTo) {
       // calculate error
       leftError = (leftTarget - encoderGet(leftencoder));
       rightError = (rightTarget - encoderGet(rightencoder));
-      // calculate pd
-      leftP = (leftError * 1.5);
-      leftD = ((leftError - leftLastError) * 1.6);
-      rightP = (rightError * 1.5);
-      rightD = ((rightError - rightLastError) * 1.6);
+      // calculate pid
+      leftP = (leftError * 1);
+      if (abs(leftError) < 15)
+        leftI = ((leftI + leftError) * .7);
+      else
+        leftI = 0;
+      leftD = ((leftError - leftLastError) * 1);
+      rightP = (rightError * 1);
+      if (abs(rightError) < 15)
+        rightI = ((rightI + rightError) * .7);
+      else
+        rightI = 0;
+      rightD = ((rightError - rightLastError) * 1);
 
       // store last error
       leftLastError = leftError;
       rightLastError = rightError;
 
       // calculate drive
-      leftDrive = (leftP + leftD);
-      rightDrive = (rightP + rightD);
+      leftDrive = (leftP + leftI + leftD);
+      rightDrive = (rightP + rightI + rightD);
 
       // if we are in debug mode, print error
       if (debugGlobal == true) {
         printf("lErr%d\n", leftError);
+        printf("lDri%d\n", leftDrive);
         printf("rErr%d\n", rightError);
+        printf("rDri%d\n", rightDrive);
       }
 
       // set motor to drive
