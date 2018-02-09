@@ -215,7 +215,7 @@ void driveToSkills(int leftTarget, int rightTarget, int waitTo) {
   leftTarget = encoderGet(leftencoder) + leftTarget;
   rightTarget = encoderGet(rightencoder) + rightTarget;
   while (true) {
-    if (count == (waitTo / 100)) {
+    if (count == (waitTo / 100) || (leftError == 0 && leftLastError == 0 && rightError == 0 && rightLastError == 0)) {
       return;
     } else {
       // calculate error

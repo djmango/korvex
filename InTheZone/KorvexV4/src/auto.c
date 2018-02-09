@@ -50,7 +50,7 @@ void lcdTextA()
 
 void autonomous() {
   lcdTextA();
-  debugGlobal = false;
+  debugGlobal = true;
   coneIncrementGlobal = 0;
   int auton = 7; // 1-6 reserved for auton, 7 skills, 9 defence, 10 test
   switch (auton) {
@@ -231,8 +231,8 @@ void autonomous() {
     motorSet(mobileGoal, 127);
     delay(1000);
     motorSet(mobileGoal, 0);
-    // drive into mobile goal
-    driveToSkills(520, 520, 1800);
+    // drive into 1st mobile goal
+    driveToSkills(560, 560, 1500);
     // pickup mobile goal
     motorSet(mobileGoal, -127);
     delay(400);
@@ -240,7 +240,7 @@ void autonomous() {
     driveToSkills(-300, 300, 1400);
     motorSet(mobileGoal, 0);
     // drive back
-    driveToSkills(610, 610, 2000);
+    driveToSkills(650, 650, 2400);
     // lower mobile goal intake, drop 1st mobile goal in 10 pt
     motorSet(mobileGoal, 127);
     delay(1000);
@@ -249,30 +249,34 @@ void autonomous() {
     // turn
     driveToSkills(150, -150, 800);
     // drive to line up with 2nd mobile goal
-    driveToSkills(150, 150, 1200);
+    driveToSkills(150, 150, 1000);
     // turn to line up with 2nd mobile goal
-    driveToSkills(80, -80, 1400);
+    driveToSkills(80, -80, 1200);
     // drive into mobile goal
-    driveToSkills(700, 700, 2500);
+    driveToSkills(700, 700, 2200);
     // pick up 2nd mobile goal and drive back
     motorSet(mobileGoal, -127);
     delay(400);
     driveToSkills(-700, -700, 2200);
     motorSet(mobileGoal, 0);
     // turn to line up with 5 pt line
-    driveToSkills(255, -255, 1600);
+    driveToSkills(180, -180, 1000);
+    driveToSkills(-120, -120, 600);
+    driveToSkills(100, 100, 700);
+    driveToSkills(75, -75, 700);
     // drive to line up drop of 2nd mobile goal
-    driveToSkills(400, 400, 1400);
+    driveToSkills(400, 400, 1200);
     // turn to drop off 2nd mobile goal
-    driveToSkills(160, -160, 1200);
+    driveToSkills(170, -170, 1200);
     // drive forward to drop off 2nd mobile goal
-    driveToSkills(150, 150, 1000);
-    // lower mobile goal intake, drop 1st mobile goal in 10 pt
+    driveToSkills(200, 200, 800);
+    // lower mobile goal intake, drop 2nd mobile goal in 10 pt
     motorSet(mobileGoal, 127);
     delay(1000);
     motorSet(mobileGoal, 0);
-    driveToSkills(-150, -150, 1500);
-
+    driveToSkills(-150, -150, 800);
+    // turn to line up with 5 pt line
+    driveToSkills(140, -140, 1200);
     break;
   case 8: // 20 pt skills, barely works
     encoderReset(rightencoder);
