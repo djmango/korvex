@@ -8,20 +8,20 @@ Encoder dr4bencoder;
 Encoder mobilegoalencoder;
 
 // auto stacker globals
-int coneIncrementGlobal;
-bool isDriverloadGlobal;
-bool autoStackerEnabled;
+int coneIncrementGlobal; // this will hold the amount of cones we currently have
+bool isDriverloadGlobal; // this will be true when we are stacking driver loads
+bool autoStackerEnabled; // this will be true when the auto stacker is doing its thing
 
-// control modifiers
-bool isReverse;
-bool isFineControl;
-float fineControl;
+// autonomous selector
+
+int lcdHoldGlobal; // this will hold the current screen, so we can have a 'scrollable' interface
+int auton;
 
 // debug enabler
-bool debugGlobal;
+bool debugGlobal; // set this to true whenever you want print statements in terminal
 
 // rerun globals
-bool isRecording;
+bool isRecording; // ill get to this stuff eventually :wink:
 bool isReplaying;
 
 // opcontrol functions
@@ -44,3 +44,4 @@ void liftTo(int liftTarget, int chainTarget, int waitTo);
 
 // ext
 void autoStacker(int coneIncrement, bool isDriverload);
+void lcdAutSel(int input);

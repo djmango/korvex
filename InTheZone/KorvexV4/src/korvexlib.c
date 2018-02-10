@@ -5,25 +5,18 @@
 // functions
 
 /*-----------------------------------------------------------------------------*/
-/*  Drive control */
+/*  drive control, user input, direct                                          */
 /*-----------------------------------------------------------------------------*/
 void driveControl(int chassisControlLeft, int chassisControlRight) {
   // chassis control
-  if (isReverse == true) { // if in reverse, invert and switch sides for normal turning
-    motorSet(driveLeft, (chassisControlLeft));
-    motorSet(driveRight, (chassisControlRight));
-    motorSet(driveRight2, (chassisControlRight));
-    motorSet(driveLeft2, (chassisControlLeft));
-  } else if (isReverse == false) { // if in normal operator, do not invert
-    motorSet(driveLeft, (chassisControlRight * -1));
-    motorSet(driveRight, (chassisControlLeft * -1));
-    motorSet(driveLeft2, (chassisControlRight * -1));
-    motorSet(driveRight2, (chassisControlLeft * -1));
-  }
+  motorSet(driveLeft, (chassisControlRight * -1));
+  motorSet(driveRight, (chassisControlLeft * -1));
+  motorSet(driveLeft2, (chassisControlRight * -1));
+  motorSet(driveRight2, (chassisControlLeft * -1));
 }
 
 /*-----------------------------------------------------------------------------*/
-/*  Lift control */
+/*  lift control, user input, direct                                           */
 /*-----------------------------------------------------------------------------*/
 void dr4bControl(int dr4bControl) {
   // lift control
@@ -34,31 +27,7 @@ void dr4bControl(int dr4bControl) {
 }
 
 /*-----------------------------------------------------------------------------*/
-/*  Toggle fine control for drive */
-/*-----------------------------------------------------------------------------*/
-void fineControlToggle(int fineBtn, int fineBtn2, int reverseBtn, int reverseBtn2) {
-  // fine control toggle
-  if (fineBtn == 1) { // toggle it on
-    isFineControl = true;
-    fineControl = .5;
-  }
-  if (fineBtn2 == 1) { // toggle it off
-    isFineControl = false;
-    fineControl = 1;
-  }
-  //reverse toggle
-    if (reverseBtn == 1) { // toggle it on
-    isReverse = true;
-    fineControl = -1;
-  }
-  if (reverseBtn2 == 1) { // toggle it off
-    isReverse = false;
-    fineControl = 1;
-  }
-}
-
-/*-----------------------------------------------------------------------------*/
-/*  Encoder based mobile goal control */
+/*  mobile goal control, user input, direct                                    */
 /*-----------------------------------------------------------------------------*/
 void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown) {
   // mobo lift control
@@ -100,7 +69,7 @@ void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown) {
 }
 
 /*-----------------------------------------------------------------------------*/
-/*  Cone handler control */
+/*  cone handler control                                                       */
 /*-----------------------------------------------------------------------------*/
 void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainControl) {
   if (autoStackerEnabled == false) // if autostacker is operating, dont take input
@@ -148,7 +117,7 @@ void autoStackControl(int incrementUpBtn, int incrementDownBtn, int incrementRes
 }
 
 /*-----------------------------------------------------------------------------*/
-/*  An argument based encoder pd, for drive */
+/*  argument based encoder pd, for drive */
 /*-----------------------------------------------------------------------------*/
 void driveTo(int leftTarget, int rightTarget, int waitTo) {
   int leftError;
@@ -195,7 +164,7 @@ void driveTo(int leftTarget, int rightTarget, int waitTo) {
 }
 
 /*-----------------------------------------------------------------------------*/
-/*  An argument based encoder pid, for drive, tuned for skills mode */
+/*  argument based encoder pid, for drive, tuned for skills mode */
 /*-----------------------------------------------------------------------------*/
 void driveToSkills(int leftTarget, int rightTarget, int waitTo) {
   int leftError;
@@ -206,14 +175,16 @@ void driveToSkills(int leftTarget, int rightTarget, int waitTo) {
   int rightLastError = 0;
   int leftP;
   int rightP;
-  float leftI;
-  float rightI;
+  float leftI = 0;
+  float rightI = 0;
   int leftD;
   int rightD;
   int count = 0;
   // offset the targets, for easier readability
   leftTarget = encoderGet(leftencoder) + leftTarget;
   rightTarget = encoderGet(rightencoder) + rightTarget;
+  leftError = (leftTarget - encoderGet(leftencoder));
+  rightError = (rightTarget - encoderGet(rightencoder));
   while (true) {
     if (count == (waitTo / 100) || (leftError == 0 && leftLastError == 0 && rightError == 0 && rightLastError == 0)) {
       return;
@@ -263,7 +234,7 @@ void driveToSkills(int leftTarget, int rightTarget, int waitTo) {
 }
 
 /*-----------------------------------------------------------------------------*/
-/*  An argument based pd for the lift and chainbar. Konsts are hardcoded       */
+/*  an argument based pd for the lift and chainbar. Konsts are hardcoded       */
 /*-----------------------------------------------------------------------------*/
 void liftTo(int liftTarget, int chainTarget, int waitTo) {
   int liftError = -1; // -1 is a place holder, so it doesnt exit instantly
@@ -323,7 +294,106 @@ void liftTo(int liftTarget, int chainTarget, int waitTo) {
 }
 
 /*-----------------------------------------------------------------------------*/
-/*  An argument based autostacker, which sets the targets of each system,      */
+/*  lcd autonomous selector, for convinience and stuff                         */
+/*-----------------------------------------------------------------------------*/
+void lcdAutSel(int input) {
+  // min and max holds
+  int lcdHoldMin = -2;
+  int lcdHoldMax = 3;
+  
+  // update holder accordingly
+  if (input == 1) { // if the left button is pushed
+    lcdHoldGlobal = lcdHoldGlobal - 1;
+  }
+  if (input == 4) { // if the right button is pushed
+    lcdHoldGlobal = lcdHoldGlobal + 1;
+  }
+
+  // limit lcd hold
+  if (lcdHoldGlobal > lcdHoldMax) {
+    lcdHoldGlobal = lcdHoldMax;
+  }
+  if (lcdHoldGlobal < lcdHoldMin) {
+    lcdHoldGlobal = lcdHoldMin;
+  }
+  
+  // display according to holder
+  switch (lcdHoldGlobal) {
+    case -2: // red right
+      lcdSetText(uart1, 1, "   red  right   ");
+      lcdSetText(uart1, 2, "<- | select | ->");
+      break;
+    case -1: // red left
+      lcdSetText(uart1, 1, "   red   left   ");
+      lcdSetText(uart1, 2, "<- | select | ->");
+      break;
+    case 0: // disabled
+      lcdSetText(uart1, 1, "    disabled    ");
+      lcdSetText(uart1, 2, "<- | select | ->");
+      break;
+    case 1: // blue left
+      lcdSetText(uart1, 1, "   blue  left   ");
+      lcdSetText(uart1, 2, "<- | select | ->");
+      break;
+    case 2: // blue right
+      lcdSetText(uart1, 1, "   blue right   ");
+      lcdSetText(uart1, 2, "<- | select | ->");
+      break;
+    case 3: // skills
+      lcdSetText(uart1, 1, "     skills     ");
+      lcdSetText(uart1, 2, "<- | select | ->");
+      break;
+  }
+
+  if (input == 2) { // ooh you got chosen, now do your thing
+    switch (lcdHoldGlobal) {
+    case -2: // red right
+      lcdSetText(uart1, 1, "|  red  right  |");
+      lcdSetText(uart1, 2, "korvex  robotics");
+      auton = 2;
+      break;
+    case -1: // red left
+      lcdSetText(uart1, 1, "|  red   left  |");
+      lcdSetText(uart1, 2, "korvex  robotics");
+      auton = 3;
+      break;
+    case 0: // disabled
+      lcdSetText(uart1, 1, "|   disabled   |");
+      lcdSetText(uart1, 2, "korvex  robotics");
+      auton = -1;
+      break;
+    case 1: // blue left
+      lcdSetText(uart1, 1, "|  blue  left  |");
+      lcdSetText(uart1, 2, "korvex  robotics");
+      auton = 0;
+      break;
+    case 2: // blue right
+      lcdSetText(uart1, 1, "|  blue right  |");
+      lcdSetText(uart1, 2, "korvex  robotics");
+      auton = 1;
+      break;
+    case 3: // skills
+      lcdSetText(uart1, 1, "     skills     ");
+      lcdSetText(uart1, 2, "korvex  robotics");
+      auton = 7;
+      break;
+    }
+    return;
+  }
+
+  // return if im sad
+  delay(100);
+  if (input == 0) // if we dont get any input, why do anything
+    if (isAutonomous() == false) {
+      return;
+    }
+    else {
+      lcdAutSel(lcdReadButtons(uart1)); // haha self calling functions, what could go wrong
+    }
+}
+
+/*-----------------------------------------------------------------------------*/
+/*  an argument based autostacker, which sets the targets of each system,      */
 /*  in accordance to presets corresponding to the cones stacked                */
 /*-----------------------------------------------------------------------------*/
 void autoStacker(int coneIncrement, bool isDriverload) { // cone increment will decide what function will run, each is specific to the height

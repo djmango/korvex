@@ -1,7 +1,3 @@
-/** @file auto.c
- * @brief File for autonomous code
- */
-
 #include "main.h"
 #include "constants.h"
 #include "korvexlib.h"
@@ -28,16 +24,6 @@
  * so, the robot will adelay a switch to another mode or disable/enable cycle.
  */
 
-/*-----------------------------------------------------------------------------*/
-/*  Funky messages for the lcd */
-/*-----------------------------------------------------------------------------*/
-void lcdTextA()
-{
-  lcdSetBacklight(uart1, true);
-  lcdSetText(uart1, 1, "it works");
-  lcdSetText(uart1, 2, "i  swear");
-}
-
 /* motors:
   driveLeft
   driveRight
@@ -49,10 +35,9 @@ void lcdTextA()
 */
 
 void autonomous() {
-  lcdTextA();
   debugGlobal = true;
   coneIncrementGlobal = 0;
-  int auton = 7; // 1-6 reserved for auton, 7 skills, 9 defence, 10 test
+  auton = 7; // 1-6 reserved for auton, 7 skills, 9 defence, 10 test
   switch (auton) {
   case 0: // 5 point 1 cone blue left
     encoderReset(rightencoder);
