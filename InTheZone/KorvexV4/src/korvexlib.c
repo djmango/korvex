@@ -79,11 +79,11 @@ void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainControl) {
   // claw control
   if (clawBtnUp == 1) {
     // move up
-    motorSet(claw, -40);
+    motorSet(claw, 40);
   }
   if (clawBtnDown == 1) {
     // move down
-    motorSet(claw, 40);
+    motorSet(claw, -40);
   }
   if (clawBtnUp == 0 && clawBtnDown == 0) {
     // dont move
@@ -187,6 +187,10 @@ void driveToSkills(int leftTarget, int rightTarget, int waitTo) {
   rightError = (rightTarget - encoderGet(rightencoder));
   while (true) {
     if (count == (waitTo / 100) || (leftError == 0 && leftLastError == 0 && rightError == 0 && rightLastError == 0)) {
+      motorSet(driveLeft, 0);
+      motorSet(driveLeft2, 0);
+      motorSet(driveRight, 0);
+      motorSet(driveRight2, 0);
       return;
     } else {
       // calculate error
@@ -195,13 +199,13 @@ void driveToSkills(int leftTarget, int rightTarget, int waitTo) {
       // calculate pid
       leftP = (leftError * 1);
       if (abs(leftError) < 15)
-        leftI = ((leftI + leftError) * .7);
+        leftI = ((leftI + leftError) * .8);
       else
         leftI = 0;
       leftD = ((leftError - leftLastError) * 1);
       rightP = (rightError * 1);
       if (abs(rightError) < 15)
-        rightI = ((rightI + rightError) * .7);
+        rightI = ((rightI + rightError) * .8);
       else
         rightI = 0;
       rightD = ((rightError - rightLastError) * 1);
@@ -382,14 +386,24 @@ void lcdAutSel(int input) {
   }
 
   // return if im sad
-  delay(100);
-  if (input == 0) // if we dont get any input, why do anything
-    if (isAutonomous() == false) {
+  if (input == 0) { // if we dont get any input, why do anything
+    if (isAutonomous() == false)
+    {
       return;
     }
-    else {
+    else
+    {
       lcdAutSel(lcdReadButtons(uart1)); // haha self calling functions, what could go wrong
     }
+  }
+}
+
+/*-----------------------------------------------------------------------------*/
+/*  recording function for rerun                                               */
+/*-----------------------------------------------------------------------------*/
+void rerunRecord() {
+  printf("driveTo(%d, %d, 100);\n", encoderGet(leftencoder), encoderGet(rightencoder));
+  // wow this was difficult
 }
 
 /*-----------------------------------------------------------------------------*/

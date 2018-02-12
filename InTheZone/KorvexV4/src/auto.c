@@ -37,7 +37,12 @@
 void autonomous() {
   debugGlobal = true;
   coneIncrementGlobal = 0;
-  auton = 7; // 1-6 reserved for auton, 7 skills, 9 defence, 10 test
+  auton = 7; // 1-6 reserved for auton, 7 skills, 9 defence, 10 test, -10 for selection
+  while (auton == -10) { // if auton has not been selected yet
+    lcdAutSel(lcdReadButtons(uart1));
+    delay(100);
+  }
+  lcdSetBacklight(uart1, false);
   switch (auton) {
   case 0: // 5 point 1 cone blue left
     encoderReset(rightencoder);
@@ -218,50 +223,86 @@ void autonomous() {
     motorSet(mobileGoal, 0);
     // drive into 1st mobile goal
     driveToSkills(560, 560, 1500);
-    // pickup mobile goal
+    // pickup 1st mobile goal
     motorSet(mobileGoal, -127);
     delay(400);
     // turn 180 degrees
     driveToSkills(-300, 300, 1400);
     motorSet(mobileGoal, 0);
     // drive back
-    driveToSkills(650, 650, 2400);
+    driveToSkills(650, 650, 1900);
     // lower mobile goal intake, drop 1st mobile goal in 10 pt
     motorSet(mobileGoal, 127);
     delay(1000);
     motorSet(mobileGoal, 0);
-    driveToSkills(-150, -150, 1500);
-    // turn
-    driveToSkills(150, -150, 800);
+    driveToSkills(-150, -150, 1300);
+    // turn to line up with 5 pt line
+    driveToSkills(150, -150, 700);
     // drive to line up with 2nd mobile goal
     driveToSkills(150, 150, 1000);
     // turn to line up with 2nd mobile goal
     driveToSkills(80, -80, 1200);
-    // drive into mobile goal
-    driveToSkills(700, 700, 2200);
+    // drive into 2nd mobile goal
+    driveToSkills(700, 720, 2200);
     // pick up 2nd mobile goal and drive back
     motorSet(mobileGoal, -127);
     delay(400);
-    driveToSkills(-700, -700, 2200);
+    driveToSkills(-670, -670, 2100);
     motorSet(mobileGoal, 0);
-    // turn to line up with 5 pt line
+    // turn to line up with wall
     driveToSkills(180, -180, 1000);
-    driveToSkills(-120, -120, 600);
+    // ram into wall for accuracy
+    driveToSkills(-150, -150, 800);
+    encoderReset(rightencoder);
+    encoderReset(leftencoder);
     driveToSkills(100, 100, 700);
+    // turn to line up with 5 pt line
     driveToSkills(75, -75, 700);
     // drive to line up drop of 2nd mobile goal
     driveToSkills(400, 400, 1200);
     // turn to drop off 2nd mobile goal
     driveToSkills(170, -170, 1200);
     // drive forward to drop off 2nd mobile goal
-    driveToSkills(200, 200, 800);
+    driveToSkills(175, 175, 800);
     // lower mobile goal intake, drop 2nd mobile goal in 10 pt
     motorSet(mobileGoal, 127);
     delay(1000);
     motorSet(mobileGoal, 0);
     driveToSkills(-150, -150, 800);
     // turn to line up with 5 pt line
-    driveToSkills(140, -140, 1200);
+    driveToSkills(-140, 140, 1200);
+    // drive along 5 pt for 3rd mobile goal
+    driveToSkills(270, 270, 1200);
+    // turn to line up with 3rd mobile goal
+    driveToSkills(-160, 160, 1200);
+    // drive into 3rd mobile goal
+    driveToSkills(450, 450, 1400);
+    // pick up 3rd mobile goal
+    motorSet(mobileGoal, -127);
+    delay(200);
+    driveToSkills(-100, -100, 300);
+    driveToSkills(-310, 310, 1000);
+    motorSet(mobileGoal, 0);
+    // drive to drop 3rd mobile goal in 10 pt
+    driveToSkills(650, 650, 2300);
+    // drop off 3rd mobile goal in 10 pt
+    motorSet(mobileGoal, 127);
+    delay(1000);
+    motorSet(mobileGoal, 0);
+    driveToSkills(-150, -150, 500);
+    // turn around to line up with 4th mobile goal
+    driveToSkills(-310, 310, 2000);
+    // drive into 4th mobile goal
+    driveToSkills(800, 800, 3000);
+    motorSet(mobileGoal, -127);
+    delay(200);
+    // drive to 10 pt zone
+    driveToSkills(500, 500, 1500);
+    motorSet(mobileGoal, 0);
+    // drop off 4th mobile goal
+    motorSet(mobileGoal, 127);
+    delay(1000);
+    motorSet(mobileGoal, 0);
     break;
   case 8: // 20 pt skills, barely works
     encoderReset(rightencoder);

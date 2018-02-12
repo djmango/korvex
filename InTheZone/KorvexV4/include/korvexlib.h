@@ -31,17 +31,18 @@ void fineControlToggle(int fineBtn, int fineBtn2, int reverseBtn,
                        int reverseBtn2);
 void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown);
 void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainControl);
-void autoStackControl(int incrementUpBtn, int incrementDownBtn,
+void autoStackControl(int incrementUpBtn, int incrementDownBtn, 
                       int incrementResetBtn, int driverloadBtn,
                       int fieldloadBtn, int incrementUpNoFuncBtn);
 
 // drive control
-void driveTo(int leftTarget, int rightTarget, int waitTo);
-void driveToSkills(int leftTarget, int rightTarget, int waitTo);
+void driveTo(int leftTarget, int rightTarget, int waitTo); // drive pd control tuned for normal match
+void driveToSkills(int leftTarget, int rightTarget, int waitTo); // drive pid control tuned for skills
 
 // lift control
-void liftTo(int liftTarget, int chainTarget, int waitTo);
+void liftTo(int liftTarget, int chainTarget, int waitTo); // lift pd control
 
 // ext
-void autoStacker(int coneIncrement, bool isDriverload);
-void lcdAutSel(int input);
+void autoStacker(int coneIncrement, bool isDriverload); // autostack presets and run function
+void lcdAutSel(int input); // lcd based autonomous selector
+void rerunRecord(); // recoder for rerun
