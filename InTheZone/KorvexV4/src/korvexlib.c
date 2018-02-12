@@ -196,6 +196,7 @@ void driveToSkills(int leftTarget, int rightTarget, int waitTo) {
       // calculate error
       leftError = (leftTarget - encoderGet(leftencoder));
       rightError = (rightTarget - encoderGet(rightencoder));
+
       // calculate pid
       leftP = (leftError * 1);
       if (abs(leftError) < 15)

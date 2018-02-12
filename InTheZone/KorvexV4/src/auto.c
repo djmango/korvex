@@ -37,7 +37,7 @@
 void autonomous() {
   debugGlobal = true;
   coneIncrementGlobal = 0;
-  auton = 7; // 1-6 reserved for auton, 7 skills, 9 defence, 10 test, -10 for selection
+  auton = 7; // 1-5 reserved for auton, 7 skills, 9 defence, 10 test, -10 for selection
   while (auton == -10) { // if auton has not been selected yet
     lcdAutSel(lcdReadButtons(uart1));
     delay(100);
@@ -222,7 +222,7 @@ void autonomous() {
     delay(1000);
     motorSet(mobileGoal, 0);
     // drive into 1st mobile goal
-    driveToSkills(560, 560, 1500);
+    driveToSkills(580, 580, 2200);
     // pickup 1st mobile goal
     motorSet(mobileGoal, -127);
     delay(400);
@@ -230,7 +230,7 @@ void autonomous() {
     driveToSkills(-300, 300, 1400);
     motorSet(mobileGoal, 0);
     // drive back
-    driveToSkills(650, 650, 1900);
+    driveToSkills(670, 670, 1900);
     // lower mobile goal intake, drop 1st mobile goal in 10 pt
     motorSet(mobileGoal, 127);
     delay(1000);
@@ -239,7 +239,7 @@ void autonomous() {
     // turn to line up with 5 pt line
     driveToSkills(150, -150, 700);
     // drive to line up with 2nd mobile goal
-    driveToSkills(150, 150, 1000);
+    driveToSkills(150, 150, 1200);
     // turn to line up with 2nd mobile goal
     driveToSkills(80, -80, 1200);
     // drive into 2nd mobile goal
@@ -270,21 +270,21 @@ void autonomous() {
     motorSet(mobileGoal, 0);
     driveToSkills(-150, -150, 800);
     // turn to line up with 5 pt line
-    driveToSkills(-140, 140, 1200);
+    driveToSkills(-150, 150, 1200);
     // drive along 5 pt for 3rd mobile goal
-    driveToSkills(270, 270, 1200);
+    driveToSkills(270, 270, 1800);
     // turn to line up with 3rd mobile goal
-    driveToSkills(-160, 160, 1200);
+    driveToSkills(-150, 150, 1200);
     // drive into 3rd mobile goal
     driveToSkills(450, 450, 1400);
     // pick up 3rd mobile goal
     motorSet(mobileGoal, -127);
     delay(200);
     driveToSkills(-100, -100, 300);
-    driveToSkills(-310, 310, 1000);
+    driveToSkills(-305, 305, 1400);
     motorSet(mobileGoal, 0);
     // drive to drop 3rd mobile goal in 10 pt
-    driveToSkills(650, 650, 2300);
+    driveToSkills(610, 610, 2200);
     // drop off 3rd mobile goal in 10 pt
     motorSet(mobileGoal, 127);
     delay(1000);
@@ -293,18 +293,19 @@ void autonomous() {
     // turn around to line up with 4th mobile goal
     driveToSkills(-310, 310, 2000);
     // drive into 4th mobile goal
-    driveToSkills(800, 800, 3000);
-    motorSet(mobileGoal, -127);
+    driveToSkills(600, 600, 2000);
+    driveToSkills(200, 200, 1000);
+    motorSet(mobileGoal, -100);
     delay(200);
     // drive to 10 pt zone
-    driveToSkills(500, 500, 1500);
+    driveToSkills(650, 650, 1700);
     motorSet(mobileGoal, 0);
     // drop off 4th mobile goal
     motorSet(mobileGoal, 127);
     delay(1000);
     motorSet(mobileGoal, 0);
     break;
-  case 8: // 20 pt skills, barely works
+  case 11: // 20 pt skills, barely works
     encoderReset(rightencoder);
     encoderReset(leftencoder);
     // lower mobile goal intake
