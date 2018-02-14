@@ -37,7 +37,7 @@
 void autonomous() {
   debugGlobal = true;
   coneIncrementGlobal = 0;
-  auton = 7; // 1-5 reserved for auton, 7 skills, 9 defence, 10 test, -10 for selection
+  auton = 2; // 1-6 reserved for auton, 7 skills, 9 defence, 10 test, -10 for selection
   while (auton == -10) { // if auton has not been selected yet
     lcdAutSel(lcdReadButtons(uart1));
     delay(100);
@@ -118,42 +118,44 @@ void autonomous() {
     motorSet(mobileGoal, 0);
     driveTo(300, -300, 1000);
     break;
-  case 2: // 5 point 1 cone red left
+  case 2: // 20 point 1 cone red left
     encoderReset(rightencoder);
     encoderReset(leftencoder);
     encoderReset(chainencoder);
     encoderReset(dr4bencoder);
     // lower mobile goal intake
-    motorSet(claw, 127);
-    delay(300);
-    motorSet(claw, 20);
     motorSet(mobileGoal, 127);
-    liftTo(0, 120, 1200);
-    motorSet(mobileGoal, 0);
-    // drive thru cones and into mobile goal
-    driveTo(440, 480, 1800);
-    // final drop of mobo just in case
-    motorSet(mobileGoal, 90);
-    delay(200);
-    motorSet(mobileGoal, 0);
-    // drive into mobo and pickup
-    driveTo(900, 900, 2200);
+    motorSet(claw, -20);
+    liftTo(20, 40, 1000);
+    // account for jolt with slight right tilt
+    motorSet(mobileGoal, 30);
+    driveTo(125, 100, 900);
+    // drive into mobile goal and pickup
+    driveTo(710, 750, 2000);
     motorSet(mobileGoal, -127);
-    liftTo(0, 130, 1500);
-    motorSet(mobileGoal, 0);
-    // stack
-    liftTo(0, 130, 400);
-    motorSet(claw, -90);
-    liftTo(0, 130, 400);
+    delay(300);
+    motorSet(mobileGoal, -80);
+    // drive back and stack
+    driveTo(-700, -700, 2200);
+    liftTo(10, 35, 500);
+    delay(200);
+    motorSet(claw, 127);
+    delay(100);
     motorSet(claw, 0);
-    // backwards
-    driveTo(200, 200, 2200);
-    // turn and drop
-    driveTo(0, 400, 1500);
-    motorSet(mobileGoal, 127);
-    liftTo(0, 120, 1400);
     motorSet(mobileGoal, 0);
-    driveTo(-300, 100, 1000);
+    // turn to line up with 5 pt line
+    driveTo(250, -250, 1400);
+    // drive along 5 pt line
+    driveTo(430, 430, 1500);
+    // turn to face 20 pt
+    driveTo(145, -145, 1000);
+    // drive into 20 pt weeeeee
+    driveTo(500, 500, 1800);
+    motorSet(mobileGoal, 127);
+    liftTo(15, 30, 1400);
+    motorSet(mobileGoal, -127);
+    driveTo(-500, -500, 2000);
+    motorSet(mobileGoal, 0);
     break;
   case 3: // left tricky stationary
     encoderReset(rightencoder);
@@ -305,43 +307,6 @@ void autonomous() {
     delay(1000);
     motorSet(mobileGoal, 0);
     break;
-  case 11: // 20 pt skills, barely works
-    encoderReset(rightencoder);
-    encoderReset(leftencoder);
-    // lower mobile goal intake
-    motorSet(mobileGoal, 127);
-    delay(1000);
-    motorSet(mobileGoal, 0);
-    // drive into mobile goal
-    driveToSkills(520, 520, 1800);
-    // pickup mobile goal and drive back
-    motorSet(mobileGoal, -127);
-    delay(400);
-    driveToSkills(-370, -370, 1800);
-    motorSet(mobileGoal, 0);
-    // turn to start line up with 20pt
-    driveToSkills(170, -170, 1000);
-    // drive to line up with 20 pt
-    driveToSkills(290, 290, 1400);
-    // turn to face 20 pt
-    driveToSkills(160, -160, 1000);
-    // drive into 20 pt
-    driveToSkills(450, 450, 2500);
-    // lower mobile goal intake
-    motorSet(mobileGoal, 127);
-    // driveToSkills(150, 150, 1500); // note future self. if this doesnt work, swap
-    delay(1500);
-    motorSet(mobileGoal, 0);
-    // raise mobile goal intake
-    driveToSkills(-100, -100, 1000);
-    motorSet(mobileGoal, -127);
-    delay(200);
-    motorSet(mobileGoal, -127);
-    // driveToSkills(-500, -500, 1800);
-    delay(1800);
-    motorSet(mobileGoal, 0);
-    driveToSkills(-400, -400, 3000);
-    break;
   case 9: // defence
     driveTo(1000, 1000, 4000);
     break;
@@ -350,8 +315,8 @@ void autonomous() {
     encoderReset(leftencoder);
     encoderReset(chainencoder);
     encoderReset(dr4bencoder);
-    driveToSkills(200, 200, 5000);
-    driveToSkills(-200, -200, 5000);
+    liftTo(10, 50, 15000);
+    break;
   default :
     break;
   }

@@ -30,6 +30,7 @@ void operatorControl() {
     }
     if (auton == -10)  { // if auton has not been selected yet
       lcdAutSel(lcdReadButtons(uart1));
+      delay(100);
     }
     if (isRecording == true) {
       if (count == 5) {

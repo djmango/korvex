@@ -74,7 +74,7 @@ void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown) {
 void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainControl) {
   if (autoStackerEnabled == false) // if autostacker is operating, dont take input
   {
-    motorSet(chainBar, chainControl * -1);
+    motorSet(chainBar, chainControl * 1);
   }
   // claw control
   if (clawBtnUp == 1) {
@@ -131,6 +131,11 @@ void driveTo(int leftTarget, int rightTarget, int waitTo) {
   int leftD;
   int rightD;
   int count = 0;
+  // offset the targets, for easier readability
+  leftTarget = encoderGet(leftencoder) + leftTarget;
+  rightTarget = encoderGet(rightencoder) + rightTarget;
+  leftError = (leftTarget - encoderGet(leftencoder));
+  rightError = (rightTarget - encoderGet(rightencoder));
   while (true) {
     if (count == (waitTo / 100)) {
       return;
@@ -263,11 +268,11 @@ void liftTo(int liftTarget, int chainTarget, int waitTo) {
       liftError = (liftTarget - encoderGet(dr4bencoder));
       chainError = (chainTarget - encoderGet(chainencoder));
 
-      // calculate PD
+      // calculate pd
       liftP = (liftError * 5);
       liftD = ((liftError - liftLastError) * 3);
-      chainP = (chainError * 2);
-      chainD = ((chainError - chainLastError) * 2);
+      chainP = (chainError * 1);
+      chainD = ((chainError - chainLastError) * 1);
 
       // store last error
       liftLastError = liftError;
@@ -278,7 +283,7 @@ void liftTo(int liftTarget, int chainTarget, int waitTo) {
       chainDrive = (chainP + chainD);
 
       // set motor to drive
-      motorSet(dr4b, liftDrive);
+      motorSet(dr4b, liftDrive  * -1);
       motorSet(chainBar, chainDrive * -1);
       if (debugGlobal == true) {
         printf("lift error %d\n", liftError);
@@ -303,7 +308,7 @@ void liftTo(int liftTarget, int chainTarget, int waitTo) {
 /*-----------------------------------------------------------------------------*/
 void lcdAutSel(int input) {
   // min and max holds
-  int lcdHoldMin = -2;
+  int lcdHoldMin = -3;
   int lcdHoldMax = 3;
   
   // update holder accordingly
@@ -324,6 +329,10 @@ void lcdAutSel(int input) {
   
   // display according to holder
   switch (lcdHoldGlobal) {
+    case -3: // defence
+      lcdSetText(uart1, 1, "   defenceBoi   ");
+      lcdSetText(uart1, 2, "<- | select | ->");
+      break;
     case -2: // red right
       lcdSetText(uart1, 1, "   red  right   ");
       lcdSetText(uart1, 2, "<- | select | ->");
@@ -352,15 +361,20 @@ void lcdAutSel(int input) {
 
   if (input == 2) { // ooh you got chosen, now do your thing
     switch (lcdHoldGlobal) {
+    case -3: // defence
+      lcdSetText(uart1, 1, "|  defenceBoi  |");
+      lcdSetText(uart1, 2, "korvex  robotics");
+      auton = 9;
+      break;
     case -2: // red right
       lcdSetText(uart1, 1, "|  red  right  |");
       lcdSetText(uart1, 2, "korvex  robotics");
-      auton = 2;
+      auton = 3;
       break;
     case -1: // red left
       lcdSetText(uart1, 1, "|  red   left  |");
       lcdSetText(uart1, 2, "korvex  robotics");
-      auton = 3;
+      auton = 2;
       break;
     case 0: // disabled
       lcdSetText(uart1, 1, "|   disabled   |");
