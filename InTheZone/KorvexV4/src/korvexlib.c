@@ -22,7 +22,7 @@ void dr4bControl(int dr4bControl) {
   // lift control
   if (autoStackerEnabled == false) // if driver is trying to control dr4b, disable autostacker and let them
   {
-    motorSet(dr4b, dr4bControl);
+    motorSet(dr4b, dr4bControl * -1);
   }
 }
 
@@ -72,18 +72,21 @@ void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown) {
 /*  cone handler control                                                       */
 /*-----------------------------------------------------------------------------*/
 void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainControl) {
-  if (autoStackerEnabled == false) // if autostacker is operating, dont take input
+  if (autoStackerEnabled == false && encoderGet(chainencoder) > 30) // if autostacker is operating, dont take input
   {
     motorSet(chainBar, chainControl * 1);
+  }
+  if (encoderGet(chainencoder) < 30) {
+    motorSet(chainBar, -45);
   }
   // claw control
   if (clawBtnUp == 1) {
     // move up
-    motorSet(claw, 40);
+    motorSet(claw, 60);
   }
   if (clawBtnDown == 1) {
     // move down
-    motorSet(claw, -40);
+    motorSet(claw, -60);
   }
   if (clawBtnUp == 0 && clawBtnDown == 0) {
     // dont move
@@ -269,8 +272,8 @@ void liftTo(int liftTarget, int chainTarget, int waitTo) {
       chainError = (chainTarget - encoderGet(chainencoder));
 
       // calculate pd
-      liftP = (liftError * 5);
-      liftD = ((liftError - liftLastError) * 3);
+      liftP = (liftError * 6);
+      liftD = ((liftError - liftLastError) * 5);
       chainP = (chainError * 1);
       chainD = ((chainError - chainLastError) * 1);
 

@@ -123,36 +123,38 @@ void autonomous() {
     encoderReset(leftencoder);
     encoderReset(chainencoder);
     encoderReset(dr4bencoder);
-    // lower mobile goal intake
-    motorSet(mobileGoal, 127);
+    // lower mobile goal intak
     motorSet(claw, -20);
-    liftTo(20, 40, 1000);
+    liftTo(15, 40, 300);
+    motorSet(mobileGoal, 127);
+    liftTo(20, 40, 500); // .8 seconds in
     // account for jolt with slight right tilt
-    motorSet(mobileGoal, 30);
-    driveTo(125, 100, 900);
+    driveTo(115, 100, 900);
+    motorSet(mobileGoal, 40);
     // drive into mobile goal and pickup
-    driveTo(710, 750, 2000);
+    driveTo(700, 750, 2000); // 3.7 seconds in
     motorSet(mobileGoal, -127);
     delay(300);
     motorSet(mobileGoal, -80);
     // drive back and stack
-    driveTo(-700, -700, 2200);
-    liftTo(10, 35, 500);
-    delay(200);
+    driveTo(-700, -700, 2200); // 5.9 seconds in
+    motorSet(mobileGoal, 0);
+    // turn to line up with 5 pt line
+    driveTo(250, -250, 1200);
+    // drop cone
+    liftTo(0, 45, 500);
+    delay(100);
     motorSet(claw, 127);
     delay(100);
     motorSet(claw, 0);
-    motorSet(mobileGoal, 0);
-    // turn to line up with 5 pt line
-    driveTo(250, -250, 1400);
     // drive along 5 pt line
-    driveTo(430, 430, 1500);
+    driveTo(390, 390, 1400); // 9.2 seconds in
     // turn to face 20 pt
-    driveTo(145, -145, 1000);
+    driveTo(150, -150, 1200);
     // drive into 20 pt weeeeee
-    driveTo(500, 500, 1800);
+    driveTo(400, 400, 2000);
     motorSet(mobileGoal, 127);
-    liftTo(15, 30, 1400);
+    liftTo(15, 30, 1200); // 13.6 seconds in
     motorSet(mobileGoal, -127);
     driveTo(-500, -500, 2000);
     motorSet(mobileGoal, 0);
@@ -315,7 +317,7 @@ void autonomous() {
     encoderReset(leftencoder);
     encoderReset(chainencoder);
     encoderReset(dr4bencoder);
-    liftTo(10, 50, 15000);
+    liftTo(10, 35, 10000);
     break;
   default :
     break;
