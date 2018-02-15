@@ -74,8 +74,8 @@ void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainControl) {
   {
     motorSet(chainBar, chainControl * 1);
   }
-  if (encoderGet(chainencoder) < 35) {
-    motorSet(chainBar, ((35 - encoderGet(chainencoder)) * -4)); // dynamic power calculation to keep it at 35
+  if (encoderGet(chainencoder) < 35); {
+    motorSet(chainBar, ((35 - encoderGet(chainencoder)) * -3)); // dynamic power calculation to keep it at 35
   }
   // claw control
   if (clawBtnUp == 1) {
