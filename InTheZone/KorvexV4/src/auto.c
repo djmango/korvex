@@ -142,7 +142,7 @@ void autonomous() {
     // turn to line up with 5 pt line
     driveTo(250, -250, 1200);
     // drop cone
-    liftTo(0, 45, 500);
+    liftTo(0, 38, 500);
     delay(100);
     motorSet(claw, 127);
     delay(100);

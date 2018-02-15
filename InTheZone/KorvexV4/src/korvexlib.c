@@ -76,8 +76,8 @@ void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainControl) {
   {
     motorSet(chainBar, chainControl * 1);
   }
-  if (encoderGet(chainencoder) < 30) {
-    motorSet(chainBar, -45);
+  if (encoderGet(chainencoder) < 35) {
+    motorSet(chainBar, -35);
   }
   // claw control
   if (clawBtnUp == 1) {
@@ -101,7 +101,7 @@ void autoStackControl(int incrementUpBtn, int incrementDownBtn, int incrementRes
   if (fieldloadBtn == 1) {
     isDriverloadGlobal = false;
   }
-  if (incrementUpBtn == 1) { 
+  if (incrementUpBtn == 1) {
     coneIncrementGlobal = coneIncrementGlobal + 1;
     autoStacker(coneIncrementGlobal, isDriverloadGlobal);
     delay(500);
@@ -313,7 +313,7 @@ void lcdAutSel(int input) {
   // min and max holds
   int lcdHoldMin = -3;
   int lcdHoldMax = 3;
-  
+
   // update holder accordingly
   if (input == 1) { // if the left button is pushed
     lcdHoldGlobal = lcdHoldGlobal - 1;
@@ -329,7 +329,7 @@ void lcdAutSel(int input) {
   if (lcdHoldGlobal < lcdHoldMin) {
     lcdHoldGlobal = lcdHoldMin;
   }
-  
+
   // display according to holder
   switch (lcdHoldGlobal) {
     case -3: // defence
