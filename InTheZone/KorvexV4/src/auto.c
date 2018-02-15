@@ -95,7 +95,7 @@ void autonomous() {
     driveTo(115, 100, 800);
     motorSet(mobileGoal, 40);
     // drive into mobile goal and pickup
-    driveTo(700, 770, 2000);
+    driveTo(730, 700, 2000);
     motorSet(mobileGoal, -127);
     delay(300);
     motorSet(mobileGoal, -80);
