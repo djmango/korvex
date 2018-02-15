@@ -37,7 +37,7 @@
 void autonomous() {
   debugGlobal = true;
   coneIncrementGlobal = 0;
-  auton = 2; // 1-6 reserved for auton, 7 skills, 9 defence, 10 test, -10 for selection
+  auton = 1; // 1-6 reserved for auton, 7 skills, 9 defence, 10 test, -10 for selection
   while (auton == -10) { // if auton has not been selected yet
     lcdAutSel(lcdReadButtons(uart1));
     delay(100);
@@ -81,42 +81,45 @@ void autonomous() {
     motorSet(mobileGoal, 0);
     driveTo(-300, 100, 1000);
     break;
-  case 1: // 5 point 1 cone blue right
+  case 1: // 20 point 1 cone blue right
     encoderReset(rightencoder);
     encoderReset(leftencoder);
     encoderReset(chainencoder);
     encoderReset(dr4bencoder);
-    // lower mobile goal intake
-    motorSet(claw, 127);
-    delay(300);
-    motorSet(claw, 20);
+    // lower mobile goal intak
+    motorSet(claw, -20);
+    liftTo(15, 40, 300);
     motorSet(mobileGoal, 127);
-    liftTo(0, 120, 1200);
-    motorSet(mobileGoal, 0);
-    // drive thru cones and into mobile goal
-    driveTo(560, 520, 2000);
-    // final drop of mobo just in case
-    motorSet(mobileGoal, 90);
-    delay(200);
-    motorSet(mobileGoal, 0);
-    // drive into mobo and pickup
-    driveTo(900, 900, 1400);
+    liftTo(20, 40, 500);
+    // account for jolt with slight right tilt
+    driveTo(115, 100, 800);
+    motorSet(mobileGoal, 40);
+    // drive into mobile goal and pickup
+    driveTo(700, 770, 2000);
     motorSet(mobileGoal, -127);
-    liftTo(0, 130, 1500);
+    delay(300);
+    motorSet(mobileGoal, -80);
+    // drive back and stack
+    driveTo(-700, -700, 2200);
     motorSet(mobileGoal, 0);
-    // stack
-    liftTo(0, 130, 400);
-    motorSet(claw, -90);
-    liftTo(0, 130, 400);
+    // turn to line up with 5 pt line
+    driveTo(-240, 240, 1200);
+    // drop cone
+    liftTo(0, 40, 600);
+    motorSet(claw, 127);
+    delay(100);
     motorSet(claw, 0);
-    // backwards
-    driveTo(200, 200, 2200);
-    // turn and drop
-    driveTo(400, 0, 800);
+    // drive along 5 pt line
+    driveTo(300, 300, 1200);
+    // turn to face 20 pt
+    driveTo(-140, 140, 1000);
+    // drive into 20 pt weeeeee
+    driveTo(400, 400, 1800);
     motorSet(mobileGoal, 127);
-    liftTo(0, 120, 1400);
+    liftTo(15, 30, 1300);
+    motorSet(mobileGoal, -127);
+    driveTo(-500, -500, 2000);
     motorSet(mobileGoal, 0);
-    driveTo(300, -300, 1000);
     break;
   case 2: // 20 point 1 cone red left
     encoderReset(rightencoder);
@@ -127,34 +130,33 @@ void autonomous() {
     motorSet(claw, -20);
     liftTo(15, 40, 300);
     motorSet(mobileGoal, 127);
-    liftTo(20, 40, 500); // .8 seconds in
+    liftTo(20, 40, 500);
     // account for jolt with slight right tilt
-    driveTo(115, 100, 900);
+    driveTo(115, 100, 800);
     motorSet(mobileGoal, 40);
     // drive into mobile goal and pickup
-    driveTo(700, 750, 2000); // 3.7 seconds in
+    driveTo(700, 770, 2000);
     motorSet(mobileGoal, -127);
     delay(300);
     motorSet(mobileGoal, -80);
     // drive back and stack
-    driveTo(-700, -700, 2200); // 5.9 seconds in
+    driveTo(-700, -700, 2200);
     motorSet(mobileGoal, 0);
     // turn to line up with 5 pt line
-    driveTo(250, -250, 1200);
+    driveTo(240, -240, 1200);
     // drop cone
-    liftTo(0, 38, 500);
-    delay(100);
+    liftTo(0, 40, 600);
     motorSet(claw, 127);
     delay(100);
     motorSet(claw, 0);
     // drive along 5 pt line
-    driveTo(390, 390, 1400); // 9.2 seconds in
+    driveTo(300, 300, 1200);
     // turn to face 20 pt
-    driveTo(150, -150, 1200);
+    driveTo(140, -140, 1000);
     // drive into 20 pt weeeeee
-    driveTo(400, 400, 2000);
+    driveTo(400, 400, 1800);
     motorSet(mobileGoal, 127);
-    liftTo(15, 30, 1200); // 13.6 seconds in
+    liftTo(15, 30, 1300);
     motorSet(mobileGoal, -127);
     driveTo(-500, -500, 2000);
     motorSet(mobileGoal, 0);

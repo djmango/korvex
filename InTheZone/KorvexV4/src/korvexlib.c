@@ -72,12 +72,12 @@ void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown) {
 /*  cone handler control                                                       */
 /*-----------------------------------------------------------------------------*/
 void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainControl) {
-  if (autoStackerEnabled == false && encoderGet(chainencoder) > 30) // if autostacker is operating, dont take input
+  if (autoStackerEnabled == false && encoderGet(chainencoder) > 35) // if autostacker is operating, dont take input
   {
     motorSet(chainBar, chainControl * 1);
   }
   if (encoderGet(chainencoder) < 35) {
-    motorSet(chainBar, -35);
+    motorSet(chainBar, ((35 - encoderGet(chainencoder)) * -4)); // dynamic power calculation to keep it at 35
   }
   // claw control
   if (clawBtnUp == 1) {
