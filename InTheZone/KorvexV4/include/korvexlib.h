@@ -5,7 +5,6 @@ Encoder leftencoder;
 Encoder rightencoder;
 Encoder chainencoder;
 Encoder dr4bencoder;
-Encoder mobilegoalencoder;
 
 // auto stacker globals
 int coneIncrementGlobal; // this will hold the amount of cones we currently have

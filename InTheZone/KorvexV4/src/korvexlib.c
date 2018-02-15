@@ -2,8 +2,6 @@
 #include "constants.h"
 #include "korvexlib.h"
 
-// functions
-
 /*-----------------------------------------------------------------------------*/
 /*  drive control, user input, direct                                          */
 /*-----------------------------------------------------------------------------*/
@@ -94,6 +92,9 @@ void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainControl) {
   }
 }
 
+/*-----------------------------------------------------------------------------*/
+/*  auto stack control                                                         */
+/*-----------------------------------------------------------------------------*/
 void autoStackControl(int incrementUpBtn, int incrementDownBtn, int incrementResetBtn, int driverloadBtn, int fieldloadBtn, int incrementUpNoFuncBtn) {
   if (driverloadBtn == 1) {
     isDriverloadGlobal = true;
