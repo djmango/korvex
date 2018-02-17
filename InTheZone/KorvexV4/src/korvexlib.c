@@ -7,17 +7,45 @@
 /*-----------------------------------------------------------------------------*/
 void driveControl(int chassisControlLeft, int chassisControlRight) {
   // chassis control
-  if (motorGet(driveLeft) < 60 && motorGet(driveLeft) > -60) {
+
+  // log direction
+  if (((chassisControlLeft + chassisControlRight) / 2) > 15) { // log that we are moving forward
+    driveDirection = 1;
+  }
+  else if (((chassisControlLeft + chassisControlRight) / 2) < -15) { // log that we are moving backward
+    driveDirection = 0;
+  }
+  else {
+    driveDirection = -1;
+  }
+
+  // decide to curve or not
+  if (driveLastDirection != driveDirection) { // if we switched directions, curve speed
+    driveSinceChange = -3;
+  }
+  
+  if (driveSinceChange > 0) {
+    driveSinceChange = driveSinceChange + 1;
+    motorSet(driveLeft, (chassisControlRight * -1));
+    motorSet(driveRight, (chassisControlLeft * -1));
+    motorSet(driveLeft2, (chassisControlRight * -1));
+    motorSet(driveRight2, (chassisControlLeft * -1));
+  }
+  else {
+    driveSinceChange = driveSinceChange + 1;
     motorSet(driveLeft, (chassisControlRight * -.3));
     motorSet(driveRight, (chassisControlLeft * -.3));
     motorSet(driveLeft2, (chassisControlRight * -.3));
     motorSet(driveRight2, (chassisControlLeft * -.3));
   }
-  else {
-    motorSet(driveLeft, (chassisControlRight * -1));
-    motorSet(driveRight, (chassisControlLeft * -1));
-    motorSet(driveLeft2, (chassisControlRight * -1));
-    motorSet(driveRight2, (chassisControlLeft * -1));
+
+  // store direction
+  driveLastDirection = driveDirection;
+
+  if (debugGlobal == true) {
+    printf("drs%d\n", driveSinceChange);
+    printf("dr%d\n", driveDirection);
+    printf("dld%d\n", driveLastDirection);
   }
 }
 

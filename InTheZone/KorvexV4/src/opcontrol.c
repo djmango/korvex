@@ -11,6 +11,7 @@
  */
 
 void operatorControl() {
+  driveSinceChange = 0;
   debugGlobal = true;
   chainBufferGlobal = 0;
   lcdSetBacklight(uart1, true);

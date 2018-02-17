@@ -23,6 +23,11 @@ bool debugGlobal; // set this to true whenever you want print statements in term
 bool isRecording; // ill get to this stuff eventually :wink:
 bool isReplaying;
 
+// ext globals
+int driveSinceChange; // this will tell us how much time it has been since a brake
+int driveDirection; // 1 is forward 0 is backward
+int driveLastDirection; // 1 is forward 0 is backward, last significant direction
+
 // opcontrol functions
 void driveControl(int chassisControlLeft, int chassisControlRight);
 void dr4bControl(int dr4bControl);
