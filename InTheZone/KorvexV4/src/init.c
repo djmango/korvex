@@ -29,7 +29,7 @@ void initialize() {
   leftencoder = encoderInit(2, 3, true);
   rightencoder = encoderInit(4, 5, true);
   dr4bencoder = encoderInit(6, 7, true);
-  chainencoder = encoderInit(8, 9, false);
+  chainencoder = encoderInit(8, 9, true);
   lcdInit(uart1);
   lcdClear(uart1);
 }

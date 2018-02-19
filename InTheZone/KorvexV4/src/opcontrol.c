@@ -11,7 +11,9 @@
  */
 
 void operatorControl() {
+  driveSinceChange = 0;
   debugGlobal = true;
+  chainBufferGlobal = 0;
   lcdSetBacklight(uart1, true);
   lcdHoldGlobal = 0;
   auton = -10;
@@ -43,7 +45,7 @@ void operatorControl() {
     dr4bControl(joystickGetAnalog(2, 2));
     mobileGoalControl(joystickGetDigital(1, 6, JOY_UP), joystickGetDigital(1, 6, JOY_DOWN));
     coneHandlerControl(joystickGetDigital(2, 5, JOY_UP), joystickGetDigital(2, 5, JOY_DOWN), joystickGetAnalog(2, 3));
-    autoStackControl(joystickGetDigital(2, 7, JOY_UP), joystickGetDigital(2, 7, JOY_DOWN), joystickGetDigital(2,7, JOY_RIGHT), joystickGetDigital(2, 8, JOY_RIGHT), joystickGetDigital(2, 8, JOY_LEFT), joystickGetDigital(2, 8, JOY_UP));
+    autoStackControl(joystickGetDigital(2, 7, JOY_UP), joystickGetDigital(2, 7, JOY_DOWN), joystickGetDigital(2, 7, JOY_RIGHT), joystickGetDigital(2, 8, JOY_RIGHT), joystickGetDigital(2, 8, JOY_LEFT), joystickGetDigital(2, 8, JOY_UP), joystickGetDigital(2, 8, JOY_DOWN), joystickGetDigital(2, 6, JOY_UP), joystickGetDigital(2, 6, JOY_DOWN));
     count = count + 1;
     delay(20);
   }

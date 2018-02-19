@@ -37,7 +37,8 @@
 void autonomous() {
   debugGlobal = true;
   coneIncrementGlobal = 0;
-  auton = 1; // 1-6 reserved for auton, 7 skills, 9 defence, 10 test, -10 for selection
+  chainBufferGlobal = 0;
+  // auton = 8; // 1-6 reserved for auton, 7 skills, 9 defence, 10 test, -10 for selection
   while (auton == -10) { // if auton has not been selected yet
     lcdAutSel(lcdReadButtons(uart1));
     delay(100);
@@ -88,14 +89,14 @@ void autonomous() {
     encoderReset(dr4bencoder);
     // lower mobile goal intak
     motorSet(claw, -20);
-    liftTo(15, 40, 300);
-    motorSet(mobileGoal, 127);
-    liftTo(20, 40, 500);
+    liftTo(15, 55, 300);
+    motorSet(mobileGoal, 90);
+    liftTo(20, 55, 500);
     // account for jolt with slight right tilt
     driveTo(115, 100, 800);
     motorSet(mobileGoal, 40);
     // drive into mobile goal and pickup
-    driveTo(700, 770, 2000);
+    driveTo(730, 700, 2000);
     motorSet(mobileGoal, -127);
     delay(300);
     motorSet(mobileGoal, -80);
@@ -105,7 +106,7 @@ void autonomous() {
     // turn to line up with 5 pt line
     driveTo(-240, 240, 1200);
     // drop cone
-    liftTo(0, 40, 600);
+    liftTo(0, 55, 600);
     motorSet(claw, 127);
     delay(100);
     motorSet(claw, 0);
@@ -114,7 +115,7 @@ void autonomous() {
     // turn to face 20 pt
     driveTo(-140, 140, 1000);
     // drive into 20 pt weeeeee
-    driveTo(400, 400, 1800);
+    driveTo(460, 460, 2000);
     motorSet(mobileGoal, 127);
     liftTo(15, 30, 1300);
     motorSet(mobileGoal, -127);
@@ -128,9 +129,9 @@ void autonomous() {
     encoderReset(dr4bencoder);
     // lower mobile goal intak
     motorSet(claw, -20);
-    liftTo(15, 40, 300);
+    liftTo(15, 55, 300);
     motorSet(mobileGoal, 127);
-    liftTo(20, 40, 500);
+    liftTo(20, 55, 500);
     // account for jolt with slight right tilt
     driveTo(115, 100, 800);
     motorSet(mobileGoal, 40);
@@ -145,7 +146,7 @@ void autonomous() {
     // turn to line up with 5 pt line
     driveTo(240, -240, 1200);
     // drop cone
-    liftTo(0, 40, 600);
+    liftTo(0, 55, 600);
     motorSet(claw, 127);
     delay(100);
     motorSet(claw, 0);
@@ -154,7 +155,7 @@ void autonomous() {
     // turn to face 20 pt
     driveTo(140, -140, 1000);
     // drive into 20 pt weeeeee
-    driveTo(400, 400, 1800);
+    driveTo(460, 460, 1800);
     motorSet(mobileGoal, 127);
     liftTo(15, 30, 1300);
     motorSet(mobileGoal, -127);
@@ -185,25 +186,37 @@ void autonomous() {
     driveTo(700, 250, 1000);
     liftTo(0, 10, 1000);
     break;
-  case 5: // tricky stationary red right
+  case 5: // tricky stationary right
     encoderReset(rightencoder);
     encoderReset(leftencoder);
     encoderReset(chainencoder);
     encoderReset(dr4bencoder);
     // line up with stationary
-    driveTo(50, 300, 1500);
-    driveTo(150, 150, 1200);
-    liftTo(50, 30, 1000);
+    driveTo(0, 370, 1600);
+    // drive into stationary
+    driveTo(130, 130, 1000);
+    // stack
+    liftTo(70, 40, 2000);
+    liftTo(40, 70, 2000);
+    motorSet(claw, 50);
+    delay(200);
+    motorSet(claw, 0);
     break;
-  case 6: // tricky stationary blue left
+  case 6: // tricky stationary left
     encoderReset(rightencoder);
     encoderReset(leftencoder);
     encoderReset(chainencoder);
     encoderReset(dr4bencoder);
     // line up with stationary
-    driveTo(300, 50, 1500);
-    driveTo(150, 150, 1200);
-    liftTo(50, 30, 1000);
+    driveTo(370, 0, 1600);
+    // drive into stationary
+    driveTo(150, 150, 1800);
+    // stack
+    liftTo(70, 40, 2000);
+    liftTo(40, 70, 2000);
+    motorSet(claw, 50);
+    delay(200);
+    motorSet(claw, 0);
     break;
   case 7: // skills
     encoderReset(rightencoder);
@@ -296,8 +309,15 @@ void autonomous() {
     delay(1000);
     motorSet(mobileGoal, 0);
     break;
-  case 9: // defence
-    driveTo(1000, 1000, 4000);
+  case 8: // defence left
+    driveTo(60, -60, 700);
+    driveTo(1250, 1250, 4000);
+    driveTo(-500, -500, 2000);
+    break;
+  case 9: // defence right
+    driveTo(-40, 40, 700);
+    driveTo(1100, 1100, 4000);
+    driveTo(-500, -500, 2000);
     break;
   case 10: // test
     encoderReset(rightencoder);

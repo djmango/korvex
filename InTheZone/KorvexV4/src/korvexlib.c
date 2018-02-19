@@ -7,10 +7,46 @@
 /*-----------------------------------------------------------------------------*/
 void driveControl(int chassisControlLeft, int chassisControlRight) {
   // chassis control
-  motorSet(driveLeft, (chassisControlRight * -1));
-  motorSet(driveRight, (chassisControlLeft * -1));
-  motorSet(driveLeft2, (chassisControlRight * -1));
-  motorSet(driveRight2, (chassisControlLeft * -1));
+
+  // log direction
+  if (((chassisControlLeft + chassisControlRight) / 2) > 15) { // log that we are moving forward
+    driveDirection = 1;
+  }
+  else if (((chassisControlLeft + chassisControlRight) / 2) < -15) { // log that we are moving backward
+    driveDirection = 0;
+  }
+  else {
+    driveDirection = -1;
+  }
+
+  // decide to curve or not
+  if (driveLastDirection != driveDirection) { // if we switched directions, curve speed
+    driveSinceChange = -3;
+  }
+  
+  if (driveSinceChange > 0) {
+    driveSinceChange = driveSinceChange + 1;
+    motorSet(driveLeft, (chassisControlRight * -1));
+    motorSet(driveRight, (chassisControlLeft * -1));
+    motorSet(driveLeft2, (chassisControlRight * -1));
+    motorSet(driveRight2, (chassisControlLeft * -1));
+  }
+  else {
+    driveSinceChange = driveSinceChange + 1;
+    motorSet(driveLeft, (chassisControlRight * -.3));
+    motorSet(driveRight, (chassisControlLeft * -.3));
+    motorSet(driveLeft2, (chassisControlRight * -.3));
+    motorSet(driveRight2, (chassisControlLeft * -.3));
+  }
+
+  // store direction
+  driveLastDirection = driveDirection;
+
+  if (debugGlobal == true) {
+    printf("drs%d\n", driveSinceChange);
+    printf("dr%d\n", driveDirection);
+    printf("dld%d\n", driveLastDirection);
+  }
 }
 
 /*-----------------------------------------------------------------------------*/
@@ -29,32 +65,6 @@ void dr4bControl(int dr4bControl) {
 /*-----------------------------------------------------------------------------*/
 void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown) {
   // mobo lift control
-  // if (moboLiftBtnUp == true) { // if user wants mobile goal to be up, set values accordingly
-  //   int target = 10;
-  //   int error = 1;
-  //   while (error != 0) {
-  //     error = (target - encoderGet(mobilegoalencoder)); // get error
-  //     int drive = error * 5;       // calc drive, which is motor power
-  //     motorSet(mobileGoal, drive); // set motor to desired power
-  //     if (isAutonomous == false) {
-  //       driveControl(joystickGetAnalog(1, 3), joystickGetAnalog(1, 2));
-  //     }
-  //   }
-  //   motorSet(mobileGoal, 0);
-  // }
-  // if (moboLiftBtnDown == 1) {
-  //   int target = -10;
-  //   int error = 1;
-  //   while (error != 0) {
-  //     error = (target - encoderGet(mobilegoalencoder)); // get error
-  //     int drive = error * 5;       // calc drive, which is motor power
-  //     motorSet(mobileGoal, drive); // set motor to desired power
-  //     if (isAutonomous == false) {
-  //       driveControl(joystickGetAnalog(1, 3), joystickGetAnalog(1, 2));
-  //     }
-  //   }
-  //   motorSet(mobileGoal, 0);
-  // }
   if (moboLiftBtnUp == 1) {
     motorSet(mobileGoal, 127);
   }
@@ -70,13 +80,10 @@ void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown) {
 /*  cone handler control                                                       */
 /*-----------------------------------------------------------------------------*/
 void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainControl) {
-  if (autoStackerEnabled == false && encoderGet(chainencoder) > 35) // if autostacker is operating, dont take input
-  {
+  if (isDriverloadGlobal == true && autoStackerEnabled == false)
+    liftTo(20, 110, 100);
+  else
     motorSet(chainBar, chainControl * 1);
-  }
-  if (encoderGet(chainencoder) < 35) {
-    motorSet(chainBar, ((35 - encoderGet(chainencoder)) * -4)); // dynamic power calculation to keep it at 35
-  }
   // claw control
   if (clawBtnUp == 1) {
     // move up
@@ -95,7 +102,7 @@ void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainControl) {
 /*-----------------------------------------------------------------------------*/
 /*  auto stack control                                                         */
 /*-----------------------------------------------------------------------------*/
-void autoStackControl(int incrementUpBtn, int incrementDownBtn, int incrementResetBtn, int driverloadBtn, int fieldloadBtn, int incrementUpNoFuncBtn) {
+void autoStackControl(int incrementUpBtn, int incrementDownBtn, int incrementResetBtn, int driverloadBtn, int fieldloadBtn, int incrementUpNoFuncBtn, int resetBtn, int bufferUp, int bufferDown) {
   if (driverloadBtn == 1) {
     isDriverloadGlobal = true;
   }
@@ -105,18 +112,28 @@ void autoStackControl(int incrementUpBtn, int incrementDownBtn, int incrementRes
   if (incrementUpBtn == 1) {
     coneIncrementGlobal = coneIncrementGlobal + 1;
     autoStacker(coneIncrementGlobal, isDriverloadGlobal);
-    delay(500);
+    delay(300);
   }
   if (incrementDownBtn == 1 && incrementUpBtn == 0) {
     coneIncrementGlobal = coneIncrementGlobal = coneIncrementGlobal - 1;
-    delay(500);
+    delay(300);
   }
   if (incrementResetBtn == 1) {
     coneIncrementGlobal = 0;
   }
   if (incrementUpNoFuncBtn == 1) {
     coneIncrementGlobal = coneIncrementGlobal = coneIncrementGlobal + 1;
-    delay(500);
+    delay(300);
+  }
+  if (bufferUp == 1) {
+    chainBufferGlobal = -5;
+  }
+  if (bufferDown == 1) {
+    chainBufferGlobal = 5;
+  }
+  if (resetBtn == 1) {
+    encoderReset(dr4bencoder);
+    encoderReset(chainencoder);
   }
 }
 
@@ -142,6 +159,10 @@ void driveTo(int leftTarget, int rightTarget, int waitTo) {
   rightError = (rightTarget - encoderGet(rightencoder));
   while (true) {
     if (count == (waitTo / 100)) {
+      motorSet(driveLeft, 0);
+      motorSet(driveLeft2, 0);
+      motorSet(driveRight, 0);
+      motorSet(driveRight2, 0);
       return;
     } else {
       // calculate error
@@ -259,8 +280,10 @@ void liftTo(int liftTarget, int chainTarget, int waitTo) {
   int chainLastError = 0;
   int liftP;
   int chainP;
+  float chainI = 0;
   int liftD;
   int chainD;
+  int chainBuffer = 0;
   int count = 0;
   while (true) {
     if (count == (waitTo / 100)) {
@@ -270,21 +293,32 @@ void liftTo(int liftTarget, int chainTarget, int waitTo) {
     } else {
       // calculate error
       liftError = (liftTarget - encoderGet(dr4bencoder));
-      chainError = (chainTarget - encoderGet(chainencoder));
+      chainError = ((chainTarget + chainBufferGlobal - 8) - encoderGet(chainencoder));
 
-      // calculate pd
+      // calculate pid
       liftP = (liftError * 6);
       liftD = ((liftError - liftLastError) * 5);
-      chainP = (chainError * 1);
+      chainP = (chainError * .5);
+      if (abs(chainError) < 20 && chainI > 20) // if we are in range for I to be desireable
+        chainI = ((chainI + chainError) * .55);
+      else
+        chainI = 20; // constant buffer because the motors are awful
       chainD = ((chainError - chainLastError) * 1);
 
       // store last error
       liftLastError = liftError;
       chainLastError = chainLastError;
+      
+      // a buffer because im lazy
+      if (chainError != 0 && chainError == chainLastError) {
+        chainBuffer = chainBuffer + 15;
+      }
+      else
+        chainBuffer = 0;
 
       // calculate drive
       liftDrive = (liftP + liftD);
-      chainDrive = (chainP + chainD);
+      chainDrive = (chainP + chainI + chainD + chainBuffer);
 
       // set motor to drive
       motorSet(dr4b, liftDrive  * -1);
@@ -297,7 +331,7 @@ void liftTo(int liftTarget, int chainTarget, int waitTo) {
       }
       // keep drive enabled if in driver
       if (isAutonomous() == false) {
-        driveControl(joystickGetAnalog(1, 3), joystickGetAnalog(1, 2));
+        driveControl(joystickGetAnalog(1, 2), joystickGetAnalog(1, 3));
         mobileGoalControl(joystickGetDigital(1, 6, JOY_UP),
                           joystickGetDigital(1, 6, JOY_DOWN));
       }
@@ -333,12 +367,15 @@ void lcdAutSel(int input) {
 
   // display according to holder
   switch (lcdHoldGlobal) {
-    case -3: // defence
-      lcdSetText(uart1, 1, "   defenceBoi   ");
+    case -4: // defence right
+      lcdSetText(uart1, 1, "  defence right ");
+      lcdSetText(uart1, 2, "<- | select | ->");
+    case -3: // defence left
+      lcdSetText(uart1, 1, "  defence left  ");
       lcdSetText(uart1, 2, "<- | select | ->");
       break;
-    case -2: // red right
-      lcdSetText(uart1, 1, "   red  right   ");
+    case -2: // stationary left
+      lcdSetText(uart1, 1, " stationary left");
       lcdSetText(uart1, 2, "<- | select | ->");
       break;
     case -1: // red left
@@ -349,8 +386,8 @@ void lcdAutSel(int input) {
       lcdSetText(uart1, 1, "    disabled    ");
       lcdSetText(uart1, 2, "<- | select | ->");
       break;
-    case 1: // blue left
-      lcdSetText(uart1, 1, "   blue  left   ");
+    case 1: // stationary right
+      lcdSetText(uart1, 1, "stationary right");
       lcdSetText(uart1, 2, "<- | select | ->");
       break;
     case 2: // blue right
@@ -365,15 +402,20 @@ void lcdAutSel(int input) {
 
   if (input == 2) { // ooh you got chosen, now do your thing
     switch (lcdHoldGlobal) {
-    case -3: // defence
-      lcdSetText(uart1, 1, "|  defenceBoi  |");
-      lcdSetText(uart1, 2, "korvex  robotics");
+    case -4: // defence right
+      lcdSetText(uart1, 1, "  defence right  ");
+      lcdSetText(uart1, 2, "u got rekt lol xd");
       auton = 9;
       break;
-    case -2: // red right
-      lcdSetText(uart1, 1, "|  red  right  |");
-      lcdSetText(uart1, 2, "korvex  robotics");
-      auton = 3;
+    case -3: // defence left
+      lcdSetText(uart1, 1, "  defence left  ");
+      lcdSetText(uart1, 2, "u got rekt lol xd");
+      auton = 8;
+      break;
+    case -2: // stationary left
+      lcdSetText(uart1, 1, "| station left |");
+      lcdSetText(uart1, 2, "haha we fooled u");
+      auton = 6;
       break;
     case -1: // red left
       lcdSetText(uart1, 1, "|  red   left  |");
@@ -382,13 +424,13 @@ void lcdAutSel(int input) {
       break;
     case 0: // disabled
       lcdSetText(uart1, 1, "|   disabled   |");
-      lcdSetText(uart1, 2, "korvex  robotics");
+      lcdSetText(uart1, 2, "i not very smart");
       auton = -1;
       break;
-    case 1: // blue left
-      lcdSetText(uart1, 1, "|  blue  left  |");
-      lcdSetText(uart1, 2, "korvex  robotics");
-      auton = 0;
+    case 1: // stationary right
+      lcdSetText(uart1, 1, "|station right |");
+      lcdSetText(uart1, 2, "haha we fooled u");
+      auton = 5;
       break;
     case 2: // blue right
       lcdSetText(uart1, 1, "|  blue right  |");
@@ -434,66 +476,115 @@ void autoStacker(int coneIncrement, bool isDriverload) { // cone increment will 
     if (isDriverload == false) { // if we are not stacking driver load, assume we are stacking from ground
       switch (coneIncrement) {
       case 1: // stacking first cone
-        motorSet(claw, 30);
-        liftTo(0, 130, 1600);
-        motorSet(claw, -40);
-        liftTo(0, 130, 400);
-        motorSet(claw, 15);
-        liftTo(0, 10, 1000);
+        motorSet(claw, -30);
+        liftTo(0, 50, 1200);
+        motorSet(claw, 40);
+        liftTo(0, 50, 500);
+        motorSet(claw, -10);
+        liftTo(0, 210, 800);
         motorSet(claw, 0);
         autoStackerEnabled = false;
         break;
       case 2:
-        motorSet(claw, 30);
-        liftTo(0, 130, 1600);
-        motorSet(claw, -40);
-        liftTo(0, 130, 400);
-        motorSet(claw, 15);
-        liftTo(0, 10, 1000);
+        motorSet(claw, -30);
+        liftTo(9, 45, 1300);
+        motorSet(claw, 40);
+        liftTo(9, 45, 500);
+        motorSet(claw, -10);
+        liftTo(0, 210, 800);
         motorSet(claw, 0);
         autoStackerEnabled = false;
         break;
       case 3:
-        motorSet(claw, 30);
-        liftTo(5, 120, 1600);
-        motorSet(claw, -40);
-        liftTo(5, 120, 400);
-        motorSet(claw, 15);
-        liftTo(0, 10, 1000);
+        motorSet(claw, -30);
+        liftTo(26, 140, 900);
+        liftTo(26, 45, 600);
+        motorSet(claw, 40);
+        liftTo(28, 45, 500);
+        motorSet(claw, -10);
+        liftTo(0, 210, 800);
         motorSet(claw, 0);
         autoStackerEnabled = false;
         break;
       case 4:
-        motorSet(claw, 30);
-        liftTo(25, 115, 1600);
-        motorSet(claw, -40);
-        liftTo(25, 115, 400);
-        motorSet(claw, 15);
-        liftTo(25, 40, 800);
+        motorSet(claw, -30);
+        liftTo(48, 140, 800);
+        liftTo(48, 50, 1000);
+        motorSet(claw, 40);
+        liftTo(48, 50, 600);
+        motorSet(claw, -10);
+        liftTo(0, 210, 800);
         motorSet(claw, 0);
-        liftTo(0, 10, 500);
         autoStackerEnabled = false;
         break;
       case 5:
-        motorSet(claw, 30);
-        liftTo(40, 115, 1600);
-        motorSet(claw, -40);
-        liftTo(40, 115, 400);
-        motorSet(claw, 15);
-        liftTo(40, 40, 1000);
+        motorSet(claw, -30);
+        liftTo(48, 140, 800);
+        liftTo(48, 50, 1000);
+        motorSet(claw, 40);
+        liftTo(48, 50, 600);
+        motorSet(claw, -10);
+        liftTo(0, 210, 800);
         motorSet(claw, 0);
-        liftTo(0, 10, 500);
         autoStackerEnabled = false;
+        break;
       case 6:
-        motorSet(claw, 30);
-        liftTo(50, 110, 1600);
-        motorSet(claw, -40);
-        liftTo(45, 110, 400);
-        motorSet(claw, 15);
-        liftTo(55, 40, 1000);
+        motorSet(claw, -30);
+        liftTo(60, 140, 1000);
+        liftTo(60, 58, 1000);
+        motorSet(claw, 40);
+        liftTo(62, 58, 600);
+        motorSet(claw, -10);
+        liftTo(0, 210, 800);
         motorSet(claw, 0);
-        liftTo(0, 10, 500);
         autoStackerEnabled = false;
+        break;
+      case 7:
+        motorSet(claw, -30);
+        liftTo(65, 140, 1200);
+        liftTo(75, 53, 1500);
+        motorSet(claw, 40);
+        liftTo(78, 53, 600);
+        motorSet(claw, -10);
+        liftTo(0, 210, 800);
+        motorSet(claw, 0);
+        autoStackerEnabled = false;
+        break;
+      case 8:
+        motorSet(claw, -30);
+        liftTo(75, 140, 1200);
+        liftTo(85, 55, 1500);
+        motorSet(claw, 40);
+        liftTo(88, 55, 600);
+        motorSet(claw, -10);
+        liftTo(0, 210, 800);
+        motorSet(claw, 0);
+        autoStackerEnabled = false;
+        break;
+      case 9:
+        motorSet(claw, -30);
+        liftTo(85, 140, 1500);
+        liftTo(95, 50, 1500);
+        motorSet(claw, 40);
+        liftTo(98, 50, 600);
+        motorSet(claw, -10);
+        liftTo(100, 140, 1000);
+        liftTo(0, 210, 1200);
+        motorSet(claw, 0);
+        autoStackerEnabled = false;
+        break;
+      case 10:
+        motorSet(claw, -30);
+        liftTo(110, 140, 1500);
+        liftTo(110, 55, 1500);
+        motorSet(claw, 40);
+        liftTo(113, 55, 600);
+        motorSet(claw, -10);
+        liftTo(0, 210, 800);
+        motorSet(claw, 0);
+        autoStackerEnabled = false;
+        break;
+        break;
       default:
         autoStackerEnabled = false;
         break;
@@ -501,6 +592,231 @@ void autoStacker(int coneIncrement, bool isDriverload) { // cone increment will 
     }
     if (isDriverload == true) { // if we are stacking driver loads, use the corresponding set of presets
       switch (coneIncrement) {
+      case 1: // stacking first cone
+        motorSet(claw, -30);
+        liftTo(0, 46, 700);
+        motorSet(claw, 40);
+        liftTo(0, 46, 500);
+        motorSet(claw, -10);
+        liftTo(20, 110, 400);
+        motorSet(claw, 0);
+        autoStackControl(joystickGetDigital(2, 7, JOY_UP), joystickGetDigital(2, 7, JOY_DOWN), joystickGetDigital(2, 7, JOY_RIGHT), joystickGetDigital(2, 8, JOY_RIGHT), joystickGetDigital(2, 8, JOY_LEFT), joystickGetDigital(2, 8, JOY_UP), joystickGetDigital(2, 8, JOY_DOWN), joystickGetDigital(2, 6, JOY_UP), joystickGetDigital(2, 6, JOY_DOWN));
+        if (isDriverloadGlobal == false) {
+          autoStackerEnabled = false; 
+          break;
+        }
+        else {
+          coneIncrementGlobal = coneIncrementGlobal + 1;
+          autoStacker(coneIncrementGlobal, true);
+        }
+        break;
+      case 2:
+        motorSet(claw, -30);
+        liftTo(9, 47, 800);
+        motorSet(claw, 40);
+        liftTo(9, 47, 500);
+        motorSet(claw, -10);
+        liftTo(20, 100, 1000);
+        motorSet(claw, 0);
+        autoStackControl(joystickGetDigital(2, 7, JOY_UP), joystickGetDigital(2, 7, JOY_DOWN), joystickGetDigital(2, 7, JOY_RIGHT), joystickGetDigital(2, 8, JOY_RIGHT), joystickGetDigital(2, 8, JOY_LEFT), joystickGetDigital(2, 8, JOY_UP), joystickGetDigital(2, 8, JOY_DOWN), joystickGetDigital(2, 6, JOY_UP), joystickGetDigital(2, 6, JOY_DOWN));
+        if (isDriverloadGlobal == false)
+        {
+          autoStackerEnabled = false;
+          break;
+        }
+        else
+        {
+          coneIncrementGlobal = coneIncrementGlobal + 1;
+          autoStacker(coneIncrementGlobal, true);
+        }
+        break;
+      case 3:
+        motorSet(claw, -30);
+        liftTo(23, 50, 1000);
+        motorSet(claw, 40);
+        liftTo(25, 50, 500);
+        motorSet(claw, -10);
+        liftTo(20, 100, 400);
+        motorSet(claw, 0);
+        autoStackControl(joystickGetDigital(2, 7, JOY_UP), joystickGetDigital(2, 7, JOY_DOWN), joystickGetDigital(2, 7, JOY_RIGHT), joystickGetDigital(2, 8, JOY_RIGHT), joystickGetDigital(2, 8, JOY_LEFT), joystickGetDigital(2, 8, JOY_UP), joystickGetDigital(2, 8, JOY_DOWN), joystickGetDigital(2, 6, JOY_UP), joystickGetDigital(2, 6, JOY_DOWN));
+        if (isDriverloadGlobal == false)
+        {
+          autoStackerEnabled = false;
+          break;
+        }
+        else
+        {
+          coneIncrementGlobal = coneIncrementGlobal + 1;
+          autoStacker(coneIncrementGlobal, true);
+        }
+        break;
+      case 4:
+        motorSet(claw, -30);
+        liftTo(35, 90, 800);
+        liftTo(35, 51, 800);
+        motorSet(claw, 40);
+        liftTo(35, 51, 600);
+        motorSet(claw, -10);
+        liftTo(20, 100, 400);
+        motorSet(claw, 0);
+        autoStackControl(joystickGetDigital(2, 7, JOY_UP), joystickGetDigital(2, 7, JOY_DOWN), joystickGetDigital(2, 7, JOY_RIGHT), joystickGetDigital(2, 8, JOY_RIGHT), joystickGetDigital(2, 8, JOY_LEFT), joystickGetDigital(2, 8, JOY_UP), joystickGetDigital(2, 8, JOY_DOWN), joystickGetDigital(2, 6, JOY_UP), joystickGetDigital(2, 6, JOY_DOWN));
+        if (isDriverloadGlobal == false)
+        {
+          autoStackerEnabled = false;
+          break;
+        }
+        else
+        {
+          coneIncrementGlobal = coneIncrementGlobal + 1;
+          autoStacker(coneIncrementGlobal, true);
+        }
+      case 5:
+        motorSet(claw, -30);
+        liftTo(46, 90, 800);
+        liftTo(46, 55, 1000);
+        motorSet(claw, 40);
+        liftTo(50, 55, 600);
+        motorSet(claw, -10);
+        liftTo(20, 100, 400);
+        motorSet(claw, 0);
+        autoStackControl(joystickGetDigital(2, 7, JOY_UP), joystickGetDigital(2, 7, JOY_DOWN), joystickGetDigital(2, 7, JOY_RIGHT), joystickGetDigital(2, 8, JOY_RIGHT), joystickGetDigital(2, 8, JOY_LEFT), joystickGetDigital(2, 8, JOY_UP), joystickGetDigital(2, 8, JOY_DOWN), joystickGetDigital(2, 6, JOY_UP), joystickGetDigital(2, 6, JOY_DOWN));
+        if (isDriverloadGlobal == false)
+        {
+          autoStackerEnabled = false;
+          break;
+        }
+        else
+        {
+          coneIncrementGlobal = coneIncrementGlobal + 1;
+          autoStacker(coneIncrementGlobal, true);
+        }
+        break;
+      case 6:
+        motorSet(claw, -30);
+        liftTo(60, 90, 1000);
+        liftTo(60, 55, 1000);
+        motorSet(claw, 40);
+        liftTo(62, 55, 600);
+        motorSet(claw, -10);
+        liftTo(20, 100, 600);
+        motorSet(claw, 0);
+        autoStackControl(joystickGetDigital(2, 7, JOY_UP), joystickGetDigital(2, 7, JOY_DOWN), joystickGetDigital(2, 7, JOY_RIGHT), joystickGetDigital(2, 8, JOY_RIGHT), joystickGetDigital(2, 8, JOY_LEFT), joystickGetDigital(2, 8, JOY_UP), joystickGetDigital(2, 8, JOY_DOWN), joystickGetDigital(2, 6, JOY_UP), joystickGetDigital(2, 6, JOY_DOWN));
+        if (isDriverloadGlobal == false)
+        {
+          autoStackerEnabled = false;
+          break;
+        }
+        else
+        {
+          coneIncrementGlobal = coneIncrementGlobal + 1;
+          autoStacker(coneIncrementGlobal, true);
+        }
+        break;
+      case 7:
+        motorSet(claw, -30);
+        liftTo(65, 90, 1200);
+        liftTo(75, 50, 1500);
+        motorSet(claw, 40);
+        liftTo(78, 50, 600);
+        motorSet(claw, -10);
+        liftTo(20, 100, 400);
+        motorSet(claw, 0);
+        autoStackControl(joystickGetDigital(2, 7, JOY_UP), joystickGetDigital(2, 7, JOY_DOWN), joystickGetDigital(2, 7, JOY_RIGHT), joystickGetDigital(2, 8, JOY_RIGHT), joystickGetDigital(2, 8, JOY_LEFT), joystickGetDigital(2, 8, JOY_UP), joystickGetDigital(2, 8, JOY_DOWN), joystickGetDigital(2, 6, JOY_UP), joystickGetDigital(2, 6, JOY_DOWN));
+        if (isDriverloadGlobal == false)
+        {
+          autoStackerEnabled = false;
+          break;
+        }
+        else
+        {
+          coneIncrementGlobal = coneIncrementGlobal + 1;
+          autoStacker(coneIncrementGlobal, true);
+        }
+        break;
+      case 8:
+        motorSet(claw, -30);
+        liftTo(75, 90, 1200);
+        liftTo(85, 50, 1500);
+        motorSet(claw, 40);
+        liftTo(88, 50, 600);
+        motorSet(claw, -10);
+        liftTo(20, 100, 400);
+        motorSet(claw, 0);
+        autoStackControl(joystickGetDigital(2, 7, JOY_UP), joystickGetDigital(2, 7, JOY_DOWN), joystickGetDigital(2, 7, JOY_RIGHT), joystickGetDigital(2, 8, JOY_RIGHT), joystickGetDigital(2, 8, JOY_LEFT), joystickGetDigital(2, 8, JOY_UP), joystickGetDigital(2, 8, JOY_DOWN), joystickGetDigital(2, 6, JOY_UP), joystickGetDigital(2, 6, JOY_DOWN));
+        if (isDriverloadGlobal == false)
+        {
+          autoStackerEnabled = false;
+          break;
+        }
+        else
+        {
+          coneIncrementGlobal = coneIncrementGlobal + 1;
+          autoStacker(coneIncrementGlobal, true);
+        }
+        break;
+      case 9:
+        motorSet(claw, -30);
+        liftTo(85, 90, 1500);
+        liftTo(95, 50, 1500);
+        motorSet(claw, 40);
+        liftTo(98, 50, 600);
+        motorSet(claw, -10);
+        liftTo(20, 100, 400);
+        motorSet(claw, 0);
+        autoStackControl(joystickGetDigital(2, 7, JOY_UP), joystickGetDigital(2, 7, JOY_DOWN), joystickGetDigital(2, 7, JOY_RIGHT), joystickGetDigital(2, 8, JOY_RIGHT), joystickGetDigital(2, 8, JOY_LEFT), joystickGetDigital(2, 8, JOY_UP), joystickGetDigital(2, 8, JOY_DOWN), joystickGetDigital(2, 6, JOY_UP), joystickGetDigital(2, 6, JOY_DOWN));
+        if (isDriverloadGlobal == false)
+        {
+          autoStackerEnabled = false;
+          break;
+        }
+        else
+        {
+          coneIncrementGlobal = coneIncrementGlobal + 1;
+          autoStacker(coneIncrementGlobal, true);
+        }
+        break;
+      case 10:
+        motorSet(claw, -30);
+        liftTo(110, 90, 1500);
+        liftTo(110, 50, 1500);
+        motorSet(claw, 40);
+        liftTo(113, 50, 600);
+        motorSet(claw, -10);
+        liftTo(20, 100, 400);
+        motorSet(claw, 0);
+        autoStackControl(joystickGetDigital(2, 7, JOY_UP), joystickGetDigital(2, 7, JOY_DOWN), joystickGetDigital(2, 7, JOY_RIGHT), joystickGetDigital(2, 8, JOY_RIGHT), joystickGetDigital(2, 8, JOY_LEFT), joystickGetDigital(2, 8, JOY_UP), joystickGetDigital(2, 8, JOY_DOWN), joystickGetDigital(2, 6, JOY_UP), joystickGetDigital(2, 6, JOY_DOWN));
+        if (isDriverloadGlobal == false)
+        {
+          autoStackerEnabled = false;
+          break;
+        }
+        else
+        {
+          coneIncrementGlobal = coneIncrementGlobal + 1;
+          autoStacker(coneIncrementGlobal, true);
+        }
+        break;
+      case 11:
+        motorSet(claw, -30);
+        liftTo(115, 90, 1500);
+        liftTo(120, 50, 1500);
+        motorSet(claw, 40);
+        liftTo(125, 50, 600);
+        motorSet(claw, -10);
+        liftTo(20, 100, 400);
+        motorSet(claw, 0);
+        autoStackControl(joystickGetDigital(2, 7, JOY_UP), joystickGetDigital(2, 7, JOY_DOWN), joystickGetDigital(2, 7, JOY_RIGHT), joystickGetDigital(2, 8, JOY_RIGHT), joystickGetDigital(2, 8, JOY_LEFT), joystickGetDigital(2, 8, JOY_UP), joystickGetDigital(2, 8, JOY_DOWN), joystickGetDigital(2, 6, JOY_UP), joystickGetDigital(2, 6, JOY_DOWN));
+        if (isDriverloadGlobal == false)
+        {
+          autoStackerEnabled = false;
+          break;
+        }
+        else
+        {
+          coneIncrementGlobal = coneIncrementGlobal + 1;
+          autoStacker(coneIncrementGlobal, true);
+        }
+        break;
       default:
         autoStackerEnabled = false;
         break;
