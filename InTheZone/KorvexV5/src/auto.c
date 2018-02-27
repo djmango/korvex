@@ -92,25 +92,25 @@ void autonomous() {
     delay(2000);
     motorSet(mobileGoal, 0);
     // turn 180 degrees
-    driveTo(-220, 220, 2000);
+    turnTo(190, 2000);
     // drive back
-    driveTo(570, 570, 1800);
+    driveTo(430, 430, 2200);
     // turn to face 20 point
-    driveTo(-30, 30, 400);
-    driveTo(400, 400, 1600);
+    turnTo(55, 800);
+    driveTo(500, 500, 2000);
     motorSet(mobileGoal, 127);
     driveTo(120, 120, 600);
     // lower mobile goal intake, drop 1st mobile goal in 20 pt
     motorSet(mobileGoal, -127);
-    driveTo(-270, -300, 2500);
+    driveTo(-250, -300, 2500);
     motorSet(mobileGoal, 127);
     // turn to line up with 5 pt line
-    driveTo(180, -180, 700);
+    turnTo(-120, 2000);
     // drive to line up with 2nd mobile goal
     driveTo(220, 220, 1200);
     motorSet(mobileGoal, 0);
     // turn to line up with 2nd mobile goal
-    driveTo(90, -90, 1600);
+    turnTo(45, 800);
     // drive into 2nd mobile goal
     driveTo(700, 720, 2200);
     // pick up 2nd mobile goal and drive back
@@ -126,11 +126,11 @@ void autonomous() {
     encoderReset(leftencoder);
     driveTo(100, 100, 700);
     // turn to line up with 5 pt line
-    driveTo(75, -75, 700);
+    turnTo(45, 700);
     // drive to line up drop of 2nd mobile goal
     driveTo(400, 400, 1200);
     // turn to drop off 2nd mobile goal
-    driveTo(170, -170, 1200);
+    turnTo(-90, 1200);
     // drive forward to drop off 2nd mobile goal
     driveTo(175, 175, 800);
     // lower mobile goal intake, drop 2nd mobile goal in 10 pt
@@ -178,7 +178,7 @@ void autonomous() {
     encoderReset(rightencoder);
     encoderReset(leftencoder);
     // test
-    driveToStraight(500, 5000);
+    turnTo(300, 6000);
   default :
     break;
   }
