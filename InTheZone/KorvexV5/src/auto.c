@@ -5,7 +5,7 @@
 void autonomous() {
   debugGlobal = true;
   lcdSetBacklight(uart1, false);
-  int auton = 2;
+  int auton = 3;
   switch (auton) {
   case 0: // skills 1
     encoderReset(rightencoder);
@@ -86,13 +86,13 @@ void autonomous() {
     delay(1500);
     motorSet(mobileGoal, 30);
     // drive into 1st mobile goal
-    driveTo(570, 570, 1800);
+    driveTo(570, 570, 1700);
     // pickup 1st mobile goal
     motorSet(mobileGoal, -127);
     delay(2000);
     motorSet(mobileGoal, 0);
     // turn 180 degrees
-    turnTo(191, 2000);
+    turnTo(190, 1800);
     // drive into 20 point
     driveTo(850, 850, 2300);
     motorSet(mobileGoal, 127);
@@ -100,13 +100,13 @@ void autonomous() {
     motorSet(mobileGoal, 40);
     // lower mobile goal intake, drop 1st mobile goal in 20 pt
     motorSet(mobileGoal, -50);
-    driveTo(-320, -370, 1900);
+    driveTo(-320, -320, 1900);
     motorSet(mobileGoal, 127);
     // turn to line up with 5 pt line
-    turnTo(-100, 1800);
+    turnTo(-110, 1800);
     motorSet(mobileGoal, 20);
     // drive to line up with 2nd mobile goal
-    driveTo(370, 370, 2000);
+    driveTo(400, 400, 2200);
     motorSet(mobileGoal, 0);
     // turn to line up with 2nd mobile goal
     turnTo(-44, 1800);
@@ -114,7 +114,7 @@ void autonomous() {
     driveTo(700, 715, 2200);
     // pick up 2nd mobile goal and drive back
     motorSet(mobileGoal, -127);
-    delay(1900);
+    delay(2300);
     motorSet(mobileGoal, 0);
     driveTo(-700, -700, 2600);
     // turn to line up with 5 pt line
@@ -124,55 +124,143 @@ void autonomous() {
     // turn to drop off 2nd mobile goal
     turnTo(-100, 1000);
     // drive forward to drop off 2nd mobile goal
-    motorSet(mobileGoal, 127);
-    driveTo(180, 180, 1000);
+    motorSet(mobileGoal, 80);
+    driveTo(180, 175, 1200);
     // drop 2nd mobile goal in 10 pt
     driveTo(-70, -70, 800);
     motorSet(mobileGoal, 0);
     // turn to line up with 5 pt line
     turnTo(90, 1600);
     // drive along 5 pt for 3rd mobile goal
-    driveTo(360, 360, 1800);
+    driveTo(420, 420, 2100);
     // turn to line up with 3rd mobile goal
-    turnTo(86, 1100);
+    turnTo(89, 1500);
     // drive into 3rd mobile goal
     motorSet(mobileGoal, 20);
-    driveTo(350, 350, 1700);
+    driveTo(390, 390, 1700);
     // pick up 3rd mobile goal
     motorSet(mobileGoal, -127);
     delay(2300);
     motorSet(mobileGoal, 0);
     turnTo(185, 1800);
     // drive to drop 3rd mobile goal in 10 pt
-    driveTo(650, 650, 2200);
+    driveTo(680, 680, 2300);
     // drop off 3rd mobile goal in 10 pt
     motorSet(mobileGoal, 127);
     delay(1000);
     driveTo(-120, -120, 500);
-    motorSet(mobileGoal, 0);
+    motorSet(mobileGoal, 30);
     // turn around to line up with 4th mobile goal
-    turnTo(-186, 1800);
+    turnTo(-182, 1800);
     // drive into 4th mobile goal
-    driveTo(860, 860, 2800);
+    driveTo(900, 900, 3200);
     motorSet(mobileGoal, -127);
-    delay(2100);
+    turnTo(15, 2100);
     motorSet(mobileGoal, 0);
     // drive to 10 pt zone
-    driveTo(850, 850, 2900);
+    driveTo(900, 900, 3100);
     // drop off 4th mobile goal
     motorSet(mobileGoal, 127);
     driveTo(150, 150, 900);
     delay(1000);
     // lower mobile goal intake, drop 1st mobile goal in 20 pt
     motorSet(mobileGoal, -50);
-    driveTo(-370, -320, 1900);
+    driveTo(-370, -370, 1900);
     motorSet(mobileGoal, 0);
     break;
+  case 3: // skills 4
+    encoderReset(rightencoder);
+    encoderReset(leftencoder);
+    // lower mobile goal intake
+    motorSet(mobileGoal, 127);
+    delay(1500);
+    motorSet(mobileGoal, 30);
+    // drive into 1st mobile goal
+    driveTo(570, 570, 1700);
+    // pickup 1st mobile goal
+    motorSet(mobileGoal, -127);
+    delay(2000);
+    motorSet(mobileGoal, 0);
+    // turn 180 degrees
+    turnTo(190, 1800);
+    // drive into 20 point
+    driveTo(850, 850, 2300);
+    motorSet(mobileGoal, 127);
+    driveTo(150, 150, 900);
+    motorSet(mobileGoal, 40);
+    // lower mobile goal intake, drop 1st mobile goal in 20 pt
+    motorSet(mobileGoal, -50);
+    driveTo(-320, -320, 1900);
+    motorSet(mobileGoal, 80);
+    // turn to line up with 5 pt line
+    turnTo(-130, 1600);
+    motorSet(mobileGoal, 20);
+    // drive to line up with 2nd mobile goal
+    driveTo(620, 620, 2600);
+    motorSet(mobileGoal, 0);
+    // turn to line up with 2nd mobile goal
+    turnTo(-20, 800);
+    // drive into 2nd mobile goal
+    driveTo(400, 400, 1400);
+    // pick up 2nd mobile goal and drive back
+    motorSet(mobileGoal, -127);
+    delay(2600);
+    motorSet(mobileGoal, 0);
+    // turn to drive back
+    turnTo(25, 1000);
+    // drive to line up drop of 2nd mobile goal
+    driveTo(-600, -600, 2500);
+    // turn to drop off 2nd mobile goal
+    turnTo(130, 1000);
+    // drive forward to drop off 2nd mobile goal
+    motorSet(mobileGoal, 60);
+    driveTo(350, 350, 2500);
+    // drop 2nd mobile goal in 10 pt
+    driveTo(-70, -70, 800);
+    motorSet(mobileGoal, 0);
+    // turn to line up with 5 pt line
+    turnTo(90, 1600);
+    // drive along 5 pt for 3rd mobile goal
+    driveTo(420, 420, 2100);
+    // turn to line up with 3rd mobile goal
+    turnTo(89, 1500);
+    // drive into 3rd mobile goal
+    motorSet(mobileGoal, 20);
+    driveTo(390, 390, 1700);
+    // pick up 3rd mobile goal
+    motorSet(mobileGoal, -127);
+    delay(2300);
+    motorSet(mobileGoal, 0);
+    turnTo(185, 1800);
+    // drive to drop 3rd mobile goal in 10 pt
+    driveTo(680, 680, 2300);
+    // drop off 3rd mobile goal in 10 pt
+    motorSet(mobileGoal, 127);
+    delay(1000);
+    driveTo(-120, -120, 500);
+    motorSet(mobileGoal, 30);
+    // turn around to line up with 4th mobile goal
+    turnTo(-182, 1800);
+    // drive into 4th mobile goal
+    driveTo(900, 900, 3200);
+    motorSet(mobileGoal, -127);
+    turnTo(15, 2100);
+    motorSet(mobileGoal, 0);
+    // drive to 10 pt zone
+    driveTo(900, 900, 3100);
+    // drop off 4th mobile goal
+    motorSet(mobileGoal, 127);
+    driveTo(150, 150, 900);
+    delay(1000);
+    // lower mobile goal intake, drop 1st mobile goal in 20 pt
+    motorSet(mobileGoal, -50);
+    driveTo(-370, -370, 1900);
+    motorSet(mobileGoal, 0);
   case -1: // test
     encoderReset(rightencoder);
     encoderReset(leftencoder);
     // test
-    turnTo(300, 6000);
+    turnTo(300, 2500);
   default :
     break;
   }

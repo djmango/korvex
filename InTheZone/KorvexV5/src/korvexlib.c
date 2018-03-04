@@ -39,12 +39,12 @@ void driveTo(int leftTarget, int rightTarget, int waitTo) {
   int rightDrive;
   int leftLastError = 0;
   int rightLastError = 0;
-  int leftP;
-  int rightP;
+  float leftP;
+  float rightP;
   float leftI = 0;
   float rightI = 0;
-  int leftD;
-  int rightD;
+  float leftD;
+  float rightD;
   int count = 0;
   // offset the targets, for easier readability
   leftTarget = encoderGet(leftencoder) + leftTarget;
@@ -66,19 +66,68 @@ void driveTo(int leftTarget, int rightTarget, int waitTo) {
       leftError = (leftTarget - encoderGet(leftencoder));
       rightError = (rightTarget - encoderGet(rightencoder));
 
-      // calculate pid
-      leftP = (leftError * 1);
-      if (abs(leftError) < 15)
-        leftI = ((leftI + leftError) * .7);
+      // calculate pid based on battery
+      if (powerLevelMain() > 8.2)
+      { // if battery is above 8.2 volts
+        leftP = (leftError * .95);
+        if (abs(leftError) < 15)
+          leftI = ((leftI + leftError) * .7);
+        else
+          leftI = 0;
+        leftD = ((leftError - leftLastError) * 1);
+        rightP = (rightError * .95);
+        if (abs(rightError) < 15)
+          rightI = ((rightI + rightError) * .7);
+        else
+          rightI = 0;
+        rightD = ((rightError - rightLastError) * 1);
+      }
+      else if (powerLevelMain() > 7.9 && powerLevelMain() < 8.2)
+      { // if battery is 7.9 - 8.2 volts
+        leftP = (leftError * 1);
+        if (abs(leftError) < 15)
+          leftI = ((leftI + leftError) * .7);
+        else
+          leftI = 0;
+        leftD = ((leftError - leftLastError) * 1);
+        rightP = (rightError * 1);
+        if (abs(rightError) < 15)
+          rightI = ((rightI + rightError) * .7);
+        else
+          rightI = 0;
+        rightD = ((rightError - rightLastError) * 1);
+      }
+      else if (powerLevelMain() > 7.6 && powerLevelMain() < 7.9)
+      { // if battery is 7.6 - 7.9 volts
+        leftP = (leftError * 1);
+        if (abs(leftError) < 15)
+          leftI = ((leftI + leftError) * 1.2);
+        else
+          leftI = 0;
+        leftD = ((leftError - leftLastError) * 1);
+        rightP = (rightError * 1);
+        if (abs(rightError) < 15)
+          rightI = ((rightI + rightError) * 1.2);
+        else
+          rightI = 0;
+        rightD = ((rightError - rightLastError) * 1);
+      }
       else
-        leftI = 0;
-      leftD = ((leftError - leftLastError) * 1);
-      rightP = (rightError * 1);
-      if (abs(rightError) < 15)
-        rightI = ((rightI + rightError) * .7);
-      else
-        rightI = 0;
-      rightD = ((rightError - rightLastError) * 1);
+      { // if battery is less than 7.6 volts
+        leftP = (leftError * 1);
+        if (abs(leftError) < 15)
+          leftI = ((leftI + leftError) * 1.1);
+        else
+          leftI = 0;
+        leftD = ((leftError - leftLastError) * 1);
+        rightP = (rightError * 1);
+        if (abs(rightError) < 15)
+          rightI = ((rightI + rightError) * 1.1);
+        else
+          rightI = 0;
+        rightD = ((rightError - rightLastError) * 1);
+      }
+      
 
       // store last error
       leftLastError = leftError;
@@ -133,13 +182,39 @@ void turnTo(int targetDegrees, int waitTo) {
       // calculate error
       error = (targetDegrees - gyroGet(gyro));
 
-      // calculate pid
-      p = (error * 1.3);
-      if (abs(error) < 500) // this is really high because i want integral all the time but idk about future me
-        i = ((i + error) * .4);
-      else
-        i = 0;
-      d = ((error - lastError) * 3.5);
+      // calculate pid based on power
+      if (powerLevelMain() > 8.2) { // if battery is above 8.2 volts
+        p = (error * 1);
+        if (abs(error) < 500)
+          i = ((i + error) * .45);
+        else
+          i = 0;
+        d = ((error - lastError) * 3.5);
+      }
+      else if (powerLevelMain() > 7.9 && powerLevelMain() < 8.2) { // if battery is 7.9 - 8.2 volts
+        p = (error * 1.2);
+        if (abs(error) < 500)
+          i = ((i + error) * .65);
+        else
+          i = 0;
+        d = ((error - lastError) * 3.6);
+      }
+      else if (powerLevelMain() > 7.7 && powerLevelMain() < 7.9) { // if battery is 7.7 - 7.9 volts
+        p = (error * 1.4);
+        if (abs(error) < 500)
+          i = ((i + error) * .8);
+        else
+          i = 0;
+        d = ((error - lastError) * 3.5);
+      }
+      else { // if battery is less than 7.7 volts
+        p = (error * 1.5);
+        if (abs(error) < 500)
+          i = ((i + error) * 1);
+        else
+          i = 0;
+        d = ((error - lastError) * 3.5);
+      }
 
       // store last error
       lastError = error;
