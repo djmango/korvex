@@ -30,7 +30,60 @@ void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown) {
 }
 
 /*-----------------------------------------------------------------------------*/
-/*  argument based encoder pid, for drive, tuned for skills mode */
+/*  mobile goal intake encoder based control                                   */
+/*-----------------------------------------------------------------------------*/
+void moboTo(int target, int waitTo) {
+  int count = 0;
+  float p;
+  float d;
+  int lastError = 0;
+  int error = (target - encoderGet(mobilegoalencoder));
+  int drive;
+  // offset the targets, for easier readability
+  error = (target - encoderGet(mobilegoalencoder));
+  while (true)
+  {
+    if (count == (waitTo / 100) || (error == 0 && lastError == 0))
+    {
+      if (debugGlobal == true)
+      {
+        printf("task completed\n");
+      }
+      motorSet(mobileGoal, 0);
+      return;
+    }
+    else
+    {
+      // calculate error
+      error = (target - encoderGet(mobilegoalencoder));
+
+      // calculate pid based on battery
+      p = (error * 1);
+      d = ((error - lastError) * 3.5);
+
+      // store last error
+      lastError = error;
+
+      // calculate drive
+      drive = (p + d);
+
+      // if we are in debug mode, print error
+      if (debugGlobal == true)
+      {
+        printf("rErr%d\n", error);
+        printf("rDri%d\n", drive);
+      }
+
+      // set motor to drive
+      motorSet(mobileGoal, drive * -1);
+      count = count + 1;
+      delay(100);
+    }
+  }
+}
+
+/*-----------------------------------------------------------------------------*/
+/*  argument based encoder pid, for drive, tuned for skills mode               */
 /*-----------------------------------------------------------------------------*/
 void driveTo(int leftTarget, int rightTarget, int waitTo) {
   int leftError;
@@ -86,13 +139,13 @@ void driveTo(int leftTarget, int rightTarget, int waitTo) {
       { // if battery is 7.9 - 8.2 volts
         leftP = (leftError * 1);
         if (abs(leftError) < 15)
-          leftI = ((leftI + leftError) * .7);
+          leftI = ((leftI + leftError) * .8);
         else
           leftI = 0;
         leftD = ((leftError - leftLastError) * 1);
         rightP = (rightError * 1);
         if (abs(rightError) < 15)
-          rightI = ((rightI + rightError) * .7);
+          rightI = ((rightI + rightError) * .8);
         else
           rightI = 0;
         rightD = ((rightError - rightLastError) * 1);
@@ -202,7 +255,7 @@ void turnTo(int targetDegrees, int waitTo) {
       else if (powerLevelMain() > 7.7 && powerLevelMain() < 7.9) { // if battery is 7.7 - 7.9 volts
         p = (error * 1.4);
         if (abs(error) < 500)
-          i = ((i + error) * .8);
+          i = ((i + error) * .77);
         else
           i = 0;
         d = ((error - lastError) * 3.5);
@@ -210,7 +263,7 @@ void turnTo(int targetDegrees, int waitTo) {
       else { // if battery is less than 7.7 volts
         p = (error * 1.5);
         if (abs(error) < 500)
-          i = ((i + error) * 1);
+          i = ((i + error) * .80);
         else
           i = 0;
         d = ((error - lastError) * 3.5);

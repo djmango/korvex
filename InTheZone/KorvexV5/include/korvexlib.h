@@ -3,6 +3,7 @@
 // init encoders
 Encoder leftencoder;
 Encoder rightencoder;
+Encoder mobilegoalencoder;
 Gyro gyro;
 
 // debug enabler
@@ -21,6 +22,7 @@ void mobileGoalControl(int moboLiftBtnUp, int moboLiftBtnDown);
 // autonomous stuff
 void driveTo(int leftTarget, int rightTarget, int waitTo); // drive pid control tuned for skills
 void turnTo(int targetDegrees, int waitTo); // turn to a certain angle with gyro
+void moboTo(int target, int waitTo); // mobile goal encoder pd
 
 // ext
 void rerunRecord(); // recoder for rerun

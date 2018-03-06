@@ -11,15 +11,16 @@
  */
 
 void operatorControl() {
-  debugGlobal = false;
-  lcdSetBacklight(uart1, true);
+  debugGlobal = true;
   isRecording = false;
+  lcdSetBacklight(uart1, true);
   int count = 0;
   while (isEnabled()) {
     // values of assorted things on the robot
     if (debugGlobal == true) {
       printf("r%d\n", encoderGet(rightencoder));
       printf("l%d\n", encoderGet(leftencoder));
+      printf("m%d\n", encoderGet(mobilegoalencoder));
     }
     if (isRecording == true && count == 5) {
       count = 0;

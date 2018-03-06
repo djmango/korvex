@@ -29,6 +29,7 @@ void initializeIO() {
 void initialize() {
   leftencoder = encoderInit(2, 3, true);
   rightencoder = encoderInit(4, 5, true);
+  mobilegoalencoder = encoderInit(6, 7, false);
   gyro = gyroInit(1, 0);
   lcdInit(uart1);
   lcdClear(uart1);
