@@ -1,250 +1,61 @@
 # korvex
-A assemblage of the code work here at korvex
 
-## Argument-based operator control
+### a repository of all the software written for korvex robotics
 
-In order to simplify changes to the operator control program, I decided to switch to arguments for input, both digital and analog. This allows us to make quick changes without complication. It also allows for everybody on the team to fully understand the code, and be able to modify it if necessary.
+------
 
-### Control Modifiers
-```c
-//control modifiers
-bool isReverse = false;
-bool isFineControl = false;
-float fineControl = 1;
-```
-These are the control modifiers. It allows for us to toggle a lower increment in acceleration, or reverse the drive, allowing for more precise and adjustable controls.
+## what is VEX robotics?
 
-### Update Drive
-```c
-void updateDrive(int chassisControlLeft, int chassisControlRight, int liftControl) {
-  //chassis control
-  if (isReverse == true) { //if in reverse, invert and switch sides for normal turning
-    motorSet(driveLeft, (chassisControlRight * -1));
-    motorSet(driveRight, (chassisControlLeft * -1));
-  }
-  else if (isReverse == false) { //if in normal operator, do not invert
-    motorSet(driveRight, (chassisControlRight));
-    motorSet(driveLeft, (chassisControlLeft));
-  }
-  //lift control
-  motorSet(dr4bLeft, (liftControl));
-  motorSet(dr4bRight, (liftControl));
-}
-```
-This is the first function that is argument based. It sets the motors to the speed of the input, and checks if the bot is in reverse. If so, it swaps the sides so clockwise and counterclockwise turning is not swapped, and input values negated.
+VEX robotics is a STEM program that allows the future innovators, thinkers and problem solvers of America showcase their talents. The program’s goal is to create engaging, affordable and powerful solutions that immerse students in engineering challenges through the excitement of building and programming robots 
 
-### Fine Control Toggle
-```c
-void fineControlToggle(int fineBtn, int fineBtn2, int reverseBtn, int reverseBtn2) {
-  // fine control toggle
-  if (fineBtn == 1) { // toggle it on
-    isFineControl = true;
-    fineControl = .5;
-  }
-  if (fineBtn2 == 1) { // toggle it off
-    isFineControl = false;
-    fineControl = 1;
-  }
-  //reverse toggle
-    if (reverseBtn == 1) { // toggle it on
-    isReverse = true;
-    fineControl = -1;
-  }
-  if (reverseBtn2 == 1) { // toggle it off
-    isReverse = false;
-    fineControl = 1;
-  }
-}
-```
-This toggles fine control and reverse on and off. When toggled, it sets the corresponding bool to the desired value. The input is set by an argument.
+## writing and compiling a basic PROS program
 
-### Mobile Goal Control
-```c
-void mobileGoalControl (int moboLiftBtnUp, int moboLiftBtnDown, int moboTiltBtnUp, int moboTiltBtnDown) {
-  // mobo lift control
-  if (moboLiftBtnUp == 1) {
-    motorSet(4, 127);
-  }
-  if (moboLiftBtnDown == 1) {
-    motorSet(4, -127);
-  }
-  if (moboLiftBtnUp == 0 &&
-      moboLiftBtnDown == 0) {
-    motorSet(4, 0);
-  }
-}
-```
-This takes the digital input from the buttons provided in the arguments, and turns motors on and off accordingly.
+1. All functions are thoroughly explained in the [PROS documentation](https://pros.cs.purdue.edu/v5/api/index.html). The syntax is all standard C++, so [Stackoverflow](https://stackoverflow.com/) will be an excellent resource for problem solving. All the files you want to edit are in the src folder. opcontrol is for user control functions and loop, and auto is for auton code. 
+2. The following is a basic function that allows for chassis control.![img](https://lh3.googleusercontent.com/4uhuqIEbZxsJ41i5F7IFF58_EQf2IzKnMJoBWgrTMe5Sy-io0iFBCVR6hc8zMfyx-4Df1tq734W_UDF7DyzSKQNUnP7OxKWMDbRp3iRfLOzwrcQ0WC5usUnvEtQ6bl7Gzudo4LGR)
 
-## Cone Handler Control
-```c
-void coneHandlerControl(int clawBtnUp, int clawBtnDown, int chainbarBtnUp, int chainbarBtnDown) {
-  motorSet(8, (joystickGetAnalog(2,2)));
-  motorSet(8, (joystickGetAnalog(2,2)));
-  if (chainbarBtnUp == 1) {
-    // move up
-    motorSet(8, 127);
-  }
-  if (chainbarBtnDown == 1) {
-    // move down
-    motorSet(8, -127);
-  }
-  if (chainbarBtnUp == 0 &&
-      chainbarBtnDown == 0) {
-    // dont move
-    motorSet(8, 0);
-  }
-  // claw control
-  if (clawBtnUp == 1) {
-    // move up
-    motorSet(9, 127);
-  }
-  if (clawBtnDown == 1) {
-    // move down
-    motorSet(9, -127);
-  }
-  if (clawBtnUp == 0 &&
-      clawBtnDown == 0) {
-    // dont move
-    motorSet(8, 0);
-  }
-}
-```
-This takes input from the arguments and sets the motors accordingly, like the mobile goal control. However, currently the chain bar is set by an analog joystick.
+This code can be found [here](https://github.com/djmango/korvex/blob/master/InTheZone/KorvexV1/src/opcontrol.c). All documentation for this code can be found in the code itself, and is outlined [here](https://github.com/djmango/korvex/tree/master/InTheZone/README.old.md)
 
-## Loop
-```c
-void operatorControl() {
-  while (isEnabled()) {
-    delay(20);
-    //chassisControl chassisControlLeft, chassisControlRight, liftControl
-    //fineControlToggle fineBtn
-    //mobileGoalControl moboLiftBtn, moboTiltBtn
-    //coneHandlerControl clawBtn, chainbarBtn
-    updateDrive(joystickGetAnalog(1,3), joystickGetAnalog(1,2), joystickGetAnalog(2,2));
-    fineControlToggle(joystickGetDigital(1, 7, JOY_DOWN));
-    mobileGoalControl(joystickGetDigital(2, 6, JOY_UP), joystickGetDigital(2, 6, JOY_DOWN), joystickGetDigital(2, 8, JOY_UP), joystickGetDigital(2, 8, JOY_DOWN));
-    coneHandlerControl(joystickGetDigital(2, 5, JOY_UP), joystickGetDigital(2, 5, JOY_DOWN), joystickGetDigital(2, 7, JOY_DOWN), joystickGetDigital(2, 7, JOY_UP));
-  }
-}
-```
+1. In order for the function to be run while the robot is in user control mode, it must be in the operatorControl loop. It can be located at the end of the opcontrol file, in the src folder. Here is an example of the control loop
 
-## Korvex V2
+![img](https://lh5.googleusercontent.com/JIGfrzqswmYMGX4p2XXwcGUZI0WM3RzqwOdtRw4Xoh3QVThOFzb_Smh9xJPbgbqi4ZCCPbKChZ3U3kquBZbf-Rs4xObBIAkBHWxVVGMyT4SxCjBRgH9oirlrnWgHQs0WVw7532zJ)
 
-### Motor Port Map
-```c
-port 1 = **scrubbed**
-port 2 = drive left side (y-cable to power expander)
-port 3 = drive right side (y-cable to power expander)
-port 4 = mobile goal lift (y-cable)
-port 5 = chain bar 1
-port 6 = dr4b left (y-cable)
-port 7 = dr4b right (y-cable)
-port 8 = second dof on lift (y-cable)
-port 9 = claw (direct)
-port 10 = **scrubbed**
-```
-Current port map, use whatever is applicable
-### Control Map
-```c
-drive left side = mainLeftJoy(1,3)
-drive right side = mainRightJoy(1,2)
-mobile goal lift = seccondaryRightBumper(2,5)
-lift = seccondaryRightJoy(2,2)
-second dof on lift = seccondaryLeftJoy(2,3)
-claw = seccondaryLeftBumper(2,6)
-```
-The first number in the sequence refers to the controler, the second refers to channel
+1. When the code is complete, open a terminal in the parent folder. Here is the what the final file tree should look like![img](https://lh5.googleusercontent.com/QEtypP8GkS0ByjxB_YIdCOr85BvLZ-dR-CFbHC3yK1Ec1-JGoaTJOkk5HtXNQPd5SXUrAN_5KZAxQBVsLCALjeFqMH3UE8OxYgpwHRIkBKsbCnOepbIPuDjb0D9MVx_Q0FeYWN9r)
+2. Navigate to the parent folder in the terminal, the folder above src. On Windows, you can open the terminal in the file explorer by pressing Shift+Right Click and selecting the Open Powershell or Open Command Prompt option. Your terminal should look something like this![img](https://lh3.googleusercontent.com/ByR26qbAQnzd7-d0ka-Wa3YkeHp2nCq3fW_sM0Z3flPOOgarrsLTygdqaN8DUagL5wNwLBwLxJH_QL_Mh-Ksz6hsMtp5XcPsWsibdJpj1m4JYqbKxZaMVx66xCNLhd7xJjrQ3Dy-)
+3. Type ls or dir (Windows) in the terminal. The result should look something like this![img](https://lh3.googleusercontent.com/4xAtic_Mq_38RfFKfeG2h1kbX5otFLlpZ2wiK8pj_kDaM2H2ITiIKdYEgASsJuFaNSUI4EGosUOoW39w9dBnQjzUpu1RClXE1ueOJKPirUiTNZUpFCuKpA4RKhl4LHkwGJka66b9)
 
-## ReRun Documentation
+This ensures you are in the correct directory
 
-At the end of the 2016-17 season, VEX Starstruck, we reviewed what had we done right and what we needed to improve on for the 2017-18 season. One of the aspects we decided on improving upon was our autonomous mode. In the previous season, our autonomous was both difficult to change and inaccurate. We decided that we would implement two new methods into our autonomous. A ‘rerun’ function, and a sensor based self-correcting mode. The rerun function would feature the ability to record a user’s actions, store them, and play them back accurately. To do this, I decided to record the inputs and store them in a two-dimensional array, a vector. 
+1. Connect the robot to your computer and type pros mu into the terminal.![img](https://lh3.googleusercontent.com/SRTVxNUObkQGGJ3wO72Zr3iIRPzJMNzeJehSA_osrG6PsFICP3HP48E2p8W9uxIfh8aBDz7rOzcH-3tEuyFvLNgcu7aV_XQHwdsIKv6HO-A13tEwKy7m8w3__NOGWi1cf0TYDMiu)
+2. Press enter to run this command. If there is an error in your code, it will spit it out here, otherwise, your code will be flashed to the robot. When it is complete, disconnect from the robot and restart the cortex. Your code is now running on the robot.
 
-### cache
-```c
-int cache[6][600]
-```
-The cache is the two-dimensional array. The [6] represents how many inputs it takes in. The [600] is where I store the input values. It is 600 because the values update 4 times a seccond and the autonomous is 15 secconds long.
+## contributing
 
-### record function
-```c
-void recordDrive() { // Record driver input while allowing driver control
-   delay(1);
-	 cache[1][DriveTimer] = joystickGetAnalog(1, 2);// Get analog value of vertical axis of right stick, joystick 1
-	 cache[2][DriveTimer] = joystickGetAnalog(1, 4); // Get analog value of vertical axis of left stick, joystick 1
-	 cache[3][DriveTimer] = joystickGetDigital(1,5,JOY_UP); // Get boolean value of upper right bumper
-	 cache[4][DriveTimer] = joystickGetDigital(1,5,JOY_DOWN); // Get boolean value of lower right bumper
-   	 cache[5][DriveTimer] = joystickGetDigital(1,6,JOY_UP); // Get boolean value of upper left bumper
-	 cache[6][DriveTimer] = joystickGetDigital(1,6,JOY_DOWN); // Get boolean value of lower left bumper
-}
-```
-The recordDrive function is how the data is stored. It allows the data to be stored while also allowing driver control over the robot. The delay is for redundancy. Cache[1] specifies that I am recording the analog Y axis input of the right stick on the first controller. The [DriveTimer] is to store what time the data is recorded, so that it can be replayed in the same order and frequency.
+1. Download [GitHub Desktop](https://desktop.github.com/)
+2. Sign up/Log in to your own GitHub account
+3. Clone the [Korvex Repository](https://github.com/djmango/korvex.git) in GitHub Desktop![img](https://lh6.googleusercontent.com/gZbZLBOrxRRPeolDaJm2wX8DJXvf-nKCCTUI7GqF71pDOw8TAtjV_4G2XutL7tg4qTUhT7jFjhNj9Wdcr5XSjk_VEc4c6FzXgdXEmTvYPwGKlPlum5_3F-wjz2gEPRAjy4aeyVuX)
+4. If you are a verified contributor to Korvex Robotics, select your branch from the top menu. If there is not a branch with your name on it, make a new one
+5. Make your intended changes
+6. When your changes are complete, commit your changes and add a small paragraph detailing what you modified, then push
 
-### playback function
-```c
-void playbackDrive() { // Set motor to array values
-   delay(1);
-   motorSet(2, -cache[1][DriveTimer]);
-   motorSet(3, -cache[1][DriveTimer]);
-   motorSet(4, cache[2][DriveTimer]);
-   motorSet(5, cache[2][DriveTimer]);
-}
-```
-This function takes the stored input values and sets them to the corresponding motors. The delay is for redundancy.
+## resources
 
-### set mode function
-```c
-void setMode() { // Check buttons to set mode
-   delay(1);
-   if (joystickGetDigital(1,7,JOY_DOWN) == 1){// If you push the lower button, turn on recording
-     RecSwitch = 1;
-     DriveTimer = 0;
-   }
-   if (joystickGetDigital(1,7,JOY_RIGHT) == 1){// If you push the right button, turn on normal drive
-     RecSwitch = 2;
-     DriveTimer = 0;
-   }
-   if (joystickGetDigital(1,7,JOY_LEFT) == 1){// If you push the left button, turn on playback from cache
-     RecSwitch = 3;
-     DriveTimer = 0;
-     setCache();
-   }
-   if (joystickGetDigital(1,7,JOY_UP)){ // If you push the upper button, turn off recording NOT USABLE
-     RecSwitch = 0;
-   }
-   if (RecSwitch == 1) { // Begin Record function
-     recordDrive();
-     updateDrive();
-   } // End Record function
-   if (RecSwitch == 2) { // Begin normal drive function
-     updateDrive();
-   }
-   if (RecSwitch == 3) { // Begin normal drive function
-     playbackDrive();
-   }
-   if (RecSwitch == 0) { // Begin playback function
-     playbackDrive();
-   }
-}
-```
-(the function was too large to fit onto the page, had to compress it)
-This function sets the mode of the program. The modes include record, playback, user control, and a placeholder for future functions. If a button is pushed on the controller, the RecSwitch value is changed to an integer (0,1,2,3).
+1. C++ Basics
 
-### op control loop
-```c
-void operatorControl() { //Motor documentation, 1-2 left joystick, 3-4 right joystick, Left Claw 8 Right Claw 9
-	while (1) {
-    setMode();
-    clawSync();
-    updateSensors();
-    //printf("Value is %d, time is %d \n", J1C2[DriveTimer], DriveTimer);
-    //printf("J1C2[%d] = %d \n", DriveTimer, J1C2[DriveTimer]); //Print statements formatted so that copy-paste will work
-    //printf("J1C3[%d] = %d \n", DriveTimer, J1C3[DriveTimer]);
-    printf("left value %d \n", leftencodervalue);
-    printf("right value %d \n", rightencodervalue);
-    DriveTimer =+ 1; // Record time
-		delay(50); // Wait for refresh
-	}
-}
-```
-This loop brings everything together. It runs all the necessary functions, in a much cleaner way than in my previous seasons. Debug code placeholders are also included.
+2. 1. [C++ Cheat Sheet](https://github.com/gibsjose/cpp-cheat-sheet)
+   2. [C++ Crash Course](https://www.labri.fr/perso/nrougier/teaching/c++-crash-course/index.html)
+   3. [C++ Basic Implementation](https://www.programiz.com/cpp-programming/return-reference)
+
+3. Working with a CLI
+
+4. 1. At least skim through [this](https://github.com/jlevy/the-art-of-command-line/blob/master/README.md)
+
+5. Version Control (git)
+
+6. 1. [Intro to GitHub](https://guides.github.com/activities/hello-world/)
+   2. [Intro to git](https://guides.github.com/introduction/git-handbook/)
+
+7. PROS
+
+8. 1. [PROS first time user guide](https://pros.cs.purdue.edu/v5/getting-started/new-users.html)
+   2. [PROS getting started guide](https://pros.cs.purdue.edu/v5/getting-started/index.html)
+
