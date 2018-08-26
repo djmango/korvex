@@ -9,4 +9,4 @@ def index(request):
         request {string} -- managed by django
     """
     
-    return render(request, 'home.html', content_type='text/html')
+    return render(request, 'home.min.html', content_type='text/html')

@@ -50,8 +50,9 @@ h6 {
   color: rgba(255, 255, 255, 0.7);
 }
 
-.text-faded-bg {
-  color: rgba(255, 255, 255, 0.7);
+.text-bg {
+  font-family: 'Open Sans', 'Helvetica Neue', Arial, sans-serif;
+  color: rgba(255, 255, 255, 1);
   display: table;
   /* keep the background color wrapped tight */
   margin: 0px auto 0px auto;
