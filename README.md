@@ -40,22 +40,15 @@ This ensures you are in the correct directory
 ## resources
 
 1. C++ Basics
-
-2. 1. [C++ Cheat Sheet](https://github.com/gibsjose/cpp-cheat-sheet)
+   1. [C++ Cheat Sheet](https://github.com/gibsjose/cpp-cheat-sheet)
    2. [C++ Crash Course](https://www.labri.fr/perso/nrougier/teaching/c++-crash-course/index.html)
    3. [C++ Basic Implementation](https://www.programiz.com/cpp-programming/return-reference)
-
-3. Working with a CLI
-
-4. 1. At least skim through [this](https://github.com/jlevy/the-art-of-command-line/blob/master/README.md)
-
-5. Version Control (git)
-
-6. 1. [Intro to GitHub](https://guides.github.com/activities/hello-world/)
+2. Working with a CLI
+   1. At least skim through [this](https://github.com/jlevy/the-art-of-command-line/blob/master/README.md)
+3. Version Control (git)
+   1. [Intro to GitHub](https://guides.github.com/activities/hello-world/)
    2. [Intro to git](https://guides.github.com/introduction/git-handbook/)
-
-7. PROS
-
-8. 1. [PROS first time user guide](https://pros.cs.purdue.edu/v5/getting-started/new-users.html)
+4. PROS
+   1. [PROS first time user guide](https://pros.cs.purdue.edu/v5/getting-started/new-users.html)
    2. [PROS getting started guide](https://pros.cs.purdue.edu/v5/getting-started/index.html)
 
