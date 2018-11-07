@@ -1,4 +1,5 @@
 #include "main.h"
+#include "korvexlib.h"
 
 /**
  * Runs the user autonomous code. This function will be started in its own task
@@ -18,23 +19,5 @@ void autonomous()
     int b = 5; // buffer, this is the range that the motor can be off by
     int m = 600; // max speed allowed: velocity from -+-100, +-200, or +-600 depending on the motor's gearset
     t = 100;
-    motor.move_absolute(t, m); // Moves t units forward
-    while (!((motor.get_position() < (t + b)) && (motor.get_position() > (t - b))))
-    {
-        // Continue running this loop as long as the motor is not within +-b units of its goal
-        pros::delay(2);
-    }
-    t = 0;
-    motor.move_absolute(t, m); // This does not cause a movement
-    while (!((motor.get_position() < (t + b)) && (motor.get_position() > (t - b))))
-    {
-        pros::delay(2);
-    }
-
-    motor.tare_position();
-    motor.move_absolute(t, m); // Moves t units forward
-    while (!((motor.get_position() < (t + b)) && (motor.get_position() > (t - b))))
-    {
-        pros::delay(2);
-    }
+    korvex::motorMoveAbs(motor, 50, 5, 200);
 }
