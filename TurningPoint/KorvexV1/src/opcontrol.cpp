@@ -1,5 +1,6 @@
 #include "main.h"
 #include "okapi/api.hpp"
+#include "korvexlib.h"
 using namespace okapi;
 
 /**
@@ -16,29 +17,18 @@ using namespace okapi;
  * task, not resume it from where it left off.
  */
 
-// ports for motors
+// module constants
 
-// chassis motors
-const int LEFT_MTR1 = 1;
-const int LEFT_MTR2 = 2;
-const int RIGHT_MTR1 = 3;
-const int RIGHT_MTR2 = 4;
-
-// lift and claw motor declerations
-const int LIFT_MTR = 5;
-const int CLAW_MTR = 6;
-
-// flywheel and intake motors
-const int FLY_MTR = 7;
-const int INTAKE_MTR = 8;
+const int FLY_PRESETS[5] = {0, 50, 100, 150, 200};
+const int FLY_SLEW[9] = {200, 175, 150, 125, 100, 75, 50, 25, 0};
 
 void opcontrol()
 {
 
 	// factory constructs
 	auto chassis = okapi::ChassisControllerFactory::create(
-		{-LEFT_MTR1, -LEFT_MTR2},				  // Left motors
-		{RIGHT_MTR1, RIGHT_MTR2},				  // Right motors
+		{LEFT_MTR1, LEFT_MTR2},				  // Left motors
+		{-RIGHT_MTR1, -RIGHT_MTR2},			  // Right motors
 		okapi::AbstractMotor::gearset::green, // Torque gearset
 		{4_in, 12.5_in}						  // 4 inch wheels, 12.5 inch wheelbase width
 	);
@@ -53,14 +43,23 @@ void opcontrol()
 	auto liftControl = AsyncControllerFactory::posIntegrated(LIFT_MTR);
 	int liftGoal = 0;
 
-	okapi::Controller controller;
+	// flywheel and intake controllers
+	pros::Motor flywheelPros(FLY_MTR, pros::E_MOTOR_GEARSET_06, true);
+	// auto flywheelControl = AsyncControllerFactory::velPID(-FLY_MTR, .0004, 0.005);
+	int flywheelIterate = 0;
+	flywheelTarget = 0;
+	auto intakeControl = AsyncControllerFactory::velIntegrated(-INTAKE_MTR);
+	bool intakeToggle = false; // for user toggle
 
+	okapi::Controller controller;
+	pros::Controller controllerPros(pros::E_CONTROLLER_MASTER); // default api for more functions
+	
 	while (true)
 	{
 		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
 						 (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
 						 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);
-		
+		// lift control
 		if (controller.getDigital(ControllerDigital::up))
 		{
 			liftGoal++;
@@ -71,6 +70,45 @@ void opcontrol()
 			liftGoal--;
 			liftControl.setTarget(liftGoal);
 		}
+
+		// intake control
+		if (controllerPros.get_digital_new_press(DIGITAL_L1)) // using pros api for new press check
+		{
+			if (intakeToggle == true)
+			{
+				intakeControl.setTarget(0);
+				intakeToggle = false;
+			}
+			else
+			{
+				intakeControl.setTarget(200);
+				intakeToggle = true;
+			}
+		}
+		else if (controller.getDigital(ControllerDigital::A))
+		{
+			intakeControl.setTarget(-200);
+		}
+		else if (intakeToggle == false)
+		{
+			intakeControl.setTarget(0);
+		}
+
+		// flywheel control
+		if (controllerPros.get_digital_new_press(DIGITAL_R1) && flywheelIterate <= 5)
+		{
+			flywheelIterate++;
+			controllerPros.print(0, 0, "FlyPreset: %d", flywheelIterate);
+			flywheelTarget = FLY_PRESETS[flywheelIterate];
+		}
+		else if (controllerPros.get_digital_new_press(DIGITAL_R2) && flywheelIterate > 0)
+		{
+			flywheelIterate--;
+			controllerPros.print(0, 0, "FlyPreset: %d", flywheelIterate);
+			flywheelTarget = FLY_PRESETS[flywheelIterate];
+		}
+
+		// chassis control
 		chassis.tank(controller.getAnalog(ControllerAnalog::leftY),
 					 controller.getAnalog(ControllerAnalog::rightY));
 		pros::delay(20);
