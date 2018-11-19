@@ -28,44 +28,44 @@ void motorTBH(pros::Motor &motor, int target, int buffer = 5, int gain = 1)
     }
 }
 
-void motorPID()
-{
-    // pull data from datastruct
-    pros::Motor motor(FLY_MTR, pros::E_MOTOR_GEARSET_06, true);
-    int targetVel = flywheelTarget;
-    float kP = 0;
-    float kI = 1;
-    float kD = .05;
+// void motorPID(void *)
+// {
+//     // pull data from datastruct
+//     pros::Motor motor(FLY_MTR, pros::E_MOTOR_GEARSET_06, true);
+//     int targetVel = flywheelTarget;
+//     float kP = 0;
+//     float kI = 1;
+//     float kD = .05;
 
-    // delcare
-    int error = 0;
-    int prev_error = 0;
-    int velocity = 0;
-    int output = 0;
-    int p = 0;
-    int i = 0;
-    int d = 0;
-    while (true) {
-        velocity = motor.get_actual_velocity();
+//     // delcare
+//     int error = 0;
+//     int prev_error = 0;
+//     int velocity = 0;
+//     int output = 0;
+//     int p = 0;
+//     int i = 0;
+//     int d = 0;
+//     while (true) {
+//         velocity = motor.get_actual_velocity();
         
-        error = targetVel - velocity;
-        // pid calc
-        p = (error * kP);
-        if (abs(error) < (targetVel / 2)) // if the error is greater than half of target
-            i = ((i + error) * kI);
-        else
-            i = 0;
-        d = ((error - prev_error) * kD);
-        // store last error
-        prev_error = error;
+//         error = targetVel - velocity;
+//         // pid calc
+//         p = (error * kP);
+//         if (abs(error) < (targetVel / 2)) // if the error is greater than half of target
+//             i = ((i + error) * kI);
+//         else
+//             i = 0;
+//         d = ((error - prev_error) * kD);
+//         // store last error
+//         prev_error = error;
 
-        // calculate output
-        output = (p + i + d);
+//         // calculate output
+//         output = (p + i + d);
 
-        // apply output
-        printf("fly output%d\n", output);
-        motor.move(output);
-        pros::delay(50);
-    }
-}
+//         // apply output
+//         printf("fly output%d\n", output);
+//         motor.move(output);
+//         pros::delay(50);
+//     }
+// }
 } // namespace korvex

@@ -24,7 +24,7 @@ const int INTAKE_MTR = 20;
 // bool isReplaying;
 
 // other globals
-extern int flywheelTarget;
+// extern int flywheelTarget;
 
 namespace korvex
 {
