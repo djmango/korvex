@@ -18,14 +18,19 @@ using namespace okapi;
  */
 
 // TODO: limit switch presets
-// TODO: switch to 2nd controller
 // TODO: advanced lcd feedback
 
 // module constants
 
+// flywheel velocity presets, each represents an trajectory arc of the ball
 const int FLY_PRESETS[7] = {0, 100, 200, 300, 400, 500, 600};
-// const int FLY_SLEW[9] = {200, 175, 150, 125, 100, 75, 50, 25, 0};
+const int FLY_PRESETS_LEN = sizeof(FLY_PRESETS) / sizeof(FLY_PRESETS[0]);
+
+// lift position presets, different heights for different poles
 const int LIFT_PRESETS[8] = {0, 20, 25, 35, 45, 60, 80, 100};
+const int LIFT_PRESETS_LEN = sizeof(LIFT_PRESETS) / sizeof(LIFT_PRESETS[0]);
+
+// globals
 int flywheelTarget = 0;
 int flywheelOutput = 0;
 
@@ -107,36 +112,76 @@ void opcontrol()
 	auto liftControl = AsyncControllerFactory::posIntegrated(LIFT_MTR);
 	int liftIterate = 0;
 
-	// flywheel and intake controllers
-
+	// flywheel task startup
 	int flywheelIterate = 0;
-	// auto flywheelMotorOkapi = okapi::Motor(FLY_MTR, true, okapi::AbstractMotor::gearset::blue);
-	// auto flywheelControl = AsyncControllerFactory::velPID(flywheelMotorOkapi, .0001, 0.01);
 	pros::Task flyPIDLoop(flyPID, (void *)NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "FlywheelPID");
+	
+	// intake controller
 	auto intakeControl = AsyncControllerFactory::velIntegrated(INTAKE_MTR);
 	bool intakeToggle = false; // for user toggle
+	bool ballTriggerBottom = false; // these are for detecting if the intake
+	bool ballTriggerTop = false; // triggers are activated
+	pros::ADIDigitalIn triggerBL(TRIGGER_BL);
+	pros::ADIDigitalIn triggerBR(TRIGGER_BR);
+	pros::ADIDigitalIn triggerTL(TRIGGER_TL);
+	pros::ADIDigitalIn triggerTR(TRIGGER_TR);
 
 	okapi::Controller controller;
 	pros::Controller controllerPros(pros::E_CONTROLLER_PARTNER); // default api for more functions
 
+	// we got time
+	int cycles = 0; // cycle counter
+	int cyclesHold = 0; // temp thing for counting
+	pros::lcd::print(0, "I got time\n");
+	pros::lcd::print(1, "Me when I got time\n");
+	pros::lcd::print(2, "This is so me when I got time\n");
 	while (true)
 	{
 		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
 						 (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
 						 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);
 		// lift control
-		if (controllerPros.get_digital_new_press(DIGITAL_UP) && liftIterate <= 8)
+		if (controllerPros.get_digital_new_press(DIGITAL_UP) && liftIterate <= LIFT_PRESETS_LEN) // if we get a new up press and we are not at max preset
 		{
 			liftIterate++;
 			liftControl.setTarget(LIFT_PRESETS[liftIterate]);
 		}
-		else if (controllerPros.get_digital_new_press(DIGITAL_DOWN) && liftIterate >= 0)
+		else if (controllerPros.get_digital_new_press(DIGITAL_DOWN) && liftIterate >= 0) // if we get a new down press and we are not at min preset
 		{
 			liftIterate--;
 			liftControl.setTarget(LIFT_PRESETS[liftIterate]);
 		}
 
 		// intake control
+		// check sensors
+
+		// get new press from either side of bottom, ensure intake is on and there is no ball already there to remove false positives
+		// we also do not want to stop the intake if theres no ball at the top, as the default position should be top
+		if ((triggerBL.get_new_press() || triggerBR.get_new_press()) && intakeToggle == true && ballTriggerBottom == false && ballTriggerTop == true)
+		{
+			intakeControl.setTarget(0);
+			intakeToggle = false;
+			ballTriggerBottom = true;
+		}
+
+		// get new press from either side of top, ensure intake is on and there is no ball already there to remove false positives
+		if ((triggerTL.get_new_press() || triggerTR.get_new_press()) && intakeToggle == true && ballTriggerTop == false)
+		{
+			intakeControl.setTarget(0);
+			intakeToggle = false;
+			ballTriggerTop = true;
+		}
+
+		// make sure to update values on sensor state change
+		// ensure that neither sensor is pushed, if so, tell the bot that the ball is no longer in position
+		if (!triggerBL.get_value() && !triggerBR.get_value())
+		{
+			ballTriggerBottom = false;
+		}
+		if (!triggerTL.get_value() && !triggerTR.get_value())
+		{
+			ballTriggerTop = false;
+		}
 		if (controllerPros.get_digital_new_press(DIGITAL_L1)) // using pros api for new press check
 		{
 			if (intakeToggle == true)
@@ -163,9 +208,9 @@ void opcontrol()
 		if (controllerPros.get_digital_new_press(DIGITAL_R1))
 		{
 			flywheelIterate++;
-			if (flywheelIterate > 7)
+			if (flywheelIterate > FLY_PRESETS_LEN)
 			{
-				flywheelIterate = 7;
+				flywheelIterate = FLY_PRESETS_LEN;
 			}
 			// controllerPros.print(0, 0, "FlyPreset: %d", flywheelIterate);
 			flywheelTarget = FLY_PRESETS[flywheelIterate];
@@ -186,6 +231,7 @@ void opcontrol()
 		// chassis control
 		chassis.tank(controller.getAnalog(ControllerAnalog::leftY),
 					 controller.getAnalog(ControllerAnalog::rightY));
+		cycles++;
 		pros::delay(20);
 	}
 }
