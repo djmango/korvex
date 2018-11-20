@@ -22,18 +22,18 @@ void opcontrol()
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
 
 	// chassis motor declerations
-	pros::Motor leftMtr1(1);
-	pros::Motor leftMtr2(2);
-	pros::Motor rightMtr1(3);
-	pros::Motor rightMtr2(4);
+	pros::Motor leftMtr1(11);
+	pros::Motor leftMtr2(12);
+	pros::Motor rightMtr1(13);
+	pros::Motor rightMtr2(14);
 
 	// lift and claw motor declerations
-	pros::Motor liftMtr(5);
-	pros::Motor clawMtr(6);
+	pros::Motor liftMtr(16);
+	pros::Motor clawMtr(17);
 
 	// flywheel and intake motors
-	pros::Motor flyMtr(7);
-	pros::Motor intakeMtr(8);
+	pros::Motor flyMtr(19);
+	pros::Motor intakeMtr(20);
 
 	// declare motor speed holders, for lack of a better term
 	int left = 0;

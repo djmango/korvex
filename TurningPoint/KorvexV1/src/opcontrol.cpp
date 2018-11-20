@@ -17,13 +17,13 @@ using namespace okapi;
  * task, not resume it from where it left off.
  */
 
-// TODO: limit switch presets
+// TODO: when we lock into a preset for flywheel, spin up and shoot automatically when ready, ex launch button
 // TODO: advanced lcd feedback
 
 // module constants
 
 // flywheel velocity presets, each represents an trajectory arc of the ball
-const int FLY_PRESETS[7] = {0, 100, 200, 300, 400, 500, 600};
+const int FLY_PRESETS[7] = {0, 300, 360, 380, 420, 500, 600};
 const int FLY_PRESETS_LEN = sizeof(FLY_PRESETS) / sizeof(FLY_PRESETS[0]);
 
 // lift position presets, different heights for different poles
@@ -39,9 +39,12 @@ pros::Motor flywheelPros(FLY_MTR, pros::E_MOTOR_GEARSET_06, true);
 void flyPID(void *)
 {
 	// define
+	// (4, 1, 1) = avg 30, slow decrease
+	// (2, 1, 0) = avg 10, slow stabalize, fast decrease
+	// (2, 1, 0.3) = avg 6, decent stabalize, fast decrease
 	float kP = 2;
-	float kI = 0;
-	float kD = 1;
+	float kI = 1;
+	float kD = .3;
 	int error = 0;
 	int prev_error = 0;
 	int velocity = 0;
@@ -60,7 +63,7 @@ void flyPID(void *)
 		p = (error * kP);
 
 		// integral
-		if (abs(error) < (flywheelTarget / 2) && kI != 0) // if the error is greater than half of target
+		if (abs(error) < 150 && kI != 0) // if the error is greater than half of target
 			i = ((i + error) * kI);
 		else
 			i = 0;
@@ -72,7 +75,6 @@ void flyPID(void *)
 
 		// calculate output
 		flywheelOutput = (p + i + d);
-		printf("fly output %d\n", flywheelOutput);
 
 		// scale
 		flywheelOutput = flywheelOutput * 0.212; // 600 * 0.212 = 127
@@ -85,9 +87,10 @@ void flyPID(void *)
 		}
 
 		// apply output
-		printf("fly err %d\n", error);
-		printf("fly target %d\n", flywheelTarget);
-		pros::delay(50);
+		// printf("fly output %d\n", flywheelOutput);
+		// printf("fly err %d\n", error);
+		// printf("fly target %d\n", flywheelTarget);
+		pros::delay(100);
 	}
 }
 
@@ -117,7 +120,8 @@ void opcontrol()
 	pros::Task flyPIDLoop(flyPID, (void *)NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "FlywheelPID");
 	
 	// intake controller
-	auto intakeControl = AsyncControllerFactory::velIntegrated(INTAKE_MTR);
+	pros::Motor intakeMotor (INTAKE_MTR, pros::E_MOTOR_GEARSET_18, true);
+	intakeMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 	bool intakeToggle = false; // for user toggle
 	bool ballTriggerBottom = false; // these are for detecting if the intake
 	bool ballTriggerTop = false; // triggers are activated
@@ -131,10 +135,11 @@ void opcontrol()
 
 	// we got time
 	int cycles = 0; // cycle counter
+	int cumulativeErr = 0;
 	int cyclesHold = 0; // temp thing for counting
-	pros::lcd::print(0, "I got time\n");
-	pros::lcd::print(1, "Me when I got time\n");
-	pros::lcd::print(2, "This is so me when I got time\n");
+	pros::lcd::print(2, "I got time\n");
+	pros::lcd::print(3, "Me when I got time\n");
+	pros::lcd::print(4, "This is so me when I got time\n");
 	while (true)
 	{
 		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
@@ -159,7 +164,11 @@ void opcontrol()
 		// we also do not want to stop the intake if theres no ball at the top, as the default position should be top
 		if ((triggerBL.get_new_press() || triggerBR.get_new_press()) && intakeToggle == true && ballTriggerBottom == false && ballTriggerTop == true)
 		{
-			intakeControl.setTarget(0);
+			printf("bot triggered\n");
+
+			// if theres a ball at the top, we want to pull it down back to the trigger
+			intakeMotor.move_velocity(-200);
+			// this is kinda a fuck it solution, just pulls down until we dont trigger the bot
 			intakeToggle = false;
 			ballTriggerBottom = true;
 		}
@@ -167,41 +176,55 @@ void opcontrol()
 		// get new press from either side of top, ensure intake is on and there is no ball already there to remove false positives
 		if ((triggerTL.get_new_press() || triggerTR.get_new_press()) && intakeToggle == true && ballTriggerTop == false)
 		{
-			intakeControl.setTarget(0);
+			printf("top triggered\n");
+			intakeMotor.move_velocity(0);
+			// intakeMotor.move_relative(-100, 100);
 			intakeToggle = false;
 			ballTriggerTop = true;
 		}
 
 		// make sure to update values on sensor state change
 		// ensure that neither sensor is pushed, if so, tell the bot that the ball is no longer in position
-		if (!triggerBL.get_value() && !triggerBR.get_value())
+		if (!triggerBL.get_value() && !triggerBR.get_value() && intakeToggle == false)
 		{
+			printf("bot not triggered\n");
 			ballTriggerBottom = false;
 		}
-		if (!triggerTL.get_value() && !triggerTR.get_value())
+		if (!triggerTL.get_value() && !triggerTR.get_value() && intakeToggle == false)
 		{
+			printf("top not triggered\n");
 			ballTriggerTop = false;
 		}
+
+		// we dont want to push the top ball up if the flywheel isnt basically stopped
+		// if (flywheelPros.get_actual_velocity() > 25 && flywheelTarget == 0) {
+		// 	intakeMotor.move_velocity(0);
+		// 	intakeToggle = false;
+		// 	printf("we gotta stop\n");
+		// }
+
+		// actual user control
 		if (controllerPros.get_digital_new_press(DIGITAL_L1)) // using pros api for new press check
 		{
 			if (intakeToggle == true)
 			{
-				intakeControl.setTarget(0);
+				intakeMotor.move_velocity(0);
 				intakeToggle = false;
 			}
 			else
 			{
-				intakeControl.setTarget(200);
+				intakeMotor.move_velocity(200);
 				intakeToggle = true;
 			}
 		}
-		else if (controllerPros.get_digital_new_press(DIGITAL_A))
+		if (controllerPros.get_digital(DIGITAL_A))
 		{
-			intakeControl.setTarget(-200);
+			intakeMotor.move_velocity(-200);
 		}
-		else if (intakeToggle == false)
+		else if (intakeToggle == false && ballTriggerBottom == false && ballTriggerTop == false)
 		{
-			intakeControl.setTarget(0);
+			printf("setting speed to 0\n");
+			intakeMotor.move_velocity(0);
 		}
 
 		// flywheel control
@@ -232,6 +255,10 @@ void opcontrol()
 		chassis.tank(controller.getAnalog(ControllerAnalog::leftY),
 					 controller.getAnalog(ControllerAnalog::rightY));
 		cycles++;
+		if (flywheelTarget != 0) {
+			cumulativeErr = cumulativeErr + abs(flywheelTarget - flywheelPros.get_actual_velocity());
+			printf("avg err %d\n", (cumulativeErr / cycles));
+		}
 		pros::delay(20);
 	}
 }
