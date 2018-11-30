@@ -17,20 +17,19 @@ using namespace okapi;
  * task, not resume it from where it left off.
  */
 
-// TODO: add shooting positions with 2d array
 // TODO: make user controls more ez pz
-// TODO: advanced lcd feedback
+// TODO: pathfinder auton
 
 // module constants
 
 // 5 for 5 shooting positions, close, middle, platform, full, and cross
 // 3 for 0, second, and third flag
 const int FLY_PRESETS[5][3] = {
-	{0, 360, 480}, // close
-	{0, 440, 560}, // middle
-	{0, 420, 600}, // platform
-	{0, 420, 600}, // full
-	{0, 420, 600}  // cross
+	{0, 590, 590}, // close
+	{0, 420, 590}, // middle
+	{0, 400, 490}, // platform
+	{0, 465, 525}, // full
+	{0, 490, 580}  // cross
 };
 const int FLY_PRESETS_LEN = 3;
 
@@ -38,13 +37,13 @@ const int FLY_PRESETS_LEN = 3;
 // lift presets respectivley: rest, [0] low intake, low stack, [1] high intake, high stack
 // intaking the cap means we want the claw level with the cap, stacking it means it needs to be a bit above
 const int LIFT_PRESETS[2][3] = {
-	{0, 650, 800},
-	{0, 950, 1600}
+	{0, 650, 800}, // low pole
+	{0, 950, 1600} // high pole
 };
-const int LIFT_PRESETS_LEN = 3;
+const int LIFT_PRESETS_LEN = 2; // 0 is the first iterate
 const int LIFT_MAX_VEL = 200;
 
-	// globals
+// globals
 int flywheelTarget = 0;
 int flywheelOutput = 0;
 
@@ -56,9 +55,9 @@ void flyPID(void *)
 	// (4, 1, 1) = avg 30, slow decrease
 	// (2, 1, 0) = avg 10, slow stabalize, fast decrease
 	// (2, 1, 0.3) = avg 6, decent stabalize, fast decrease
-	float kP = 2.5;
-	float kI = 1;
-	float kD = 0;
+	float kP = 0.7;
+	float kI = 0.1;
+	float kD = 0.3;
 	int error = 0;
 	int prev_error = 0;
 	int velocity = 0;
@@ -91,7 +90,6 @@ void flyPID(void *)
 		flywheelOutput = (p + i + d);
 
 		// scale
-		// flywheelOutput = flywheelOutput * 0.212; // 600 * 0.212 = 127
 		if (flywheelOutput < 0 || flywheelTarget == 0)
 		{
 			flywheelOutput = 0;
@@ -103,16 +101,10 @@ void flyPID(void *)
 		}
 
 		// apply output
-		// flywheelPros.move(flywheelOutput); we have a temp solution
-
-		// 48 natural decrease per second
-		if (flywheelTarget == 0 && abs(velocity) > 15)
-		{
-			flywheelPros.move_velocity(0);
-		}
-		// printf("fly output %d\n", flywheelOutput);
-		// printf("fly err %d\n", error);
-		// printf("fly target %d\n", flywheelTarget);
+		flywheelPros.move(flywheelOutput);
+		printf("fly output %d\n", flywheelOutput);
+		printf("fly err %d\n", error);
+		printf("fly target %d\n", flywheelTarget);
 		pros::delay(100);
 	}
 }
@@ -132,7 +124,7 @@ void isFlySpunUpCheck(void *)
 		std::cout << "\nerr: " << err;
 		std::cout << "\navg err: " << averageErr;
 
-		if (cycles >= 20) // every 1 second
+		if (cycles >= 40 || flywheelTarget == 0) // every 2 seconds, or whenever we arent trying to spin
 		{
 			averageErr = 0;
 			cycles = 0;
@@ -286,14 +278,6 @@ void opcontrol()
 			ballTriggerTop = false;
 		}
 
-		// we dont want to push the top ball up if the flywheel isnt basically stopped
-		if (abs(flywheelPros.get_actual_velocity()) > 25 && flywheelTarget == 0 && ballTriggerTop == true)
-		{
-			intakeMotor.move_velocity(0);
-			intakeToggle = false;
-			printf("we gotta stop\n");
-		}
-
 		// actual user control
 		if (controllerPros.get_digital_new_press(DIGITAL_L1))
 		{
@@ -348,7 +332,7 @@ void opcontrol()
 
 			case 1: // mid, change to platform
 				shootingPosition++;
-				controllerPros.print(2, 0, "Pos %d: Platform", shootingPosition);
+				controllerPros.print(2, 0, "Pos %d: Plat", shootingPosition);
 				break;
 
 			case 2: // platform, change to full
@@ -404,12 +388,29 @@ void opcontrol()
 		}
 
 		// these are async so all user input is ignored
-		if (flyArmed == 1 && isFlySpunUp == true && flywheelTarget != 0)
+		if (flyArmed == 1 && isFlySpunUp == true && flywheelTarget != 0) // shoot one ball
 		{
+			chassis.tank(0, 0);
 			intakeMotor.move_velocity(200);
 			intakeToggle = true;
 			ballTriggerTop = false; // we are shooting this ball so its gone
-			pros::delay(1000);
+
+			// if there is a ball on bottom
+			// we should keep the intake going until the bottom ball goes to top pos
+			if (ballTriggerBottom == true)
+			{
+				cyclesHold = cycles;
+				while (isFlySpunUp == false && !(cyclesHold + 50 < cycles))
+				{
+					// to make sure we dont get stuck
+					cycles++;
+					pros::delay(20);
+				}
+			}
+			else
+			{
+				pros::delay(500);
+			}
 			// disarm flywheel
 			flyArmed = 0;
 			controllerPros.print(0, 0, "Fly Not Armed");
@@ -418,44 +419,6 @@ void opcontrol()
 			flywheelIterate = 0;
 			flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
 		}
-		// if (flyArmed == 2 && isFlySpunUp == true && flywheelTarget != 0)
-		// {
-		// 	// freeze chassis
-		// 	chassis.tank(0, 0);
-		// 	intakeMotor.move_velocity(200);
-		// 	// wait for first ball to get shot
-		// 	pros::delay(500);
-		// 	isFlySpunUp = false;
-		// 	intakeMotor.move_velocity(0);
-		// 	controllerPros.print(0, 0, "Shot 1st ball..");
-		// 	// lower flywheel power
-		// 	flywheelIterate--;
-		// 	flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
-		// 	flywheelPros.move_velocity(flywheelTarget);
-		// 	// wait for spinup
-		// 	pros::delay(500);
-		// 	cyclesHold = cycles;
-		// 	while (isFlySpunUp == false && !(cyclesHold + 10 < cycles)) 
-		// 	{
-		// 		// to make sure we dont get stuck
-		// 		cycles++;
-		// 		pros::delay(100);
-		// 	}
-		// 	// shoot 2nd ball
-		// 	intakeMotor.move_velocity(200);
-		// 	// wait for second ball to get shot
-		// 	pros::delay(500);
-
-		// 	// cleanup
-		// 	ballTriggerTop = false; // we are shooting the balls so they gone
-		// 	ballTriggerBottom = false;
-		// 	// disarm the flywheel
-		// 	flyArmed = 0;
-		// 	controllerPros.print(0, 0, "Fly Not Armed");
-		// 	intakeMotor.move_velocity(0);
-		// 	flywheelIterate = 0;
-		// 	flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
-		// }
 		if (flyArmed == 2 && isFlySpunUp == true && flywheelTarget != 0) // lower then upper
 		{
 			// freeze chassis
