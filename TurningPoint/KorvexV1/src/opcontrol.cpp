@@ -248,6 +248,7 @@ void opcontrol()
 		if ((triggerBL.get_new_press() || triggerBR.get_new_press()) && intakeToggle == true && ballTriggerBottom == false && ballTriggerTop == true)
 		{
 			// printf("bot triggered\n");
+			controllerPros.print(2, 0, "Ball Bot");
 
 			// if theres a ball at the top, we want to pull it down back to the trigger
 			intakeMotor.move_velocity(-200);
@@ -260,6 +261,7 @@ void opcontrol()
 		if ((triggerTL.get_new_press() || triggerTR.get_new_press()) && intakeToggle == true && ballTriggerTop == false)
 		{
 			// printf("top triggered\n");
+			controllerPros.print(2, 0, "Ball Top");
 			intakeMotor.move_velocity(0);
 			intakeToggle = false;
 			ballTriggerTop = true;
