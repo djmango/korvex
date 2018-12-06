@@ -249,6 +249,7 @@ void opcontrol()
 		{
 			// printf("bot triggered\n");
 			controllerPros.print(2, 0, "Ball Bot");
+			controller.rumble(". .");
 
 			// if theres a ball at the top, we want to pull it down back to the trigger
 			intakeMotor.move_velocity(-200);
@@ -262,6 +263,7 @@ void opcontrol()
 		{
 			// printf("top triggered\n");
 			controllerPros.print(2, 0, "Ball Top");
+			controller.rumble(". -");
 			intakeMotor.move_velocity(0);
 			intakeToggle = false;
 			ballTriggerTop = true;

@@ -41,54 +41,140 @@ pros::ADIDigitalIn triggerTR_A(TRIGGER_TR);
 
 void autonomous()
 {
-    // setup
-    flywheelPros_A.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    // 0 = red close, mid and top flag and park
+    // 1 = red close, all flags and park
+    // 2 = red far, opponent descore
+    int auton = 0;
+    int tmp = 0;
+    switch (auton)
+    {
+    case 0: // red close, mid and top flag and park
+        // setup
+        flywheelPros_A.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+        chassis.setMaxVelocity(150); // this might fix things
 
-    // actual auton
-    intakeMotor_A.move_velocity(200);
-    chassis.moveDistanceAsync(970); // going to cap with ball under it
-    // wait until we intake ball to bot
-    while (!(triggerBL_A.get_new_press() || triggerBR_A.get_new_press()))
-    {
-        pros::delay(20);
-    }
-    // theres a ball at the top, we want to pull it down back to the trigger
-    intakeMotor_A.move_velocity(-200);
-    while (!(triggerTL_A.get_new_press() || triggerTR_A.get_new_press()))
-    {
-        pros::delay(20);
-    }
-    intakeMotor_A.move_velocity(0);
-    // there is now a ball in both positions
-    flywheelPros_A.move_velocity(590);
-    chassis.moveDistance(-1000);
-    // back and turn into shooting position
-    chassis.turnAngle(255);
-    chassis.moveDistance(-420);
-    // shoot first ball when ready
-    while (!(flywheelPros_A.get_actual_velocity() > 590))
-    {
-        pros::delay(20);
-    }
-    intakeMotor_A.move_velocity(200);
-    pros::delay(500);
-    intakeMotor_A.move_velocity(0);
-    // start moving for bot flag toggle
-    chassis.moveDistance(1000);
+        // actual auton
+        intakeMotor_A.move_velocity(200);
+        chassis.moveDistanceAsync(37_in); // going to cap with ball under it
 
-    // shoot second ball
-    while (!(flywheelPros_A.get_actual_velocity() > 590))
-    {
-        pros::delay(20);
+        // wait until we intake ball to bot
+        while (!(triggerBL_A.get_new_press() || triggerBR_A.get_new_press()) && !(tmp > 200)) // 1 sec timeout
+        {
+            pros::delay(20);
+            tmp++;
+        }
+
+        // theres a ball at the top, we want to pull it down back to the trigger
+        intakeMotor_A.move_velocity(-200);
+        while (!(triggerTL_A.get_new_press() || triggerTR_A.get_new_press()))
+        {
+            pros::delay(20);
+        }
+        intakeMotor_A.move_velocity(0);
+
+        // there is now a ball in both positions
+        flywheelPros_A.move_velocity(600);
+        chassis.moveDistance(-39_in); // 40 is perfecc
+        // back and turn into shooting position
+        chassis.setMaxVelocity(130);
+        chassis.turnAngle(238);
+        chassis.setMaxVelocity(190);
+        chassis.moveDistance(-12_in);
+        // shoot first ball when ready
+        while (!(flywheelPros_A.get_actual_velocity() > 590))
+        {
+            pros::delay(20);
+        }
+        intakeMotor_A.move_velocity(200);
+        pros::delay(500);
+        intakeMotor_A.move_velocity(0);
+
+        // second ball shot position
+        chassis.moveDistance(24_in);
+
+        // shoot second ball
+        while (!(flywheelPros_A.get_actual_velocity() > 590))
+        {
+            pros::delay(20);
+        }
+        intakeMotor_A.move_velocity(200);
+        pros::delay(500);
+        intakeMotor_A.move_velocity(0);
+        flywheelPros_A.move_velocity(0);
+
+        // move to park
+        chassis.moveDistance(-41_in);
+        chassis.turnAngle(-280);
+        chassis.moveDistance(50_in);
+        break;
+
+    case 1: // red close, all flags and park
+        // setup
+        flywheelPros_A.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+        chassis.setMaxVelocity(170); // this might fix things
+
+        // actual auton
+        intakeMotor_A.move_velocity(200);
+        chassis.moveDistanceAsync(37_in); // going to cap with ball under it
+
+        // wait until we intake ball to bot
+        while (!(triggerBL_A.get_new_press() || triggerBR_A.get_new_press()) && !(tmp > 200)) // 1 sec timeout
+        {
+            pros::delay(20);
+            tmp++;
+        }
+
+        // theres a ball at the top, we want to pull it down back to the trigger
+        intakeMotor_A.move_velocity(-200);
+        while (!(triggerTL_A.get_new_press() || triggerTR_A.get_new_press()))
+        {
+            pros::delay(20);
+        }
+        intakeMotor_A.move_velocity(0);
+
+        // there is now a ball in both positions
+        flywheelPros_A.move_velocity(600);
+        chassis.moveDistance(-40_in); // 40 is perfecc
+        // back and turn into shooting position
+        chassis.setMaxVelocity(135);
+        chassis.turnAngle(242);
+        chassis.setMaxVelocity(190);
+        chassis.moveDistance(-11_in);
+        // shoot first ball when ready
+        while (!(flywheelPros_A.get_actual_velocity() > 590))
+        {
+            pros::delay(20);
+        }
+        intakeMotor_A.move_velocity(200);
+        pros::delay(500);
+        chassis.setMaxVelocity(200);
+        intakeMotor_A.move_velocity(0);
+
+        // start moving for bot flag toggle
+        // this is for second ball shot
+        chassis.moveDistance(24_in);
+
+        // shoot second ball
+        while (!(flywheelPros_A.get_actual_velocity() > 590))
+        {
+            pros::delay(20);
+        }
+        intakeMotor_A.move_velocity(200);
+        pros::delay(500);
+        intakeMotor_A.move_velocity(0);
+        flywheelPros_A.move_velocity(0);
+        // ram into bot flag
+        chassis.moveDistance(26_in);
+        // move to park
+        chassis.moveDistance(-70_in);
+        chassis.turnAngle(-300);
+        chassis.moveDistance(40_in);
+        break;
+
+    case 2: // red far, opponent descore
+        break;
+
+    default:
+        break;
     }
-    intakeMotor_A.move_velocity(200);
-    pros::delay(500);
-    intakeMotor_A.move_velocity(0);
-    flywheelPros_A.move_velocity(0);
-    // ram into bot flag
-    chassis.moveDistance(400);
-    // move to park
-    chassis.moveDistance(-1900);
-    chassis.turnAngle(-260);
-    chassis.moveDistance(800);
 }
