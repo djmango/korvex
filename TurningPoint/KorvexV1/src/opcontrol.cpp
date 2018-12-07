@@ -182,11 +182,16 @@ void opcontrol()
 	bool intakeToggle = false;		// for user toggle
 	bool ballTriggerBottom = false; // these are for detecting if the intake
 	bool ballTriggerTop = false;	// triggers are activated
+
 	// intake triggers
 	pros::ADIDigitalIn triggerBL(TRIGGER_BL);
 	pros::ADIDigitalIn triggerBR(TRIGGER_BR);
 	pros::ADIDigitalIn triggerTL(TRIGGER_TL);
 	pros::ADIDigitalIn triggerTR(TRIGGER_TR);
+
+	// claw controller
+	pros::Motor clawMotor(CLAW_MTR, pros::E_MOTOR_GEARSET_18, false);
+	clawMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
 	okapi::Controller controller;
 	pros::Controller controllerPros(pros::E_CONTROLLER_MASTER); // default api for more functions
@@ -204,41 +209,28 @@ void opcontrol()
 						 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);
 		// lift control
 
-		// position changer
-		if (controllerPros.get_digital_new_press(DIGITAL_LEFT))
+		if (controllerPros.get_digital_new_press(DIGITAL_UP)) // stack on low
 		{
-			if (liftPosition != 1)
+			liftMotor.move_absolute(1200, 200);
+		}
+		else if (controllerPros.get_digital_new_press(DIGITAL_LEFT)) // descore
+		{
+			liftMotor.move_absolute(1500, 200);
+		}
+		else if (controllerPros.get_digital_new_press(DIGITAL_DOWN)) // normal pos
+		{
+			if (liftMotor.get_position() < 100)
 			{
-				liftPosition = 1; // this statement is legit foolproof idk how it'd break
-				controllerPros.print(2, 0, "High Pole");
+				liftMotor.move_relative(-100, 100);
 			}
 			else
 			{
-				liftPosition = 0;
-				controllerPros.print(2, 0, "Low Pole");
+				liftMotor.move_absolute(-10, 200);
 			}
 		}
-
-		// goin thru presets
-		if (controllerPros.get_digital_new_press(DIGITAL_UP)) // if we get a new up press
+		else if (controllerPros.get_digital_new_press(DIGITAL_RIGHT)) // normal pos
 		{
-			liftIterate++;
-			if (liftIterate >= LIFT_PRESETS_LEN) // dont wanna go above
-			{
-				liftIterate = LIFT_PRESETS_LEN;
-			}
-			liftTarget = LIFT_PRESETS[liftPosition][liftIterate];
-			controllerPros.print(0, 0, "Lift Tar: %d", liftTarget);
-		}
-		else if (controllerPros.get_digital_new_press(DIGITAL_DOWN)) // if we get a new down press and we are not at min preset
-		{
-			liftIterate--;
-			if (liftIterate < 0)
-			{
-				liftIterate = 0;
-			}
-			liftTarget = LIFT_PRESETS[liftPosition][liftIterate];
-			controllerPros.print(0, 0, "Lift Tar: %d", liftTarget);
+			clawMotor.move_relative(450, 200);
 		}
 
 		// intake control
@@ -249,7 +241,7 @@ void opcontrol()
 		{
 			// printf("bot triggered\n");
 			controllerPros.print(2, 0, "Ball Bot");
-			controller.rumble(". .");
+			controllerPros.rumble(". .");
 
 			// if theres a ball at the top, we want to pull it down back to the trigger
 			intakeMotor.move_velocity(-200);
@@ -263,7 +255,7 @@ void opcontrol()
 		{
 			// printf("top triggered\n");
 			controllerPros.print(2, 0, "Ball Top");
-			controller.rumble(". -");
+			controllerPros.rumble(". -");
 			intakeMotor.move_velocity(0);
 			intakeToggle = false;
 			ballTriggerTop = true;
@@ -283,7 +275,7 @@ void opcontrol()
 		}
 
 		// actual user control
-		if (controllerPros.get_digital_new_press(DIGITAL_L1))
+		if (controllerPros.get_digital_new_press(DIGITAL_L1)) // toggle on intake
 		{
 			if (intakeToggle == true)
 			{
@@ -296,7 +288,7 @@ void opcontrol()
 				intakeToggle = true;
 			}
 		}
-		if (controllerPros.get_digital(DIGITAL_L2))
+		if (controllerPros.get_digital(DIGITAL_L2)) // reverse intake
 		{
 			intakeMotor.move_velocity(-200);
 			intakeToggle = false;
@@ -465,7 +457,7 @@ void opcontrol()
 
 		// update motors
 		flywheelPros.move_velocity(flywheelTarget); // this is a temp solution, works well enough for me
-		liftMotor.move_absolute(liftTarget, LIFT_MAX_VEL);
+		// liftMotor.move_absolute(liftTarget, LIFT_MAX_VEL);
 		// std::cout << "\nMotor Position: " << liftMotor.get_position();
 		// std::cout << "\nfly: " << flywheelPros.get_actual_velocity();
 		// chassis control
