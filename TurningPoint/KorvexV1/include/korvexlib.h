@@ -13,7 +13,8 @@ const int LIFT_MTR = 16;
 const int CLAW_MTR = 17;
 
 // flywheel and intake motors
-const int FLY_MTR = 19;
+const int FLY_MTR1 = 18;
+const int FLY_MTR2 = 19;
 const int INTAKE_MTR = 20;
 
 // sensors

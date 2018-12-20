@@ -1,15 +1,5 @@
 #include "main.h"
 
-void on_center_button() {
-	static bool pressed = false;
-	pressed = !pressed;
-	if (pressed) {
-		pros::lcd::set_text(2, "I was pressed!");
-	} else {
-		pros::lcd::clear_line(2);
-	}
-}
-
 /**
  * Runs initialization code. This occurs as soon as the program is started.
  *
@@ -17,10 +7,42 @@ void on_center_button() {
  * to keep execution time for this mode under a few seconds.
  */
 void initialize() {
-	pros::lcd::initialize();
-	// pros::lcd::set_text(1, "Hello PROS User!");
+	// pros::lcd::initialize();
 
-	// pros::lcd::register_btn1_cb(on_center_button);
+	// lvgl theme
+	lv_color_t c;
+	// c.red = 0xCC;
+	// c.green = 0xCC;
+	// c.blue = 0x90;
+	c = LV_COLOR_HEX(0x00ff80);
+	lv_color16_t c16;
+	c16.full = lv_color_to16(c);
+
+	lv_theme_t *th = lv_theme_alien_init(c16.full, NULL); //Set a HUE value and keep font default
+	lv_theme_set_current(th);
+
+	/*Create a Tab view object*/
+	lv_obj_t *tabview;
+	tabview = lv_tabview_create(lv_scr_act(), NULL);
+
+	/*Add 3 tabs (the tabs are page (lv_page) and can be scrolled*/
+	lv_obj_t *redTab = lv_tabview_add_tab(tabview, "Red");
+	lv_obj_t *blueTab = lv_tabview_add_tab(tabview, "Blue");
+	lv_obj_t *skillsTab = lv_tabview_add_tab(tabview, "Skills");
+
+	/*Add content to the tabs*/
+	lv_obj_t *label = lv_label_create(redTab, NULL);
+	lv_label_set_text(label, "This the first tab\n\n"
+							 "If the content\n"
+							 "become too long\n"
+							 "the tab become\n"
+							 "scrollable\n\n");
+
+	label = lv_label_create(blueTab, NULL);
+	lv_label_set_text(label, "Second tab");
+
+	label = lv_label_create(skillsTab, NULL);
+	lv_label_set_text(label, "Third tab");
 }
 
 /**

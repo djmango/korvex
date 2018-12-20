@@ -25,8 +25,8 @@ using namespace okapi;
 // 5 for 5 shooting positions, close, middle, platform, full, and cross
 // 3 for 0, second, and third flag
 const int FLY_PRESETS[5][3] = {
-	{0, 590, 590}, // close
-	{0, 420, 590}, // middle
+	{0, 600, 600}, // close
+	{0, 420, 600}, // middle
 	{0, 400, 490}, // platform
 	{0, 465, 525}, // full
 	{0, 490, 580}  // cross
@@ -48,66 +48,8 @@ int flywheelTarget = 0;
 int flywheelOutput = 0;
 
 // im lazy
-pros::Motor flywheelPros(FLY_MTR, pros::E_MOTOR_GEARSET_06, true);
-void flyPID(void *)
-{
-	// define
-	// (4, 1, 1) = avg 30, slow decrease
-	// (2, 1, 0) = avg 10, slow stabalize, fast decrease
-	// (2, 1, 0.3) = avg 6, decent stabalize, fast decrease
-	float kP = 0.7;
-	float kI = 0.1;
-	float kD = 0.3;
-	int error = 0;
-	int prev_error = 0;
-	int velocity = 0;
-	int output = 0;
-	int p = 0;
-	int i = 0;
-	int d = 0;
-	while (true)
-	{
-		velocity = flywheelPros.get_actual_velocity();
-
-		error = flywheelTarget - velocity;
-		// pid calc
-
-		// proportional
-		p = (error * kP);
-
-		// integral
-		if (abs(error) > 0 && kI != 0)
-			i = ((i + error) * kI);
-		else
-			i = 0;
-
-		// derivative
-		d = ((error - prev_error) * kD);
-		// store last error
-		prev_error = error;
-
-		// calculate output
-		flywheelOutput = (p + i + d);
-
-		// scale
-		if (flywheelOutput < 0 || flywheelTarget == 0)
-		{
-			flywheelOutput = 0;
-		}
-
-		if (flywheelOutput > 127)
-		{
-			flywheelOutput = 127;
-		}
-
-		// apply output
-		flywheelPros.move(flywheelOutput);
-		printf("fly output %d\n", flywheelOutput);
-		printf("fly err %d\n", error);
-		printf("fly target %d\n", flywheelTarget);
-		pros::delay(100);
-	}
-}
+pros::Motor flywheelMotor1(FLY_MTR1, pros::E_MOTOR_GEARSET_06, true);
+pros::Motor flywheelMotor2(FLY_MTR2, pros::E_MOTOR_GEARSET_06, true);
 
 bool isFlySpunUp = false;
 void isFlySpunUpCheck(void *)
@@ -118,7 +60,7 @@ void isFlySpunUpCheck(void *)
 	while (true)
 	{
 		cycles++;
-		err = flywheelTarget - flywheelPros.get_actual_velocity();
+		err = flywheelTarget - flywheelMotor1.get_actual_velocity();
 		averageErr = (averageErr + err) / 2;
 		// printf("avg fly err %d\n", averageErr);
 		std::cout << "\nerr: " << err;
@@ -169,7 +111,8 @@ void opcontrol()
 	int liftTarget = 0;   // this worked well for flywheel so why not
 
 	// flywheel task startup
-	flywheelPros.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+	flywheelMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+	flywheelMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 	int flywheelIterate = 0;
 	int flyArmed = 0;		  // 0 = not armed, 1 is one ball shoot, 2 is two ball shoot
 	int shootingPosition = 0; // 0 = close, 1 = mid, 2 = platform, 3 = full, 4 = cross
@@ -199,14 +142,10 @@ void opcontrol()
 	// we got time
 	int cycles = 0;		// cycle counter
 	int cyclesHold = 0; // temp thing for counting
-	pros::lcd::print(2, "I got time\n");
-	pros::lcd::print(3, "Me when I got time\n");
-	pros::lcd::print(4, "This is so me when I got time\n");
+	int flywheeLastTarg = 0;
+	int flywheelOffCycle = 0;
 	while (true)
 	{
-		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
-						 (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
-						 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);
 		// lift control
 
 		if (controllerPros.get_digital_new_press(DIGITAL_UP)) // stack on low
@@ -419,7 +358,8 @@ void opcontrol()
 		{
 			// freeze chassis
 			flywheelTarget = FLY_PRESETS[shootingPosition][1];
-			flywheelPros.move_velocity(flywheelTarget);
+			flywheelMotor1.move_velocity(flywheelTarget);
+			flywheelMotor2.move_velocity(flywheelTarget);
 			chassis.tank(0, 0);
 			intakeMotor.move_velocity(200);
 			// wait for first ball to get shot
@@ -429,7 +369,8 @@ void opcontrol()
 			controllerPros.print(0, 0, "Shot 1st ball..");
 			// increase  flywheel power
 			flywheelTarget = FLY_PRESETS[shootingPosition][2];
-			flywheelPros.move_velocity(flywheelTarget);
+			flywheelMotor1.move_velocity(flywheelTarget);
+			flywheelMotor2.move_velocity(flywheelTarget);
 			// wait for spinup
 			pros::delay(1000);
 			cyclesHold = cycles;
@@ -455,11 +396,27 @@ void opcontrol()
 			flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
 		}
 
-		// update motors
-		flywheelPros.move_velocity(flywheelTarget); // this is a temp solution, works well enough for me
-		// liftMotor.move_absolute(liftTarget, LIFT_MAX_VEL);
+		// debug
 		// std::cout << "\nMotor Position: " << liftMotor.get_position();
-		// std::cout << "\nfly: " << flywheelPros.get_actual_velocity();
+		// std::cout << "\nfly: " << flywheelMotor1.get_actual_velocity();
+		// use last fly targ, if not 0 and current is 0 then we are stopping so initiate the lift halt
+
+		// update motors
+		flywheelMotor1.move_velocity(flywheelTarget); // this is a temp solution, works well enough for me
+		flywheelMotor2.move_velocity(flywheelTarget);
+
+		// liftMotor.move_absolute(liftTarget, LIFT_MAX_VEL);
+		if (flywheeLastTarg != 0 && flywheelTarget == 0) { // the flywheel just got set to 0
+			flywheelOffCycle = cycles; // store when we turned the flywheel off
+		}
+
+		if (flywheelOffCycle > cycles - 400 && (triggerTL.get_value() || triggerTR.get_value())) { // stop the intake if flywheel is spinning down
+			// 50 is temp, do whatever the stop time is in seconds for flywheel divided by 20
+			intakeMotor.move_velocity(0);
+		}
+
+		flywheeLastTarg = flywheelTarget;
+
 		// chassis control
 		chassis.tank(controller.getAnalog(ControllerAnalog::leftY),
 					 controller.getAnalog(ControllerAnalog::rightY));
