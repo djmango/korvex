@@ -8,7 +8,7 @@
  */
 void initialize() {
 	// pros::lcd::initialize();
-
+	// TODO: move the themes to src and revert the includes to default, compile locally
 	// lvgl theme
 	lv_color_t c;
 	// c.red = 0xCC;
