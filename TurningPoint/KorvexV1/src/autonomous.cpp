@@ -48,7 +48,8 @@ void autonomous()
     // 1 = blue close, all flags and park
     // 2 = blue far, opponent descore
     // 3 = red close, mid and top flag and park
-    int auton = -1;
+    int auton = 2;
+    // int auton = autonSelection;
     int tmp = 0;
     switch (auton)
     {
@@ -153,8 +154,10 @@ void autonomous()
         break;
     case 0: // blue close, mid and top flag and park
         // setup
+        liftMotor_A.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor_A1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        chassis.setMaxVelocity(130); // this might fix things
+        flywheelMotor_A2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+        chassis.setMaxVelocity(120); // this might fix things
 
         // actual auton
         intakeMotor_A.move_velocity(200);
@@ -177,10 +180,11 @@ void autonomous()
 
         // there is now a ball in both positions
         flywheelMotor_A1.move_velocity(600);
+        flywheelMotor_A2.move_velocity(600);
         chassis.moveDistance(-37_in);
         // back and turn into shooting position
-        chassis.turnAngle(238);
-        chassis.moveDistance(-14_in);
+        chassis.turnAngle(244);
+        chassis.moveDistance(-10_in);
         // shoot first ball when ready
         while (!(flywheelMotor_A1.get_actual_velocity() > 590))
         {
@@ -191,7 +195,7 @@ void autonomous()
         intakeMotor_A.move_velocity(0);
 
         // second ball shot position
-        chassis.moveDistance(29_in);
+        chassis.moveDistance(27_in);
         chassis.setMaxVelocity(180);
 
         // shoot second ball
@@ -203,19 +207,24 @@ void autonomous()
         pros::delay(500);
         intakeMotor_A.move_velocity(0);
         flywheelMotor_A1.move_velocity(0);
+        flywheelMotor_A2.move_velocity(0);
 
         // move to park
-        chassis.moveDistance(-44_in);
-        chassis.turnAngle(-270);
+        chassis.moveDistance(-47_in);
+        chassis.turnAngle(-265);
         chassis.moveDistance(18_in);
         chassis.moveDistance(25_in);
         break;
 
-    case 1: // blue close, all flags and park
+    case 1: // blue far
+        break;
+
+    case 2: // blue stack
         // setup
         liftMotor_A.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor_A1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        chassis.setMaxVelocity(170); // this might fix things
+        flywheelMotor_A2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+        chassis.setMaxVelocity(120); // this might fix things
 
         // actual auton
         intakeMotor_A.move_velocity(200);
@@ -236,75 +245,17 @@ void autonomous()
         }
         intakeMotor_A.move_velocity(0);
 
-        // there is now a ball in both positions
-        flywheelMotor_A1.move_velocity(600);
-        chassis.moveDistance(-40_in); // 40 is perfecc
-        // back and turn into shooting position
-        chassis.setMaxVelocity(135);
-        chassis.turnAngle(242);
-        chassis.setMaxVelocity(190);
-        chassis.moveDistance(-11_in);
-        // shoot first ball when ready
-        while (!(flywheelMotor_A1.get_actual_velocity() > 590))
-        {
-            pros::delay(20);
-        }
-        intakeMotor_A.move_velocity(200);
-        pros::delay(500);
-        chassis.setMaxVelocity(200);
-        intakeMotor_A.move_velocity(0);
+        // there is now a ball in both positions, back for claw flipout
+        chassis.moveDistance(-12_in);
 
-        // start moving for bot flag toggle
-        // this is for second ball shot
-        chassis.moveDistance(24_in);
+        chassis.turnAngleAsync(600);
+        liftMotor_A.move_absolute(500, 200);
+        pros::delay(2000);
+        liftMotor_A.move_absolute(0, 200);
 
-        // shoot second ball
-        while (!(flywheelMotor_A1.get_actual_velocity() > 590))
-        {
-            pros::delay(20);
-        }
-        intakeMotor_A.move_velocity(200);
-        pros::delay(500);
-        intakeMotor_A.move_velocity(0);
-        flywheelMotor_A1.move_velocity(0);
-        // ram into bot flag
-        chassis.moveDistance(26_in);
-        // move to park
-        chassis.moveDistance(-70_in);
-        chassis.turnAngle(-300);
-        chassis.moveDistance(40_in);
-        break;
 
-    case 2: // blue far
-        // setup
-        liftMotor_A.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        flywheelMotor_A1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        chassis.setMaxVelocity(110); // this might fix things
-
-        // actual auton
-
-        // there is now a ball
-        flywheelMotor_A1.move_velocity(585);
-
-        // backup for shooting
-        chassis.turnAngle(260);
-        chassis.moveDistance(-6_in);
-
-        // shoot first ball when ready
-        while (!(flywheelMotor_A1.get_actual_velocity() > 580))
-        {
-            pros::delay(20);
-        }
-        intakeMotor_A.move_velocity(200);
-        pros::delay(500);
-        intakeMotor_A.move_velocity(0);
-        flywheelMotor_A1.move_velocity(0);
-
-        // park
-        chassis.moveDistance(30_in);
-        chassis.turnAngle(-260);
-        chassis.moveDistance(15_in);
-        chassis.moveDistance(24_in);
+        // grab cap
+        chassis.moveDistance(14_in);
         break;
     case 3: // red close, mid and top flag and park
         // setup

@@ -28,20 +28,20 @@ const int FLY_PRESETS[5][3] = {
 	{0, 600, 600}, // close
 	{0, 420, 600}, // middle
 	{0, 400, 490}, // platform
-	{0, 465, 525}, // full
+	{0, 470, 540}, // full
 	{0, 490, 580}  // cross
 };
-const int FLY_PRESETS_LEN = 3;
+const int FLY_PRESETS_LEN = 2;
 
 // lift position presets, different heights for different poles
 // lift presets respectivley: rest, [0] low intake, low stack, [1] high intake, high stack
 // intaking the cap means we want the claw level with the cap, stacking it means it needs to be a bit above
 const int LIFT_PRESETS[2][3] = {
-	{0, 650, 800}, // low pole
-	{0, 950, 1600} // high pole
+	{0, 800, 1400}, // low pole
+	{0, 1400, 2100} // high pole
 };
 const int LIFT_PRESETS_LEN = 2; // 0 is the first iterate
-const int LIFT_MAX_VEL = 200;
+const int LIFT_MAX_VEL = 150;
 
 // globals
 int flywheelTarget = 0;
@@ -63,8 +63,8 @@ void isFlySpunUpCheck(void *)
 		err = flywheelTarget - flywheelMotor1.get_actual_velocity();
 		averageErr = (averageErr + err) / 2;
 		// printf("avg fly err %d\n", averageErr);
-		std::cout << "\nerr: " << err;
-		std::cout << "\navg err: " << averageErr;
+		// std::cout << "\nerr: " << err;
+		// std::cout << "\navg err: " << averageErr;
 
 		if (cycles >= 40 || flywheelTarget == 0) // every 2 seconds, or whenever we arent trying to spin
 		{
@@ -148,31 +148,61 @@ void opcontrol()
 	{
 		// lift control
 
-		if (controllerPros.get_digital_new_press(DIGITAL_UP)) // stack on low
+		// position changer
+		if (controllerPros.get_digital_new_press(DIGITAL_LEFT))
 		{
-			liftMotor.move_absolute(1200, 200);
-		}
-		else if (controllerPros.get_digital_new_press(DIGITAL_LEFT)) // descore
-		{
-			liftMotor.move_absolute(1500, 200);
-		}
-		else if (controllerPros.get_digital_new_press(DIGITAL_DOWN)) // normal pos
-		{
-			if (liftMotor.get_position() < 100)
+			if (liftPosition != 1)
 			{
-				liftMotor.move_relative(-100, 100);
+				liftPosition = 1; // this statement is legit foolproof idk how it'd break
+				controllerPros.print(2, 0, "High Pole");
 			}
 			else
 			{
-				liftMotor.move_absolute(-10, 200);
+				liftPosition = 0;
+				controllerPros.print(2, 0, "Low Pole");
 			}
 		}
-		else if (controllerPros.get_digital_new_press(DIGITAL_RIGHT)) // normal pos
+
+		// goin thru presets
+		if (controllerPros.get_digital_new_press(DIGITAL_UP)) // if we get a new up press
 		{
-			clawMotor.move_relative(450, 200);
+			liftIterate++;
+			if (liftIterate >= LIFT_PRESETS_LEN) // dont wanna go above
+			{
+				liftIterate = LIFT_PRESETS_LEN;
+			}
+			liftTarget = LIFT_PRESETS[liftPosition][liftIterate];
+			controllerPros.print(0, 0, "Lift Tar: %d", liftTarget);
+		}
+		else if (controllerPros.get_digital_new_press(DIGITAL_DOWN)) // if we get a new down press and we are not at min preset
+		{
+			liftIterate--;
+
+			// if we are at minimum, allow the robot to go further if spammed
+			if (liftIterate < 0)
+			{
+				liftIterate = 0;
+				if (liftTarget <= 0)
+				{
+					liftTarget = liftTarget - 20;
+				}
+				else
+				{
+					liftTarget = 0;
+				}
+				std::cout << "\n tar" << liftTarget;
+			}
+
+			// otherwise normal preset operation
+			else
+			{
+				liftTarget = LIFT_PRESETS[liftPosition][liftIterate];
+			}
+			controllerPros.print(0, 0, "Lift Tar: %d", liftTarget);
 		}
 
 		// intake control
+
 		// check sensors
 		// get new press from either side of bottom, ensure intake is on and there is no ball already there to remove false positives
 		// we also do not want to stop the intake if theres no ball at the top, as the default position should be top
@@ -399,19 +429,21 @@ void opcontrol()
 		// debug
 		// std::cout << "\nMotor Position: " << liftMotor.get_position();
 		// std::cout << "\nfly: " << flywheelMotor1.get_actual_velocity();
-		// use last fly targ, if not 0 and current is 0 then we are stopping so initiate the lift halt
 
 		// update motors
 		flywheelMotor1.move_velocity(flywheelTarget); // this is a temp solution, works well enough for me
 		flywheelMotor2.move_velocity(flywheelTarget);
 
-		// liftMotor.move_absolute(liftTarget, LIFT_MAX_VEL);
-		if (flywheeLastTarg != 0 && flywheelTarget == 0) { // the flywheel just got set to 0
+		// use last fly targ, if not 0 and current is 0 then we are stopping so initiate the lift halt
+		liftMotor.move_absolute(liftTarget, LIFT_MAX_VEL);
+		if (flywheeLastTarg != 0 && flywheelTarget == 0)
+		{							   // the flywheel just got set to 0
 			flywheelOffCycle = cycles; // store when we turned the flywheel off
 		}
 
-		if (flywheelOffCycle > cycles - 400 && (triggerTL.get_value() || triggerTR.get_value())) { // stop the intake if flywheel is spinning down
-			// 50 is temp, do whatever the stop time is in seconds for flywheel divided by 20
+		if (flywheelOffCycle > cycles - 300 && (triggerTL.get_value() || triggerTR.get_value()))
+		{ // stop the intake if flywheel is spinning down
+			// 50 is temp, do whatever the stop time is in miliseconds for flywheel divided by 20
 			intakeMotor.move_velocity(0);
 		}
 

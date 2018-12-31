@@ -23,6 +23,9 @@ const int TRIGGER_BR = 3;
 const int TRIGGER_TL = 4;
 const int TRIGGER_TR = 5;
 
+// auton
+extern int autonSelection;
+
 // debug enabler
 // bool debugGlobal; // set this to true whenever you want print statements in terminal
 
