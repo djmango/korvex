@@ -17,85 +17,39 @@ using namespace okapi;
  * task, not resume it from where it left off.
  */
 
-// TODO: add shooting positions with 2d array
 // TODO: make user controls more ez pz
-// TODO: advanced lcd feedback
+// TODO: pathfinder auton
 
 // module constants
 
-// flywheel velocity presets, each represents an trajectory arc of the ball
-const int FLY_PRESETS[7] = {0, 300, 360, 380, 420, 500, 600};
-const int FLY_PRESETS_LEN = sizeof(FLY_PRESETS) / sizeof(FLY_PRESETS[0]);
+// 5 for 5 shooting positions, close, middle, platform, full, and cross
+// 3 for 0, second, and third flag
+const int FLY_PRESETS[5][3] = {
+	{0, 600, 600}, // close
+	{0, 420, 600}, // middle
+	{0, 400, 490}, // platform
+	{0, 470, 540}, // full
+	{0, 490, 580}  // cross
+};
+const int FLY_PRESETS_LEN = 2;
 
 // lift position presets, different heights for different poles
-const int LIFT_PRESETS[8] = {0, 20, 25, 35, 45, 60, 80, 100};
-const int LIFT_PRESETS_LEN = sizeof(LIFT_PRESETS) / sizeof(LIFT_PRESETS[0]);
+// lift presets respectivley: rest, [0] low intake, low stack, [1] high intake, high stack
+// intaking the cap means we want the claw level with the cap, stacking it means it needs to be a bit above
+const int LIFT_PRESETS[2][3] = {
+	{0, 800, 1400}, // low pole
+	{0, 1400, 2100} // high pole
+};
+const int LIFT_PRESETS_LEN = 2; // 0 is the first iterate
+const int LIFT_MAX_VEL = 150;
 
 // globals
 int flywheelTarget = 0;
 int flywheelOutput = 0;
 
 // im lazy
-pros::Motor flywheelPros(FLY_MTR, pros::E_MOTOR_GEARSET_06, true);
-void flyPID(void *)
-{
-	// define
-	// (4, 1, 1) = avg 30, slow decrease
-	// (2, 1, 0) = avg 10, slow stabalize, fast decrease
-	// (2, 1, 0.3) = avg 6, decent stabalize, fast decrease
-	float kP = 2;
-	float kI = 1;
-	float kD = .3;
-	int error = 0;
-	int prev_error = 0;
-	int velocity = 0;
-	int output = 0;
-	int p = 0;
-	int i = 0;
-	int d = 0;
-	while (true)
-	{
-		velocity = flywheelPros.get_actual_velocity();
-
-		error = flywheelTarget - velocity;
-		// pid calc
-
-		// proportional
-		p = (error * kP);
-
-		// integral
-		if (abs(error) < 150 && kI != 0) // if the error is greater than half of target
-			i = ((i + error) * kI);
-		else
-			i = 0;
-
-		// derivative
-		d = ((error - prev_error) * kD);
-		// store last error
-		prev_error = error;
-
-		// calculate output
-		flywheelOutput = (p + i + d);
-
-		// scale
-		flywheelOutput = flywheelOutput * 0.212; // 600 * 0.212 = 127
-		if (flywheelOutput < 0 || flywheelTarget == 0)
-		{
-			flywheelOutput = 0;
-		}
-		if (flywheelOutput > 127)
-		{
-			flywheelOutput = 127;
-		}
-
-		// apply output
-		flywheelPros.move(flywheelOutput);
-		// printf("fly output %d\n", flywheelOutput);
-		// printf("fly err %d\n", error);
-		// printf("fly target %d\n", flywheelTarget);
-		pros::delay(100);
-	}
-}
+pros::Motor flywheelMotor1(FLY_MTR1, pros::E_MOTOR_GEARSET_06, true);
+pros::Motor flywheelMotor2(FLY_MTR2, pros::E_MOTOR_GEARSET_06, true);
 
 bool isFlySpunUp = false;
 void isFlySpunUpCheck(void *)
@@ -106,11 +60,13 @@ void isFlySpunUpCheck(void *)
 	while (true)
 	{
 		cycles++;
-		err = flywheelTarget - flywheelPros.get_actual_velocity();
-		averageErr = (averageErr + err) / cycles;
+		err = flywheelTarget - flywheelMotor1.get_actual_velocity();
+		averageErr = (averageErr + err) / 2;
 		// printf("avg fly err %d\n", averageErr);
+		// std::cout << "\nerr: " << err;
+		// std::cout << "\navg err: " << averageErr;
 
-		if (cycles >= 20) // every second
+		if (cycles >= 40 || flywheelTarget == 0) // every 2 seconds, or whenever we arent trying to spin
 		{
 			averageErr = 0;
 			cycles = 0;
@@ -120,7 +76,7 @@ void isFlySpunUpCheck(void *)
 		// how could it be spun up if its not supposed to be spinning?
 		if (abs(averageErr) < 5 && flywheelTarget != 0)
 		{
-			printf("we spun up\n");
+			// printf("we spun up\n");
 			isFlySpunUp = true;
 		}
 		else
@@ -138,7 +94,7 @@ void opcontrol()
 	auto chassis = okapi::ChassisControllerFactory::create(
 		{LEFT_MTR1, LEFT_MTR2},				  // Left motors
 		{-RIGHT_MTR1, -RIGHT_MTR2},			  // Right motors
-		okapi::AbstractMotor::gearset::green, // Torque gearset
+		okapi::AbstractMotor::gearset::green, // Normal gearset
 		{4_in, 12.5_in}						  // 4 inch wheels, 12.5 inch wheelbase width
 	);
 
@@ -149,13 +105,18 @@ void opcontrol()
 		chassis // Chassis Controller
 	);
 
-	auto liftControl = AsyncControllerFactory::posIntegrated(LIFT_MTR);
+	pros::Motor liftMotor(LIFT_MTR, pros::E_MOTOR_GEARSET_18, false);
 	int liftIterate = 0;
+	int liftPosition = 0; // 0 = low pole, 1 = high pole
+	int liftTarget = 0;   // this worked well for flywheel so why not
 
 	// flywheel task startup
+	flywheelMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+	flywheelMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 	int flywheelIterate = 0;
-	int flyArmed = 0; // 0 = not armed, 1 is one ball shoot, 2 is two ball shoot
-	pros::Task flyPIDLoop(flyPID, (void *)NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "FlywheelPID");
+	int flyArmed = 0;		  // 0 = not armed, 1 is one ball shoot, 2 is two ball shoot
+	int shootingPosition = 0; // 0 = close, 1 = mid, 2 = platform, 3 = full, 4 = cross
+	// pros::Task flyPIDLoop(flyPID, (void *)NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "FlywheelPID");
 	pros::Task isFlySpunUpCheckLoop(isFlySpunUpCheck, (void *)NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "FlywheelSpunUpCheck");
 
 	// intake controller
@@ -164,45 +125,102 @@ void opcontrol()
 	bool intakeToggle = false;		// for user toggle
 	bool ballTriggerBottom = false; // these are for detecting if the intake
 	bool ballTriggerTop = false;	// triggers are activated
+
+	// intake triggers
 	pros::ADIDigitalIn triggerBL(TRIGGER_BL);
 	pros::ADIDigitalIn triggerBR(TRIGGER_BR);
 	pros::ADIDigitalIn triggerTL(TRIGGER_TL);
 	pros::ADIDigitalIn triggerTR(TRIGGER_TR);
 
+	// check for balls
+	if (triggerBL.get_new_press() || triggerBR.get_new_press())
+	{
+		ballTriggerBottom = true;
+	}
+	if (triggerTL.get_new_press() || triggerTR.get_new_press())
+	{
+		ballTriggerTop = true;
+	}
+
+	// claw controller
+	pros::Motor clawMotor(CLAW_MTR, pros::E_MOTOR_GEARSET_18, false);
+	clawMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+
 	okapi::Controller controller;
-	pros::Controller controllerPros(pros::E_CONTROLLER_PARTNER); // default api for more functions
+	pros::Controller controllerPros(pros::E_CONTROLLER_MASTER); // default api for more functions
 
 	// we got time
 	int cycles = 0;		// cycle counter
 	int cyclesHold = 0; // temp thing for counting
-	pros::lcd::print(2, "I got time\n");
-	pros::lcd::print(3, "Me when I got time\n");
-	pros::lcd::print(4, "This is so me when I got time\n");
+	int flywheeLastTarg = 0;
+	int flywheelOffCycle = 0;
 	while (true)
 	{
-		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
-						 (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
-						 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);
 		// lift control
-		if (controllerPros.get_digital_new_press(DIGITAL_UP) && liftIterate <= LIFT_PRESETS_LEN) // if we get a new up press and we are not at max preset
+
+		// position changer
+		if (controllerPros.get_digital_new_press(DIGITAL_LEFT))
+		{
+			if (liftPosition != 1)
+			{
+				liftPosition = 1; // this statement is legit foolproof idk how it'd break
+				controllerPros.print(2, 0, "High Pole");
+			}
+			else
+			{
+				liftPosition = 0;
+				controllerPros.print(2, 0, "Low Pole");
+			}
+		}
+
+		// goin thru presets
+		if (controllerPros.get_digital_new_press(DIGITAL_UP)) // if we get a new up press
 		{
 			liftIterate++;
-			liftControl.setTarget(LIFT_PRESETS[liftIterate]);
+			if (liftIterate >= LIFT_PRESETS_LEN) // dont wanna go above
+			{
+				liftIterate = LIFT_PRESETS_LEN;
+			}
+			liftTarget = LIFT_PRESETS[liftPosition][liftIterate];
+			controllerPros.print(0, 0, "Lift Tar: %d", liftTarget);
 		}
-		else if (controllerPros.get_digital_new_press(DIGITAL_DOWN) && liftIterate >= 0) // if we get a new down press and we are not at min preset
+		else if (controllerPros.get_digital_new_press(DIGITAL_DOWN)) // if we get a new down press and we are not at min preset
 		{
 			liftIterate--;
-			liftControl.setTarget(LIFT_PRESETS[liftIterate]);
+
+			// if we are at minimum, allow the robot to go further if spammed
+			if (liftIterate < 0)
+			{
+				liftIterate = 0;
+				if (liftTarget <= 0)
+				{
+					liftTarget = liftTarget - 20;
+				}
+				else
+				{
+					liftTarget = 0;
+				}
+				std::cout << "\n tar" << liftTarget;
+			}
+
+			// otherwise normal preset operation
+			else
+			{
+				liftTarget = LIFT_PRESETS[liftPosition][liftIterate];
+			}
+			controllerPros.print(0, 0, "Lift Tar: %d", liftTarget);
 		}
 
 		// intake control
-		// check sensors
 
+		// check sensors
 		// get new press from either side of bottom, ensure intake is on and there is no ball already there to remove false positives
 		// we also do not want to stop the intake if theres no ball at the top, as the default position should be top
 		if ((triggerBL.get_new_press() || triggerBR.get_new_press()) && intakeToggle == true && ballTriggerBottom == false && ballTriggerTop == true)
 		{
 			// printf("bot triggered\n");
+			controllerPros.print(2, 0, "Ball Bot");
+			controllerPros.rumble(". .");
 
 			// if theres a ball at the top, we want to pull it down back to the trigger
 			intakeMotor.move_velocity(-200);
@@ -215,8 +233,9 @@ void opcontrol()
 		if ((triggerTL.get_new_press() || triggerTR.get_new_press()) && intakeToggle == true && ballTriggerTop == false)
 		{
 			// printf("top triggered\n");
+			controllerPros.print(2, 0, "Ball Top");
+			controllerPros.rumble(". -");
 			intakeMotor.move_velocity(0);
-			// intakeMotor.move_relative(-100, 100);
 			intakeToggle = false;
 			ballTriggerTop = true;
 		}
@@ -234,15 +253,8 @@ void opcontrol()
 			ballTriggerTop = false;
 		}
 
-		// we dont want to push the top ball up if the flywheel isnt basically stopped
-		// if (flywheelPros.get_actual_velocity() > 25 && flywheelTarget == 0) {
-		// 	intakeMotor.move_velocity(0);
-		// 	intakeToggle = false;
-		// 	printf("we gotta stop\n");
-		// }
-
 		// actual user control
-		if (controllerPros.get_digital_new_press(DIGITAL_L1)) // using pros api for new press check
+		if (controllerPros.get_digital_new_press(DIGITAL_L1)) // toggle on intake
 		{
 			if (intakeToggle == true)
 			{
@@ -255,13 +267,13 @@ void opcontrol()
 				intakeToggle = true;
 			}
 		}
-		if (controllerPros.get_digital(DIGITAL_L2))
+		if (controllerPros.get_digital(DIGITAL_L2)) // reverse intake
 		{
 			intakeMotor.move_velocity(-200);
+			intakeToggle = false;
 		}
 		else if (intakeToggle == false && ballTriggerBottom == false && ballTriggerTop == false)
 		{
-			// printf("setting speed to 0\n");
 			intakeMotor.move_velocity(0);
 		}
 
@@ -269,7 +281,7 @@ void opcontrol()
 		if (controllerPros.get_digital_new_press(DIGITAL_B))
 		{
 			flyArmed = 0;
-			controllerPros.print(0, 0, "Flywheel Not Armed");
+			controllerPros.print(0, 0, "Fly Not Armed");
 		}
 		if (controllerPros.get_digital_new_press(DIGITAL_A))
 		{
@@ -282,42 +294,112 @@ void opcontrol()
 			flyArmed = 2;
 		}
 
+		// shooting position toggler
+		if (controllerPros.get_digital_new_press(DIGITAL_Y))
+		{
+
+			switch (shootingPosition) // here we look at the current position, and change it to the next in line, if max is hit we reset
+			{
+			case 0: // close up, change to mid
+				shootingPosition++;
+				controllerPros.print(2, 0, "Pos %d: Mid", shootingPosition);
+				break;
+
+			case 1: // mid, change to platform
+				shootingPosition++;
+				controllerPros.print(2, 0, "Pos %d: Plat", shootingPosition);
+				break;
+
+			case 2: // platform, change to full
+				shootingPosition++;
+				controllerPros.print(2, 0, "Pos %d: Full", shootingPosition);
+				break;
+
+			case 3: // full, change to cross
+				shootingPosition++;
+				controllerPros.print(2, 0, "Pos %d: Cross", shootingPosition);
+				break;
+
+			case 4: // cross, change to close up
+				// reset to 0 cuz we hit max
+				shootingPosition = 0;
+				controllerPros.print(2, 0, "Pos %d: Close", shootingPosition);
+				break;
+
+			default: // this should never run but im a meh dev so just in case
+				// reset to 0 cuz we hit something weird
+				shootingPosition = 0;
+				controllerPros.print(2, 0, "Pos %d: Close", shootingPosition);
+				break;
+			}
+
+			// since we are moving shooting positions, turn off flywheel
+			flyArmed = 0;
+			controllerPros.print(0, 0, "Fly Not Armed");
+			flywheelIterate = 0;
+			flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
+		}
+
 		// flywheel control
 		if (controllerPros.get_digital_new_press(DIGITAL_R1))
 		{
 			flywheelIterate++;
-			if (flywheelIterate > FLY_PRESETS_LEN)
+			if (flywheelIterate >= FLY_PRESETS_LEN)
 			{
 				flywheelIterate = FLY_PRESETS_LEN;
 			}
-			// controllerPros.print(0, 0, "FlyPreset: %d", flywheelIterate);
-			flywheelTarget = FLY_PRESETS[flywheelIterate];
-			controllerPros.print(1, 0, "FlyTarget: %d", flywheelTarget);
+			flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
+			controllerPros.print(1, 0, "%d, Tar: %d", flywheelIterate, flywheelTarget);
 		}
-		else if (controllerPros.get_digital_new_press(DIGITAL_R2) && flywheelIterate > 0)
+		else if (controllerPros.get_digital_new_press(DIGITAL_R2))
 		{
 			flywheelIterate--;
 			if (flywheelIterate < 0)
 			{
 				flywheelIterate = 0;
 			}
-			// controllerPros.print(0, 0, "FlyPreset: %d", flywheelIterate);
-			flywheelTarget = FLY_PRESETS[flywheelIterate];
-			controllerPros.print(1, 0, "FlyTarget: %d", flywheelTarget);
+			flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
+			controllerPros.print(1, 0, "%d, Tar: %d", flywheelIterate, flywheelTarget);
 		}
 
 		// these are async so all user input is ignored
-		if (flyArmed == 1 && isFlySpunUp == true && flywheelTarget != 0)
+		if (flyArmed == 1 && isFlySpunUp == true && flywheelTarget != 0) // shoot one ball
 		{
+			chassis.tank(0, 0);
 			intakeMotor.move_velocity(200);
 			intakeToggle = true;
 			ballTriggerTop = false; // we are shooting this ball so its gone
+
+			// if there is a ball on bottom
+			// we should keep the intake going until the bottom ball goes to top pos
+			if (ballTriggerBottom == true)
+			{
+				cyclesHold = cycles;
+				while (isFlySpunUp == false && !(cyclesHold + 50 < cycles))
+				{
+					// to make sure we dont get stuck
+					cycles++;
+					pros::delay(20);
+				}
+			}
+			else
+			{
+				pros::delay(500);
+			}
+			// disarm flywheel
 			flyArmed = 0;
-			controllerPros.print(0, 0, "Shot 1 ball");
+			controllerPros.print(0, 0, "Fly Not Armed");
+			intakeMotor.move_velocity(0);
+			intakeToggle = false;
+			flywheelIterate = 0;
+			flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
 		}
-		if (flyArmed == 2 && isFlySpunUp == true && flywheelTarget != 0)
+		if (flyArmed == 2 && isFlySpunUp == true && flywheelTarget != 0) // lower then upper
 		{
 			// freeze chassis
+			flywheelTarget = FLY_PRESETS[shootingPosition][1];
+			flywheelMotor1.move_velocity(flywheelTarget);
+			flywheelMotor2.move_velocity(flywheelTarget);
 			chassis.tank(0, 0);
 			intakeMotor.move_velocity(200);
 			// wait for first ball to get shot
@@ -325,27 +407,57 @@ void opcontrol()
 			isFlySpunUp = false;
 			intakeMotor.move_velocity(0);
 			controllerPros.print(0, 0, "Shot 1st ball..");
-			// lower flywheel power
-			flywheelIterate--;
-			flywheelTarget = FLY_PRESETS[flywheelIterate];
+			// increase  flywheel power
+			flywheelTarget = FLY_PRESETS[shootingPosition][2];
+			flywheelMotor1.move_velocity(flywheelTarget);
+			flywheelMotor2.move_velocity(flywheelTarget);
 			// wait for spinup
-			while (isFlySpunUp == false)
+			pros::delay(1000);
+			cyclesHold = cycles;
+			while (isFlySpunUp == false && !(cyclesHold + 10 < cycles))
 			{
+				// to make sure we dont get stuck
+				cycles++;
 				pros::delay(100);
 			}
 			// shoot 2nd ball
 			intakeMotor.move_velocity(200);
-			// wait for first ball to get shot
+			// wait for second ball to get shot
 			pros::delay(500);
-			controllerPros.print(0, 0, "Shot 2nd ball");
 
 			// cleanup
-			ballTriggerTop = false; // we are shooting this ball so its gone
-			flyArmed = 0;				// this is to shoot off the 2nd ball
+			ballTriggerTop = false; // we are shooting the balls so they gone
+			ballTriggerBottom = false;
+			// disarm the flywheel
+			flyArmed = 0;
+			controllerPros.print(0, 0, "Fly Not Armed");
 			intakeMotor.move_velocity(0);
 			flywheelIterate = 0;
-			flywheelTarget = FLY_PRESETS[flywheelIterate];
+			flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
 		}
+
+		// debug
+		// std::cout << "\nMotor Position: " << liftMotor.get_position();
+		// std::cout << "\nfly: " << flywheelMotor1.get_actual_velocity();
+
+		// update motors
+		flywheelMotor1.move_velocity(flywheelTarget); // this is a temp solution, works well enough for me
+		flywheelMotor2.move_velocity(flywheelTarget);
+
+		// use last fly targ, if not 0 and current is 0 then we are stopping so initiate the lift halt
+		liftMotor.move_absolute(liftTarget, LIFT_MAX_VEL);
+		if (flywheeLastTarg != 0 && flywheelTarget == 0 && cycles > 100) // cycles over 100 bcuz false positive at start
+		{							   // the flywheel just got set to 0
+			flywheelOffCycle = cycles; // store when we turned the flywheel off
+		}
+
+		if (flywheelOffCycle > cycles - 300 && (triggerTL.get_value() || triggerTR.get_value()))
+		{ // stop the intake if flywheel is spinning down
+			// 50 is temp, do whatever the stop time is in miliseconds for flywheel divided by 20
+			intakeMotor.move_velocity(0);
+		}
+
+		flywheeLastTarg = flywheelTarget;
 
 		// chassis control
 		chassis.tank(controller.getAnalog(ControllerAnalog::leftY),

@@ -13,7 +13,8 @@ const int LIFT_MTR = 16;
 const int CLAW_MTR = 17;
 
 // flywheel and intake motors
-const int FLY_MTR = 19;
+const int FLY_MTR1 = 18;
+const int FLY_MTR2 = 19;
 const int INTAKE_MTR = 20;
 
 // sensors
@@ -21,6 +22,9 @@ const int TRIGGER_BL = 2;
 const int TRIGGER_BR = 3;
 const int TRIGGER_TL = 4;
 const int TRIGGER_TR = 5;
+
+// auton
+extern int autonSelection;
 
 // debug enabler
 // bool debugGlobal; // set this to true whenever you want print statements in terminal
