@@ -23,14 +23,19 @@ using namespace okapi;
 //     {4_in, 12.5_in}                       // 4 inch wheels, 12.5 inch wheelbase width
 // );
 
-auto chassis = ChassisControllerFactory::create(
-    {LEFT_MTR1, LEFT_MTR2},     // Left motors
-    {-RIGHT_MTR1, -RIGHT_MTR2}, // Right motors
-    IterativePosPIDController::Gains{0.002, 0.0005, 0.002}, // distance args
-    IterativePosPIDController::Gains{0.001, 0, 0.001}, // angle args (keeps robot straight)
-    IterativePosPIDController::Gains{0.001, 0, 0.001}, // turn args
+auto chassis = ChassisControllerFactory::create( // .002 .0005 .002
+    {LEFT_MTR1, LEFT_MTR2},                      // Left motors
+    {-RIGHT_MTR1, -RIGHT_MTR2},                  // Right motors
+    // IterativePosPIDController::Gains{0.007, 0.000, 0.007}, // distance args
+    // IterativePosPIDController::Gains{0.003, 0.00, 0.002}, // angle args (keeps robot straight)
+    // IterativePosPIDController::Gains{0.005, 0.00, 0.0005}, // turn args
+
+    IterativePosPIDController::Gains{0.004, 0.000, 0.004}, // distance args
+    IterativePosPIDController::Gains{0.002, 0.00, 0.001},  // angle args (keeps robot straight)
+    IterativePosPIDController::Gains{0.002, 0.00, 0.0005}, // turn args
+
     AbstractMotor::gearset::green, // normal gearset
-    {4_in, 12.5_in}                       // 4 inch wheels, 12.5 inch wheelbase width
+    {4_in, 12.5_in}                // 4 inch wheels, 12.5 inch wheelbase width
 );
 
 auto chassisController = okapi::AsyncControllerFactory::motionProfile(
@@ -58,7 +63,8 @@ void autonomous()
     // 1 = blue close, all flags and park
     // 2 = blue far, opponent descore
     // 3 = red close, mid and top flag and park
-    int auton = -2;
+    int auton = 0;
+    // int autonSelection;
     // int auton = autonSelection;
     int tmp = 0;
     switch (auton)
@@ -70,10 +76,13 @@ void autonomous()
         chassis.setMaxVelocity(200); // this might fix things
 
         // actual auton
-        chassis.moveDistance(8_in); // going to cap with ball under it
+        chassis.moveDistance(8_in);
+        // chassis.waitUntilSettled();
+        // chassis.moveDistance(-8_in);
+        // chassis.turnAngle(350);
+        // chassis.waitUntilSettled();
+        // chassis.turnAngle(-350);
         chassis.stop();
-        // chassis.moveDistance(-10_in); // going to cap with ball under it
-        // chassis.turnAngle(90);
         break;
     case -1: // skills
         // setup
@@ -179,13 +188,13 @@ void autonomous()
         liftMotor_A.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor_A1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor_A2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        chassis.setMaxVelocity(120); // this might fix things
+        chassis.setMaxVelocity(150); // this might fix things
 
         // actual auton
         intakeMotor_A.move_velocity(200);
-        chassis.moveDistance(30_in); // going to cap with ball under it
-        chassis.waitUntilSettled();
-        chassis.moveDistanceAsync(6_in);
+        chassis.moveDistanceAsync(36_in); // going to cap with ball under it
+        // chassis.waitUntilSettled();
+        // chassis.moveDistanceAsync(6_in);
 
         // wait until we intake ball to bot
         while (!(triggerBL_A.get_new_press() || triggerBR_A.get_new_press()) && !(tmp > 200)) // 1 sec timeout
@@ -205,13 +214,10 @@ void autonomous()
         // there is now a ball in both positions
         flywheelMotor_A1.move_velocity(600);
         flywheelMotor_A2.move_velocity(600);
-        chassis.setMaxVelocity(150);
         chassis.moveDistance(-35_in);
         // back and turn into shooting position
-        chassis.setMaxVelocity(100);
-        chassis.turnAngle(238);
-        chassis.moveDistance(-8_in);
-        chassis.setMaxVelocity(150);
+        chassis.turnAngle(470);
+        chassis.moveDistance(-7_in);
         // shoot first ball when ready
         while (!(flywheelMotor_A1.get_actual_velocity() > 590))
         {
@@ -223,24 +229,22 @@ void autonomous()
 
         // second ball shot position
         chassis.moveDistance(27_in);
-        // chassis.turnAngle(-25);
 
         // shoot second ball
         while (!(flywheelMotor_A1.get_actual_velocity() > 590))
         {
             pros::delay(20);
         }
-        pros::delay(500);
+        intakeMotor_A.move_velocity(200);
+        pros::delay(600);
         intakeMotor_A.move_velocity(0);
         flywheelMotor_A1.move_velocity(0);
         flywheelMotor_A2.move_velocity(0);
 
         // move to park
-        // chassis.turnAngle(25);
-        intakeMotor_A.move_velocity(200);
         chassis.setMaxVelocity(200);
-        chassis.moveDistance(-47_in);
-        chassis.turnAngle(-265);
+        chassis.moveDistance(-45_in);
+        chassis.turnAngle(-550);
         chassis.moveDistance(16_in);
         chassis.moveDistance(25_in);
         break;
