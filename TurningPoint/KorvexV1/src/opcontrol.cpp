@@ -132,6 +132,16 @@ void opcontrol()
 	pros::ADIDigitalIn triggerTL(TRIGGER_TL);
 	pros::ADIDigitalIn triggerTR(TRIGGER_TR);
 
+	// check for balls
+	if (triggerBL.get_new_press() || triggerBR.get_new_press())
+	{
+		ballTriggerBottom = true;
+	}
+	if (triggerTL.get_new_press() || triggerTR.get_new_press())
+	{
+		ballTriggerTop = true;
+	}
+
 	// claw controller
 	pros::Motor clawMotor(CLAW_MTR, pros::E_MOTOR_GEARSET_18, false);
 	clawMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
@@ -436,7 +446,7 @@ void opcontrol()
 
 		// use last fly targ, if not 0 and current is 0 then we are stopping so initiate the lift halt
 		liftMotor.move_absolute(liftTarget, LIFT_MAX_VEL);
-		if (flywheeLastTarg != 0 && flywheelTarget == 0)
+		if (flywheeLastTarg != 0 && flywheelTarget == 0 && cycles > 100) // cycles over 100 bcuz false positive at start
 		{							   // the flywheel just got set to 0
 			flywheelOffCycle = cycles; // store when we turned the flywheel off
 		}
