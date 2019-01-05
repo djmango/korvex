@@ -1,4 +1,6 @@
 #include "main.h"
+#include "okapi/api.hpp"
+
 #pragma
 // ports for motors
 
@@ -25,6 +27,21 @@ const int TRIGGER_TR = 5;
 
 // auton
 extern int autonSelection;
+
+// motor declerations
+extern pros::Motor liftMotor;
+extern pros::Motor flywheelMotor1;
+extern pros::Motor flywheelMotor2;
+extern pros::Motor intakeMotor;
+
+// other declerations
+extern pros::Controller controllerPros;
+extern okapi::Controller controller;
+extern pros::ADIDigitalIn triggerBL;
+extern pros::ADIDigitalIn triggerBR;
+extern pros::ADIDigitalIn triggerTL;
+extern pros::ADIDigitalIn triggerTR;
+extern okapi::ChassisControllerFactory chassis;
 
 // debug enabler
 // bool debugGlobal; // set this to true whenever you want print statements in terminal

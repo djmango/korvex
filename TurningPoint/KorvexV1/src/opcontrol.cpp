@@ -17,9 +17,6 @@ using namespace okapi;
  * task, not resume it from where it left off.
  */
 
-// TODO: make user controls more ez pz
-// TODO: pathfinder auton
-
 // module constants
 
 // 5 for 5 shooting positions, close, middle, platform, full, and cross
@@ -41,7 +38,7 @@ const int LIFT_PRESETS[2][3] = {
 	{0, 1400, 2100} // high pole
 };
 const int LIFT_PRESETS_LEN = 2; // 0 is the first iterate
-const int LIFT_MAX_VEL = 150;
+const int LIFT_MAX_VEL = 120;
 
 // globals
 int flywheelTarget = 0;
@@ -141,10 +138,6 @@ void opcontrol()
 	{
 		ballTriggerTop = true;
 	}
-
-	// claw controller
-	pros::Motor clawMotor(CLAW_MTR, pros::E_MOTOR_GEARSET_18, false);
-	clawMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
 	okapi::Controller controller;
 	pros::Controller controllerPros(pros::E_CONTROLLER_MASTER); // default api for more functions
@@ -302,17 +295,17 @@ void opcontrol()
 			{
 			case 0: // close up, change to mid
 				shootingPosition++;
-				controllerPros.print(2, 0, "Pos %d: Mid", shootingPosition);
+				controllerPros.print(2, 0, "Pos %d: Mid  ", shootingPosition);
 				break;
 
 			case 1: // mid, change to platform
 				shootingPosition++;
-				controllerPros.print(2, 0, "Pos %d: Plat", shootingPosition);
+				controllerPros.print(2, 0, "Pos %d: Plat ", shootingPosition);
 				break;
 
 			case 2: // platform, change to full
 				shootingPosition++;
-				controllerPros.print(2, 0, "Pos %d: Full", shootingPosition);
+				controllerPros.print(2, 0, "Pos %d: Full ", shootingPosition);
 				break;
 
 			case 3: // full, change to cross
@@ -437,21 +430,23 @@ void opcontrol()
 		}
 
 		// debug
-		// std::cout << "\nMotor Position: " << liftMotor.get_position();
-		// std::cout << "\nfly: " << flywheelMotor1.get_actual_velocity();
+		// std::cout << "Motor Position: " << liftMotor.get_position() << std:cout:endl;
+		// std::cout << "fly: " << flywheelMotor1.get_actual_velocity() << std:cout:endl;
 
 		// update motors
 		flywheelMotor1.move_velocity(flywheelTarget); // this is a temp solution, works well enough for me
 		flywheelMotor2.move_velocity(flywheelTarget);
-
-		// use last fly targ, if not 0 and current is 0 then we are stopping so initiate the lift halt
 		liftMotor.move_absolute(liftTarget, LIFT_MAX_VEL);
-		if (flywheeLastTarg != 0 && flywheelTarget == 0 && cycles > 100) // cycles over 100 bcuz false positive at start
+
+
+		// prevent flywheel jams
+		// use last fly targ, if not 0 and current is 0 then we are stopping so initiate the intake halt
+		if (flywheeLastTarg != 0 && flywheelTarget == 0)
 		{							   // the flywheel just got set to 0
 			flywheelOffCycle = cycles; // store when we turned the flywheel off
 		}
 
-		if (flywheelOffCycle > cycles - 300 && (triggerTL.get_value() || triggerTR.get_value()))
+		if (flywheelOffCycle > cycles - 250 && (triggerTL.get_value() || triggerTR.get_value()) && cycles > 100) // cycles over 190 bcuz false positive at start
 		{ // stop the intake if flywheel is spinning down
 			// 50 is temp, do whatever the stop time is in miliseconds for flywheel divided by 20
 			intakeMotor.move_velocity(0);

@@ -9,21 +9,24 @@
  */
 
 // called when a button is released or long pressed
+
+int autonSelection = -3;
+
 static lv_res_t redBtnmAction(lv_obj_t *btnm, const char *txt)
 {
 	printf("red button: %s released\n", txt);
 
 	if (txt == "Close")
 	{
-		int autonSelection = 1; // or whatever red Close is
+		autonSelection = 3; // or whatever red close is
 	}
 	if (txt == "Far")
 	{
-		int autonSelection = 2;
+		autonSelection = 4;
 	}
 	if (txt == "Stack")
 	{
-		int autonSelection = 3;
+		autonSelection = 5;
 	}
 
 	return LV_RES_OK; // return OK because the button matrix is not deleted
@@ -33,7 +36,20 @@ static lv_res_t blueBtnmAction(lv_obj_t *btnm, const char *txt)
 {
 	printf("blue button: %s released\n", txt);
 
-	return LV_RES_OK; // return OK because the button matrix is not deleted
+	if (txt == "Close")
+	{
+		autonSelection = 0;
+	}
+	if (txt == "Far")
+	{
+		autonSelection = 1;
+	}
+	if (txt == "Stack")
+	{
+		autonSelection = 2;
+	}
+
+		return LV_RES_OK; // return OK because the button matrix is not deleted
 }
 
 static lv_res_t skillsBtnAction(lv_obj_t *btn)
