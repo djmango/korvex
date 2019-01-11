@@ -38,7 +38,6 @@ const int LIFT_PRESETS[2][3] = {
 	{0, 1400, 2100} // high pole
 };
 const int LIFT_PRESETS_LEN = 2; // 0 is the first iterate
-const int LIFT_MAX_VEL = 100;
 
 // globals
 int flywheelTarget = 0;
@@ -94,7 +93,6 @@ void opcontrol()
 	int flywheelIterate = 0;
 	int flyArmed = 0;		  // 0 = not armed, 1 is one ball shoot, 2 is two ball shoot
 	int shootingPosition = 0; // 0 = close, 1 = mid, 2 = platform, 3 = full, 4 = cross
-	// pros::Task flyPIDLoop(flyPID, (void *)NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "FlywheelPID");
 	pros::Task isFlySpunUpCheckLoop(isFlySpunUpCheck, (void *)NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "FlywheelSpunUpCheck");
 
 	// intake stuff
@@ -118,9 +116,7 @@ void opcontrol()
 	int cyclesHold = 0; // temp thing for counting
 	int flywheeLastTarg = 0;
 	int flywheelOffCycle = 0;
-	// chassis.resetSensors();
-	// chassis.moveDistanceAsync(0);
-	chassis.stop();	
+
 	while (true)
 	{
 		// lift control
@@ -404,14 +400,12 @@ void opcontrol()
 		}
 
 		// debug
-		// std::cout << "Motor Position: " << liftMotor.get_position() << std:cout:endl;
 		// std::cout << "fly: " << flywheelMotor1.get_actual_velocity() << std:cout:endl;
 
 		// update motors
 		flywheelMotor1.move_velocity(flywheelTarget); // this is a temp solution, works well enough for me
 		flywheelMotor2.move_velocity(flywheelTarget);
-		liftMotor.move_absolute(liftTarget, LIFT_MAX_VEL);
-
+		liftControllerPID.setTarget(liftTarget);
 
 		// prevent flywheel jams
 		// use last fly targ, if not 0 and current is 0 then we are stopping so initiate the intake halt

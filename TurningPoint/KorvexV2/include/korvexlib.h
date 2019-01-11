@@ -42,6 +42,7 @@ extern pros::ADIDigitalIn triggerBR;
 extern pros::ADIDigitalIn triggerTL;
 extern pros::ADIDigitalIn triggerTR;
 extern okapi::ChassisControllerPID chassis;
+extern okapi::IterativePosPIDController liftControllerPID;
 
 // debug enabler
 // bool debugGlobal; // set this to true whenever you want print statements in terminal

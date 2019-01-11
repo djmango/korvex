@@ -66,16 +66,7 @@ static const char *btnmMap[] = {"Close", "Far", "Stack", ""};
 
 void initialize()
 {
-	// pros::lcd::initialize();
-	// TODO: move the themes to src and revert the includes to default, compile locally
 	// lvgl theme
-	// lv_color_t c;
-	// c.red = 0xCC;
-	// c.green = 0xCC;
-	// c.blue = 0x90;
-	// c = LV_COLOR_HEX(ff1500);
-	// lv_color16_t c16;
-	// c16.full = lv_color_to16(c);
 
 	lv_theme_t *th = lv_theme_alien_init(280, NULL); //Set a HUE value and keep font default
 	lv_theme_set_current(th);
@@ -126,7 +117,6 @@ void initialize()
  * the robot is enabled, this task will exit.
  */
 void disabled() {
-	// chassis.moveDistanceAsync(0);
 	chassis.stop();
 }
 

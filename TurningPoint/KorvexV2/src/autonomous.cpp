@@ -15,20 +15,6 @@ using namespace okapi;
  * from where it left off.
  */
 
-// factory constructs
-
-// auto chassis = ChassisControllerFactory::create( // .002 .0005 .002
-//     {LEFT_MTR1, LEFT_MTR2},                      // Left motors
-//     {-RIGHT_MTR1, -RIGHT_MTR2},                  // Right motors
-
-//     IterativePosPIDController::Gains{0.004, 0.000, 0.004}, // distance args
-//     IterativePosPIDController::Gains{0.0035, 0.00, 0.001},  // angle args (keeps robot straight)
-//     IterativePosPIDController::Gains{0.002, 0.00, 0.0005}, // turn args
-
-//     AbstractMotor::gearset::green, // normal gearset
-//     {4_in, 12.5_in}                // 4 inch wheels, 12.5 inch wheelbase width
-// );
-
 void autonomous()
 {
     int autonStart = pros::millis(); // note the start time
@@ -45,7 +31,6 @@ void autonomous()
     switch (auton)
     {
     case -2: // test
-        liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         chassis.setMaxVelocity(200); // this might fix things
@@ -61,7 +46,6 @@ void autonomous()
         break;
     case -1: // skills
         // setup
-        liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         chassis.setMaxVelocity(100); // this might fix things
@@ -160,7 +144,6 @@ void autonomous()
         break;
     case 0: // blue close, mid and top flag and park
         // setup
-        liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         chassis.setMaxVelocity(150); // this might fix things
@@ -226,7 +209,6 @@ void autonomous()
 
         // drive onto platform
         chassis.moveDistanceAsync(25_in);
-        // TODO: make it so you read milis on auton start and if at anytime we are about to reach 15 run the stop()
         while (!(pros::millis() > autonStart + 14950))
         {
             pros::delay(20);
@@ -236,7 +218,6 @@ void autonomous()
 
     case 1: // blue front heavy
         // setup
-        liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         chassis.setMaxVelocity(150); // this might fix things
@@ -333,7 +314,6 @@ void autonomous()
 
     case 2: // blue stack
         // setup
-        liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         chassis.setMaxVelocity(150); // this might fix things
@@ -383,92 +363,12 @@ void autonomous()
         pros::delay(500);
         flywheelMotor1.move_velocity(0);
         flywheelMotor2.move_velocity(0);
-
-        // turn for cap flip
-        // intakeMotor.move_velocity(-200);
-        // chassis.turnAngle(-580);
-
-        // // drive to cap
-        // chassis.moveDistance(10_in);
-        // chassis.turnAngle(340);
-
-        // // flip
-        // chassis.setMaxVelocity(140);
-        // chassis.moveDistance(24_in);
-        // pros::delay(1000);
-
-        // // back and turn for park
-        // chassis.setMaxVelocity(200);
-        // intakeMotor.move_velocity(0);
-        // chassis.moveDistance(-10_in);
-        // chassis.turnAngle(620);
-
-        // chassis.moveDistance(25_in);
-        // chassis.moveDistanceAsync(15_in);
-
-        // turn around to pick up cap and flipout
-        // chassis.turnAngleAsync(1100);
-        // liftMotor.move_absolute(300, 200);
-        // pros::delay(800);
-        // liftMotor.move_absolute(-70, 100);
-        // pros::delay(600);
-
-        // // grab cap
-        // chassis.moveDistance(-20_in);
-        // liftMotor.move_absolute(1200, 100);
-
-        // // drive and turn for post align
-        // chassis.moveDistance(20_in);
-        // chassis.turnAngle(-525);
-
-        // // drive into post
-        // liftMotor.move_absolute(1400, 150);
-        // chassis.moveDistance(-24.5_in);
-
-        // // drop cap on post
-        // pros::delay(1000);
-        // liftMotor.move_absolute(800, 100);
-        // pros::delay(800);
-
-        // // back out
-        // chassis.moveDistance(13_in);
-        // liftMotor.move_absolute(0, 150);
-
-        // flip the bad bois top flag
-        // chassis.turnAngle(-240);
-        // flywheelMotor1.move_velocity(590);
-        // flywheelMotor2.move_velocity(590);
-
-        // // shoot ball when ready
-        // while (!(flywheelMotor1.get_actual_velocity() > 585))
-        // {
-        //     pros::delay(20);
-        // }
-        // intakeMotor.move_velocity(200);
-        // pros::delay(500);
-        // intakeMotor.move_velocity(0);
-
-        // pros::delay(500);
-        // flywheelMotor1.move_velocity(0);
-        // flywheelMotor2.move_velocity(0);
-
-        // parkk
-        // chassis.turnAngle(-300);
-        // chassis.moveDistance(17_in);
-        // chassis.turnAngle(180);
-        // chassis.moveDistanceAsync(24_in);
-        // while ((pros::millis() - 14950 < autonStart))
-        // {
-        //     pros::delay(20);
-        // }
-        // chassis.stop();
         break;
     case 3: // red close, mid and top flag and park
         break;
 
     case 4: // red front heavy
         // setup
-        liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         chassis.setMaxVelocity(150); // this might fix things
@@ -545,7 +445,6 @@ void autonomous()
 
     case 5: // red far
             // setup
-        liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         chassis.setMaxVelocity(150); // this might fix things
@@ -592,7 +491,6 @@ void autonomous()
         pros::delay(500);
         intakeMotor.move_velocity(0);
         pros::delay(500);
-        // TODO: enable auton switch, add double shot to other auton
         // second ball
         flywheelMotor1.move_velocity(480);
         flywheelMotor2.move_velocity(480);
