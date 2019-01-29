@@ -5,19 +5,18 @@
 // ports for motors
 
 // chassis motors
-const int LEFT_MTR1 = 11;
-const int LEFT_MTR2 = 12;
-const int RIGHT_MTR1 = 13;
-const int RIGHT_MTR2 = 14;
+const int LEFT_MTR1 = 1;
+const int LEFT_MTR2 = 2;
+const int RIGHT_MTR1 = 3;
+const int RIGHT_MTR2 = 4;
 
 // lift and claw motor declerations
-const int LIFT_MTR = 16;
-const int CLAW_MTR = 17;
+const int LIFT_MTR = 7;
+const int CAPFLIP_MTR = 8;
 
 // flywheel and intake motors
-const int FLY_MTR1 = 18;
-const int FLY_MTR2 = 19;
-const int INTAKE_MTR = 20;
+const int FLY_MTR = 9;
+const int INTAKE_MTR = 10;
 
 // sensors
 const int TRIGGER_BL = 2;
@@ -29,10 +28,15 @@ const int TRIGGER_TR = 5;
 extern int autonSelection;
 
 // motor declerations
+extern pros::Motor chassisLeft1;
+extern pros::Motor chassisLeft2;
+extern pros::Motor chassisRight1;
+extern pros::Motor chassisRight2;
 extern pros::Motor liftMotor;
-extern pros::Motor flywheelMotor1;
-extern pros::Motor flywheelMotor2;
+extern pros::Motor flywheelMotor;
+extern pros::Motor capflipMotor;
 extern pros::Motor intakeMotor;
+extern pros::Motor descoreMotor;
 
 // other declerations
 extern pros::Controller controllerPros;

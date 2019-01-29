@@ -83,14 +83,23 @@ void initialize()
 	// add content to the tabs
 
 	// red tab
-
-	// Create a default button matrix
+	
+	// button matrix
 	lv_obj_t *redBtnm = lv_btnm_create(redTab, NULL);
 	lv_btnm_set_map(redBtnm, btnmMap);
 	lv_btnm_set_action(redBtnm, redBtnmAction);
 	lv_obj_set_size(redBtnm, 450, 50);
 	lv_obj_set_pos(redBtnm, 0, 100);
 	lv_obj_align(redBtnm, NULL, LV_ALIGN_CENTER, 0, 0);
+
+	// auton switches
+	lv_obj_t *redSw1 = lv_sw_create(redTab, NULL); // TODO: this thing
+	lv_obj_t *redSw1Label = lv_label_create(redSw1, NULL);
+	lv_label_set_text(redSw1Label, "Park");
+	// lv_btnm_set_action(redSw1, blueBtnmAction);
+	lv_obj_set_size(redSw1, 50, 20);
+	lv_obj_set_pos(redSw1, 0, 200);
+	lv_obj_align(redSw1, NULL, LV_ALIGN_CENTER, 0, 0);
 
 	// blue tab
 	lv_obj_t *blueBtnm = lv_btnm_create(blueTab, NULL);

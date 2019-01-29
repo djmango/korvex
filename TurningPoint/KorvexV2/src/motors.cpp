@@ -3,9 +3,15 @@
 #include "korvexlib.h"
 
 // motors
-pros::Motor flywheelMotor1(FLY_MTR1, pros::E_MOTOR_GEARSET_06, true);
-pros::Motor flywheelMotor2(FLY_MTR2, pros::E_MOTOR_GEARSET_06, true);
-pros::Motor intakeMotor(INTAKE_MTR, pros::E_MOTOR_GEARSET_18, true);
+pros::Motor chassisLeft1(LEFT_MTR1, pros::E_MOTOR_GEARSET_18, false);
+pros::Motor chassisLeft2(LEFT_MTR2, pros::E_MOTOR_GEARSET_18, false);
+pros::Motor chassisRight1(RIGHT_MTR1, pros::E_MOTOR_GEARSET_18, true);
+pros::Motor chassisRight2(RIGHT_MTR2, pros::E_MOTOR_GEARSET_18, true);
+
+pros::Motor flywheelMotor(FLY_MTR, pros::E_MOTOR_GEARSET_06, true);
+pros::Motor intakeMotor(INTAKE_MTR, pros::E_MOTOR_GEARSET_18, false);
+pros::Motor capflipMotor(CAPFLIP_MTR, pros::E_MOTOR_GEARSET_18, false);
+pros::Motor descoreMotor(LIFT_MTR, pros::E_MOTOR_GEARSET_18, false);
 
 // intake triggers
 pros::ADIDigitalIn triggerBL(TRIGGER_BL);
@@ -19,11 +25,11 @@ pros::Controller controllerPros(pros::E_CONTROLLER_MASTER);
 
 using namespace okapi;
 okapi::ChassisControllerPID chassis = okapi::ChassisControllerFactory::create(
-    {LEFT_MTR1, LEFT_MTR2},     // Left motors
-    {-RIGHT_MTR1, -RIGHT_MTR2}, // Right motors
+    {LEFT_MTR2, LEFT_MTR1},     // Left motors
+    {-RIGHT_MTR2, -RIGHT_MTR1}, // Right motors
 
-    IterativePosPIDController::Gains{0.004, 0.000, 0.004}, // distance args
-    IterativePosPIDController::Gains{0.0044, 0.00, 0.0005}, // angle args (keeps robot straight)
+    IterativePosPIDController::Gains{0.003, 0.00, 0.001}, // distance args
+    IterativePosPIDController::Gains{0.007, 0.000, 0.002}, // angle args (keeps robot straight)
     IterativePosPIDController::Gains{0.0025, 0.00, 0.0005}, // turn args
 
     AbstractMotor::gearset::green, // normal gearset
