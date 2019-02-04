@@ -25,12 +25,12 @@ pros::Controller controllerPros(pros::E_CONTROLLER_MASTER);
 
 using namespace okapi;
 okapi::ChassisControllerPID chassis = okapi::ChassisControllerFactory::create(
-    {LEFT_MTR2, LEFT_MTR1},     // Left motors
+    {LEFT_MTR2, LEFT_MTR1},     // Left motors (the sensor vals are read from first motor on each side)
     {-RIGHT_MTR2, -RIGHT_MTR1}, // Right motors
 
-    IterativePosPIDController::Gains{0.003, 0.00, 0.001}, // distance args
-    IterativePosPIDController::Gains{0.007, 0.000, 0.002}, // angle args (keeps robot straight)
-    IterativePosPIDController::Gains{0.0025, 0.00, 0.0005}, // turn args
+    IterativePosPIDController::Gains{0.002, 0.00, 0.0035}, // distance args
+    IterativePosPIDController::Gains{0.002, 0.006, 0.001}, // angle args (keeps robot straight)
+    IterativePosPIDController::Gains{0.0025, 0.00, 0.001}, // turn args
 
     AbstractMotor::gearset::green, // normal gearset
     {4_in, 12.5_in}                // 4 inch wheels, 12.5 inch wheelbase width

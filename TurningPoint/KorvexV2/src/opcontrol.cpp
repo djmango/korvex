@@ -22,13 +22,13 @@ using namespace okapi;
 // 5 for 5 shooting positions, close, middle, platform, full, and cross
 // 3 for 0, second, and third flag
 const int FLY_PRESETS[5][3] = {
-	{0, 600, 460}, // close (inveted cuz anish wanted it)
+	{0, 600, 490}, // close (inveted cuz anish wanted it)
 	{0, 500, 600}, // middle
 	{0, 480, 490}, // platform
 	{0, 470, 540}, // full
 	{0, 490, 580}  // cross
 };
-const int FLY_PRESETS_LEN = 2; // lowered cuz big boy driver onl used 3
+const int FLY_PRESETS_LEN = 3; // lowered cuz big boy driver onl used 3
 
 // lift position presets, different heights for different poles
 // lift presets respectivley: rest, [0] low intake, low stack, [1] high intake, high stack
@@ -38,6 +38,10 @@ const int LIFT_PRESETS[2][3] = {
 	{0, 1400, 2100} // high pole
 };
 const int LIFT_PRESETS_LEN = 2; // 0 is the first iterate
+
+const int CAPFLIP_PRESETS[4] = {
+	0, -445, -560, -700};
+const int CAPFLIP_PRESETS_LEN = 3;
 
 // globals
 int flywheelTarget = 0;
@@ -86,6 +90,7 @@ void opcontrol()
 
 	// capflip stuff
 	int capflipTarget = 0;
+	int capflipIterate = 0;
 
 	// descore stuff
 	descoreMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
@@ -178,33 +183,30 @@ void opcontrol()
 		}
 
 		// capflip control
-		if (controllerPros.get_digital(DIGITAL_UP) && capflipMotor.get_position() >= -700) // if we get a new up press
+		if (controllerPros.get_digital_new_press(DIGITAL_RIGHT)) // new cycle press, go to next preset
 		{
-			capflipMotor.move_velocity(-150);
-		}
-		else if (controllerPros.get_digital(DIGITAL_DOWN)) // if we get a new down press
-		{
-			capflipMotor.move_velocity(200);
-		}
-		else
-		{
-			if (capflipMotor.get_position() < -700)
+			capflipIterate++;
+			if (capflipIterate >= CAPFLIP_PRESETS_LEN) // dont wanna go above
 			{
-				capflipMotor.move_absolute(-650, 200);
+				capflipIterate = CAPFLIP_PRESETS_LEN;
 			}
-			else
-			{
-				capflipMotor.move_velocity(0);
-			}
+			capflipTarget = CAPFLIP_PRESETS[capflipIterate];
+			controllerPros.print(0, 0, "Cap Tar: %d", capflipTarget);
+			capflipMotor.move_absolute(capflipTarget, 150);
+		}
+		else if (controllerPros.get_digital_new_press(DIGITAL_Y)) // reset capflip
+		{
+			capflipIterate = 0;
+			capflipMotor.move_absolute(0, 150);
 		}
 
 		// descore control
-		if (controllerPros.get_digital(DIGITAL_LEFT)) // if we get a new up press
+		if (controllerPros.get_digital(DIGITAL_UP)) // if we get a new up press
 		{
 			descoreMotor.move_velocity(200);
 			descoreRelease = false;
 		}
-		else if (controllerPros.get_digital(DIGITAL_RIGHT)) // if we get a new down press
+		else if (controllerPros.get_digital(DIGITAL_DOWN)) // if we get a new down press
 		{
 			descoreMotor.move_velocity(-200);
 			descoreRelease = false;
@@ -299,7 +301,7 @@ void opcontrol()
 		}
 
 		// shooting position toggler
-		if (controllerPros.get_digital_new_press(DIGITAL_Y))
+		if (controllerPros.get_digital_new_press(DIGITAL_B))
 		{
 
 			switch (shootingPosition) // here we look at the current position, and change it to the next in line, if max is hit we reset
@@ -400,42 +402,56 @@ void opcontrol()
 		}
 		if (flyArmed == 2 && isFlySpunUp == true && flywheelTarget != 0) // lower then upper
 		{
-			// freeze chassis
-			flywheelTarget = FLY_PRESETS[shootingPosition][1];
+			// flywheelIterate = 2;
+			// flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
+			flywheelTarget = 600;
 			flywheelMotor.move_velocity(flywheelTarget);
 			chassis.tank(0, 0);
+			// wait for spinup for first shot
+			while (isFlySpunUp == false && (cyclesHold + 25 > cycles))
+			{
+				// to make sure we dont get stuck
+				chassis.tank(controller.getAnalog(ControllerAnalog::leftY),
+							 controller.getAnalog(ControllerAnalog::rightY));
+				cycles++;
+				pros::delay(20);
+			}
 			intakeMotor.move_velocity(200);
 			// wait for first ball to get shot
 			cyclesHold = cycles;
-			// pros::delay(500); // im replacing the delays with delay-loops to allow chassis control
-			while (cyclesHold + 25 > cycles)
+			// im replacing the delays with delay-loops to allow chassis control
+			while (cyclesHold + 20 > cycles)
 			{
 				chassis.tank(controller.getAnalog(ControllerAnalog::leftY),
 							 controller.getAnalog(ControllerAnalog::rightY));
 				cycles++;
 				pros::delay(20);
 			}
-			
 
 			isFlySpunUp = false;
 			intakeMotor.move_velocity(0);
 			controllerPros.print(0, 0, "Shot 1st ball..");
-			// increase  flywheel power
-			flywheelTarget = FLY_PRESETS[shootingPosition][2];
+
+			// spindown
+			// flywheelMotor.move_velocity(-600);
+			// cyclesHold = cycles;
+			// while (cyclesHold + 30 > cycles)
+			// {
+			// 	chassis.tank(controller.getAnalog(ControllerAnalog::leftY),
+			// 				 controller.getAnalog(ControllerAnalog::rightY));
+			// 	cycles++;
+			// 	pros::delay(20);
+			// }
+
+			// change flywheel power
+			// flywheelIterate = 1;
+			// flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
+			flywheelTarget = 490;
 			flywheelMotor.move_velocity(flywheelTarget);
-			// pros::delay(1000);
-			cyclesHold = cycles;
-			while (cyclesHold + 50 > cycles)
-			{
-				chassis.tank(controller.getAnalog(ControllerAnalog::leftY),
-							 controller.getAnalog(ControllerAnalog::rightY));
-				cycles++;
-				pros::delay(20);
-			}
 
 			// wait for spinup
 			cyclesHold = cycles;
-			while (isFlySpunUp == false && (cyclesHold + 50 > cycles))
+			while (isFlySpunUp == false && (cyclesHold + 70 > cycles))
 			{
 				// to make sure we dont get stuck
 				chassis.tank(controller.getAnalog(ControllerAnalog::leftY),
@@ -446,6 +462,7 @@ void opcontrol()
 			// shoot 2nd ball
 			intakeMotor.move_velocity(200);
 			// wait for second ball to get shot
+			chassis.tank(0, 0);
 			pros::delay(500);
 
 			// cleanup

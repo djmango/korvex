@@ -24,7 +24,7 @@ void autonomous()
     // 1 = blue close, all flags and park
     // 2 = blue far, opponent descore
     // 3 = red close, mid and top flag and park
-    int auton = -2;
+    int auton = 0;
     // int auton = autonSelection; // this is to enable auton selector
     // std::cout << autonSelection << std::endl;
     int tmp = 0;
@@ -37,11 +37,12 @@ void autonomous()
         chassis.setMaxVelocity(200);
 
         // actual auton
-
-        chassis.moveDistance(24_in);
-        chassis.waitUntilSettled();
-        std::cout << chassis.getSensorVals()[0] << std::endl;
-        std::cout << chassis.getSensorVals()[1] << std::endl;
+        chassis.turnAngle(200);
+        // chassis.moveDistance(24_in);
+        // chassis.waitUntilSettled();
+        // chassis.moveDistance(-24_in);
+        // std::cout << chassis.getSensorVals()[0] << std::endl;
+        // std::cout << chassis.getSensorVals()[1] << std::endl;
         // chassis.moveDistance(-20_in);
         // chassis.moveDistance(1_in);
         break;
@@ -113,19 +114,21 @@ void autonomous()
     case 0: // blue close, mid and top flag and park
         // setup
         flywheelMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        chassis.setMaxVelocity(150); // this might fix things
+        chassis.setMaxVelocity(200); // this might fix things
 
         // actual auton
         intakeMotor.move_velocity(200);
-        chassis.moveDistanceAsync(37_in); // going to cap with ball under it
+        chassis.moveDistanceAsync(38_in); // going to cap with ball under it
 
         // wait until we intake ball to bot
-        while (!(triggerBL.get_new_press() || triggerBR.get_new_press()) && !(tmp > 100)) // 2 sec timeout
+        tmp = 0;
+        while (!(triggerBL.get_new_press() || triggerBR.get_new_press()) && !(tmp > 300)) // 2 sec timeout
         {
             pros::delay(20);
             tmp++;
         }
 
+        pros::delay(50); // since the trigger is kinda hairtrigger-y we need to pull 2nd ball a bit higher
         // theres a ball at the top, we want to pull it down back to the trigger
         intakeMotor.move_velocity(-200);
         while (!(triggerTL.get_new_press() || triggerTR.get_new_press()))
@@ -136,12 +139,12 @@ void autonomous()
 
         // there is now a ball in both positions
         flywheelMotor.move_velocity(600);
-        chassis.moveDistance(-36_in);
+        chassis.moveDistance(-37_in);
         // back and turn into shooting position
-        chassis.turnAngle(500);
+        chassis.turnAngle(700);
         chassis.moveDistance(-7_in);
         // shoot first ball when ready
-        while (!(flywheelMotor.get_actual_velocity() > 590))
+        while (!(flywheelMotor.get_actual_velocity() > 595))
         {
             pros::delay(20);
         }
@@ -149,36 +152,36 @@ void autonomous()
         pros::delay(500);
         intakeMotor.move_velocity(0);
 
-        // second ball shot position
-        chassis.moveDistance(27_in);
-
-        // shoot second ball
-        while (!(flywheelMotor.get_actual_velocity() > 590))
-        {
-            pros::delay(20);
-        }
+        // shoot second ball and move to flip bot flag
+        chassis.moveDistanceAsync(50_in);
+        pros::delay(400); // this is the timing for the run and shoot
         intakeMotor.move_velocity(200);
         pros::delay(600);
         intakeMotor.move_velocity(0);
         flywheelMotor.move_velocity(0);
+        chassis.waitUntilSettled();
 
-        // move to park
+        chassis.moveDistance(-35_in);
+
+        // turn to flip cap
+        chassis.turnAngle(-300);
+
+        // move to cap
+        capflipMotor.move_absolute(-700, 200);
+        chassis.moveDistance(18_in);
+
+        // flip cap
+        capflipMotor.move_absolute(0, 150);
+        pros::delay(500);
+
+        // park
+        chassis.turnAngle(-300);
+        chassis.moveDistance(14_in);
+        chassis.turnAngle(-500);
         chassis.setMaxVelocity(200);
-        chassis.moveDistance(-45_in);
+        chassis.moveDistance(28_in);
+        chassis.moveDistance(20_in);
 
-        // turn to drive onto platform
-        chassis.turnAngle(-550);
-
-        // align with platform
-        chassis.moveDistance(16_in);
-
-        // drive onto platform
-        chassis.moveDistanceAsync(25_in);
-        while (!(pros::millis() > autonStart + 14950))
-        {
-            pros::delay(20);
-        }
-        chassis.stop();
         break;
 
     case 1: // blue front heavy
