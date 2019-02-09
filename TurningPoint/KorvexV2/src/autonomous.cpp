@@ -27,6 +27,7 @@ void autonomous()
     int auton = 0;
     // int auton = autonSelection; // this is to enable auton selector
     // std::cout << autonSelection << std::endl;
+    bool preload = false;
     int tmp = 0;
     switch (auton)
     {
@@ -114,49 +115,49 @@ void autonomous()
     case 0: // blue close, mid and top flag and park
         // setup
         flywheelMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        chassis.setMaxVelocity(200); // this might fix things
 
         // actual auton
+
+        // check if we missed preload (idiot)
+        if (triggerTL.get_value() || triggerTR.get_value())
+        {
+            preload = true;
+        }
+        
         intakeMotor.move_velocity(200);
-        chassis.moveDistanceAsync(38_in); // going to cap with ball under it
+        chassis.moveDistanceAsync(39_in); // going to cap with ball under it
 
         // wait until we intake ball to bot
         tmp = 0;
-        while (!(triggerBL.get_new_press() || triggerBR.get_new_press()) && !(tmp > 300)) // 2 sec timeout
+        while (!(triggerBL.get_new_press() || triggerBR.get_new_press()) && !(tmp > 100)) // 2 sec timeout
         {
-            pros::delay(20);
             tmp++;
+            pros::delay(20);
         }
 
-        pros::delay(50); // since the trigger is kinda hairtrigger-y we need to pull 2nd ball a bit higher
         // theres a ball at the top, we want to pull it down back to the trigger
-        intakeMotor.move_velocity(-200);
-        while (!(triggerTL.get_new_press() || triggerTR.get_new_press()))
-        {
-            pros::delay(20);
-        }
-        intakeMotor.move_velocity(0);
+        intakeMotor.move_relative(-200, 200);
 
         // there is now a ball in both positions
         flywheelMotor.move_velocity(600);
         chassis.moveDistance(-37_in);
         // back and turn into shooting position
-        chassis.turnAngle(700);
+        chassis.turnAngle(350);
         chassis.moveDistance(-7_in);
         // shoot first ball when ready
-        while (!(flywheelMotor.get_actual_velocity() > 595))
+        tmp = 0;
+        while (!(flywheelMotor.get_actual_velocity() > 590) && !(tmp > 50))
         {
+            tmp++;
             pros::delay(20);
         }
-        intakeMotor.move_velocity(200);
-        pros::delay(500);
-        intakeMotor.move_velocity(0);
+        intakeMotor.move_relative(2000, 200);
 
         // shoot second ball and move to flip bot flag
         chassis.moveDistanceAsync(50_in);
-        pros::delay(400); // this is the timing for the run and shoot
+        pros::delay(300); // this is the timing for the run and shoot
         intakeMotor.move_velocity(200);
-        pros::delay(600);
+        pros::delay(500);
         intakeMotor.move_velocity(0);
         flywheelMotor.move_velocity(0);
         chassis.waitUntilSettled();
@@ -164,7 +165,7 @@ void autonomous()
         chassis.moveDistance(-35_in);
 
         // turn to flip cap
-        chassis.turnAngle(-300);
+        chassis.turnAngle(-150);
 
         // move to cap
         capflipMotor.move_absolute(-700, 200);
@@ -172,14 +173,15 @@ void autonomous()
 
         // flip cap
         capflipMotor.move_absolute(0, 150);
-        pros::delay(500);
+        pros::delay(200);
 
         // park
-        chassis.turnAngle(-300);
-        chassis.moveDistance(14_in);
-        chassis.turnAngle(-500);
-        chassis.setMaxVelocity(200);
-        chassis.moveDistance(28_in);
+        chassis.turnAngle(-150);
+        chassis.moveDistance(18_in);
+        chassis.turnAngle(-275);
+
+        // onwards soldiers! take the platform! fuck im bored
+        chassis.moveDistance(30_in);
         chassis.moveDistance(20_in);
 
         break;

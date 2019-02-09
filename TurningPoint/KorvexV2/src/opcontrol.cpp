@@ -230,6 +230,17 @@ void opcontrol()
 
 			// if theres a ball at the top, we want to pull it down back to the trigger
 			intakeMotor.move_velocity(-200);
+
+			// start flywheel and the ball gets like 'sucked down' so we need to pull it down a bit further than the normal loop would allow
+			while (cyclesHold + 10 > cycles)
+			{
+				chassis.tank(controller.getAnalog(ControllerAnalog::leftY),
+							 controller.getAnalog(ControllerAnalog::rightY));
+				cycles++;
+				pros::delay(20);
+			}
+			flywheelTarget = 600;
+			flywheelMotor.move_velocity(flywheelTarget);
 			// this is kinda a fuck it solution, just pulls down until we dont trigger the bot
 			intakeToggle = false;
 			ballTriggerBottom = true;
@@ -416,11 +427,11 @@ void opcontrol()
 				cycles++;
 				pros::delay(20);
 			}
-			intakeMotor.move_velocity(200);
+			intakeMotor.move_relative(2000, 200);
 			// wait for first ball to get shot
 			cyclesHold = cycles;
 			// im replacing the delays with delay-loops to allow chassis control
-			while (cyclesHold + 20 > cycles)
+			while (cyclesHold + 5 > cycles)
 			{
 				chassis.tank(controller.getAnalog(ControllerAnalog::leftY),
 							 controller.getAnalog(ControllerAnalog::rightY));
@@ -429,25 +440,26 @@ void opcontrol()
 			}
 
 			isFlySpunUp = false;
-			intakeMotor.move_velocity(0);
 			controllerPros.print(0, 0, "Shot 1st ball..");
 
-			// spindown
-			// flywheelMotor.move_velocity(-600);
-			// cyclesHold = cycles;
-			// while (cyclesHold + 30 > cycles)
-			// {
-			// 	chassis.tank(controller.getAnalog(ControllerAnalog::leftY),
-			// 				 controller.getAnalog(ControllerAnalog::rightY));
-			// 	cycles++;
-			// 	pros::delay(20);
-			// }
+			// agrro spindown
+			flywheelMotor.move_velocity(600);
+			cyclesHold = cycles;
+			while (cyclesHold + 25 > cycles)
+			{
+				chassis.tank(controller.getAnalog(ControllerAnalog::leftY),
+							 controller.getAnalog(ControllerAnalog::rightY));
+				cycles++;
+				pros::delay(20);
+			}
 
 			// change flywheel power
 			// flywheelIterate = 1;
 			// flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
 			flywheelTarget = 490;
 			flywheelMotor.move_velocity(flywheelTarget);
+			isFlySpunUp == false;
+			pros::delay(100);
 
 			// wait for spinup
 			cyclesHold = cycles;
@@ -460,10 +472,10 @@ void opcontrol()
 				pros::delay(20);
 			}
 			// shoot 2nd ball
-			intakeMotor.move_velocity(200);
+			intakeMotor.move_relative(200, 200);
 			// wait for second ball to get shot
 			chassis.tank(0, 0);
-			pros::delay(500);
+			pros::delay(200);
 
 			// cleanup
 			ballTriggerTop = false; // we are shooting the balls so they gone
@@ -471,7 +483,6 @@ void opcontrol()
 			// disarm the flywheel
 			flyArmed = 0;
 			controllerPros.print(0, 0, "Fly Not Armed");
-			intakeMotor.move_velocity(0);
 			flywheelIterate = 0;
 			flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
 		}

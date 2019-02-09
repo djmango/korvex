@@ -61,6 +61,15 @@ static lv_res_t skillsBtnAction(lv_obj_t *btn)
 	return LV_RES_OK; // return OK because the button matrix is not deleted
 }
 
+static lv_res_t parkBtnAction(lv_obj_t *btn)
+{
+	uint8_t id = lv_obj_get_free_num(btn);
+
+	printf("Btn %d is long pressed %d\n", btn);
+
+	return LV_RES_OK;
+}
+
 /*Create a button descriptor string array*/
 static const char *btnmMap[] = {"Close", "Far", "Stack", ""};
 
@@ -93,13 +102,13 @@ void initialize()
 	lv_obj_align(redBtnm, NULL, LV_ALIGN_CENTER, 0, 0);
 
 	// auton switches
-	lv_obj_t *redSw1 = lv_sw_create(redTab, NULL); // TODO: this thing
-	lv_obj_t *redSw1Label = lv_label_create(redSw1, NULL);
-	lv_label_set_text(redSw1Label, "Park");
-	// lv_btnm_set_action(redSw1, blueBtnmAction);
-	lv_obj_set_size(redSw1, 50, 20);
-	lv_obj_set_pos(redSw1, 0, 200);
-	lv_obj_align(redSw1, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_t *redBtn1 = lv_sw_create(redTab, NULL); // TODO: this thing
+	lv_obj_t *redBtn1Label = lv_label_create(redBtn1, NULL);
+	lv_label_set_text(redBtn1Label, "Park");
+	lv_btn_set_action(redBtn1, LV_BTN_ACTION_LONG_PR, parkBtnAction);
+	lv_obj_set_size(redBtn1, 100, 40);
+	lv_obj_set_pos(redBtn1, 0, 200);
+	lv_obj_align(redBtn1, NULL, LV_ALIGN_CENTER, 0, 0);
 
 	// blue tab
 	lv_obj_t *blueBtnm = lv_btnm_create(blueTab, NULL);
