@@ -27,7 +27,7 @@ using namespace okapi;
 // 3 for 0, second, and third flag
 const int FLY_PRESETS[5][3] = {
 	{0, 360, 480}, // close
-	{0, 440, 560}, // middle
+	{0, 440, 570}, // middle
 	{0, 420, 600}, // platform
 	{0, 420, 600}, // full
 	{0, 420, 600}  // cross
@@ -435,7 +435,7 @@ void opcontrol()
 		// 	// wait for spinup
 		// 	pros::delay(500);
 		// 	cyclesHold = cycles;
-		// 	while (isFlySpunUp == false && !(cyclesHold + 10 < cycles)) 
+		// 	while (isFlySpunUp == false && !(cyclesHold + 10 < cycles))
 		// 	{
 		// 		// to make sure we dont get stuck
 		// 		cycles++;
