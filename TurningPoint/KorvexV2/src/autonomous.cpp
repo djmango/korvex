@@ -24,111 +24,32 @@ void autonomous()
     // 1 = blue close, all flags and park
     // 2 = blue far, opponent descore
     // 3 = red close, mid and top flag and park
-    int auton = 0;
+    int auton = 1;
     // int auton = autonSelection; // this is to enable auton selector
     // std::cout << autonSelection << std::endl;
     bool preload = false;
     int tmp = 0;
-    switch (auton)
+    switch (auton) // TODO: retune turns, test both autons and clone 3 flag + park for red
     {
     case -2: // test
-
-        // TODO: lower deceleration/acceleration rate
-        flywheelMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        chassis.setMaxVelocity(200);
-
-        // actual auton
-        chassis.turnAngle(200);
-        // chassis.moveDistance(24_in);
-        // chassis.waitUntilSettled();
-        // chassis.moveDistance(-24_in);
-        // std::cout << chassis.getSensorVals()[0] << std::endl;
-        // std::cout << chassis.getSensorVals()[1] << std::endl;
-        // chassis.moveDistance(-20_in);
-        // chassis.moveDistance(1_in);
+        chassis.turnAngle(90_deg);
+        pros::delay(1000);
+        chassis.turnAngle(-90_deg);
         break;
     case -1: // skills
-        // setup
-        flywheelMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        chassis.setMaxVelocity(100); // this might fix things
-
-        // actual auton
-        intakeMotor.move_velocity(200);
-        chassis.moveDistanceAsync(37_in); // going to cap with ball under it
-
-        // wait until we intake ball to bot
-        while (!(triggerBL.get_new_press() || triggerBR.get_new_press()) && !(tmp > 200)) // 1 sec timeout
-        {
-            pros::delay(20);
-            tmp++;
-        }
-
-        // theres a ball at the top, we want to pull it down back to the trigger
-        intakeMotor.move_velocity(-200);
-        while (!(triggerTL.get_new_press() || triggerTR.get_new_press()))
-        {
-            pros::delay(20);
-        }
-        intakeMotor.move_velocity(0);
-
-        // there is now a ball in both positions
-        flywheelMotor.move_velocity(600);
-        chassis.moveDistance(-39_in);
-        // back and turn into shooting position
-        chassis.turnAngle(-267);
-        chassis.moveDistance(-15_in);
-        // shoot first ball when ready
-        while (!(flywheelMotor.get_actual_velocity() > 590))
-        {
-            pros::delay(20);
-        }
-        intakeMotor.move_velocity(200);
-        pros::delay(500);
-        intakeMotor.move_velocity(0);
-
-        // second ball shot position
-        chassis.moveDistance(33_in);
-
-        // shoot second ball
-        while (!(flywheelMotor.get_actual_velocity() > 590))
-        {
-            pros::delay(20);
-        }
-        intakeMotor.move_velocity(200);
-        pros::delay(500);
-        intakeMotor.move_velocity(0);
-        flywheelMotor.move_velocity(0);
-
-        // run into bot flag
-        chassis.turnAngle(-25);
-        chassis.moveDistance(24_in);
-        chassis.turnAngle(15);
-
-        // line up for far cap
-        chassis.moveDistance(-64_in);
-        chassis.turnAngle(280);
-
-        // park
-        chassis.moveDistance(18_in);
-        chassis.moveDistance(48_in);
         break;
-    case 0: // blue close, mid and top flag and park
+    case 0: // blue close, full post, capflip and park
         // setup
-        flywheelMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+        flywheelController.setGearing(okapi::AbstractMotor::gearset::blue);
+        flywheelController.setBrakeMode(okapi::AbstractMotor::brakeMode::hold);
+        tmp = 0;
 
         // actual auton
 
-        // check if we missed preload (idiot)
-        if (triggerTL.get_value() || triggerTR.get_value())
-        {
-            preload = true;
-        }
-        
         intakeMotor.move_velocity(200);
-        chassis.moveDistanceAsync(39_in); // going to cap with ball under it
+        chassis.moveDistance(39_in); // going to cap with ball under it
 
         // wait until we intake ball to bot
-        tmp = 0;
         while (!(triggerBL.get_new_press() || triggerBR.get_new_press()) && !(tmp > 100)) // 2 sec timeout
         {
             tmp++;
@@ -136,17 +57,17 @@ void autonomous()
         }
 
         // theres a ball at the top, we want to pull it down back to the trigger
-        intakeMotor.move_relative(-200, 200);
+        intakeMotor.move_relative(-400, 200);
 
         // there is now a ball in both positions
-        flywheelMotor.move_velocity(600);
+        flywheelController.moveVelocity(600);
         chassis.moveDistance(-37_in);
         // back and turn into shooting position
-        chassis.turnAngle(350);
+        chassis.turnAngle(90_deg);
         chassis.moveDistance(-7_in);
         // shoot first ball when ready
         tmp = 0;
-        while (!(flywheelMotor.get_actual_velocity() > 590) && !(tmp > 50))
+        while (!(flywheelController.getActualVelocity() > 590) && !(tmp > 50))
         {
             tmp++;
             pros::delay(20);
@@ -154,18 +75,19 @@ void autonomous()
         intakeMotor.move_relative(2000, 200);
 
         // shoot second ball and move to flip bot flag
+        pros::delay(500);
         chassis.moveDistanceAsync(50_in);
         pros::delay(300); // this is the timing for the run and shoot
         intakeMotor.move_velocity(200);
         pros::delay(500);
         intakeMotor.move_velocity(0);
-        flywheelMotor.move_velocity(0);
+        flywheelController.moveVelocity(0);
         chassis.waitUntilSettled();
 
         chassis.moveDistance(-35_in);
 
         // turn to flip cap
-        chassis.turnAngle(-150);
+        chassis.turnAngle(-45_deg);
 
         // move to cap
         capflipMotor.move_absolute(-700, 200);
@@ -176,9 +98,9 @@ void autonomous()
         pros::delay(200);
 
         // park
-        chassis.turnAngle(-150);
+        chassis.turnAngle(-45_deg);
         chassis.moveDistance(18_in);
-        chassis.turnAngle(-275);
+        chassis.turnAngle(-90_deg);
 
         // onwards soldiers! take the platform! fuck im bored
         chassis.moveDistance(30_in);
@@ -186,261 +108,80 @@ void autonomous()
 
         break;
 
-    case 1: // blue front heavy
+    case 1: // blue full post and park only
         // setup
-        flywheelMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        chassis.setMaxVelocity(150); // this might fix things
+        flywheelController.setGearing(okapi::AbstractMotor::gearset::blue);
+        flywheelController.setBrakeMode(okapi::AbstractMotor::brakeMode::hold);
+        tmp = 0;
 
         // actual auton
+
         intakeMotor.move_velocity(200);
-        chassis.moveDistanceAsync(37_in); // going to cap with ball under it
+        chassis.moveDistance(39_in); // going to cap with ball under it
 
         // wait until we intake ball to bot
         while (!(triggerBL.get_new_press() || triggerBR.get_new_press()) && !(tmp > 100)) // 2 sec timeout
         {
-            pros::delay(20);
             tmp++;
+            pros::delay(20);
         }
 
         // theres a ball at the top, we want to pull it down back to the trigger
-        intakeMotor.move_velocity(-200);
-        while (!(triggerTL.get_new_press() || triggerTR.get_new_press()))
-        {
-            pros::delay(20);
-        }
-        intakeMotor.move_velocity(0);
+        pros::delay(100);
+        intakeMotor.move_relative(-400, 200);
 
         // there is now a ball in both positions
-        flywheelMotor.move_velocity(600);
-        chassis.moveDistance(-38_in);
+        flywheelController.moveVelocity(600);
+        chassis.moveDistance(-37_in);
         // back and turn into shooting position
-        chassis.turnAngle(490);
+        chassis.turnAngle(93_deg);
         chassis.moveDistance(-7_in);
         // shoot first ball when ready
-        while (!(flywheelMotor.get_actual_velocity() > 590))
+        tmp = 0;
+        while (!(flywheelController.getActualVelocity() > 590) && !(tmp > 50))
         {
+            tmp++;
             pros::delay(20);
         }
-        intakeMotor.move_velocity(200);
+        intakeMotor.move_relative(1500, 200);
         pros::delay(500);
-        intakeMotor.move_velocity(0);
-
-        // second ball shot position
-        chassis.moveDistance(27_in);
 
         // shoot second ball
-        while (!(flywheelMotor.get_actual_velocity() > 590))
-        {
-            pros::delay(20);
-        }
-        intakeMotor.move_velocity(200);
+        flywheelController.moveVelocity(0);
+        pros::delay(100);
+        flywheelController.moveVelocity(490);
+        intakeMotor.move_relative(500, 200);
+
+        // move to flip bot flag
+        chassis.turnAngleAsync(2_deg);
         pros::delay(600);
-        intakeMotor.move_velocity(0);
-        flywheelMotor.move_velocity(0);
+        chassis.moveDistanceAsync(52_in);
+        pros::delay(500); // this is the timing for the run and shoot
+        intakeMotor.move_velocity(-200);
+        pros::delay(300);
+        flywheelController.moveVelocity(0);
+        chassis.waitUntilSettled();
 
-        // hit third flag
-        chassis.turnAngle(80);
-        chassis.moveDistance(26_in);
-        chassis.turnAngle(-40);
+        chassis.moveDistance(-68_in);
 
-        // its parking time
-        chassis.setMaxVelocity(200);
-        chassis.moveDistance(-70_in);
+        // turn to park
+        chassis.turnAngle(-85_deg);
 
-        // turn to drive onto platform
-        chassis.turnAngle(-550);
+        // move to platform
+        chassis.moveDistance(23_in);
 
-        // align with platform
-        chassis.moveDistance(17_in);
-        intakeMotor.move_velocity(200);
-
-        // drive onto platform
-        chassis.moveDistanceAsync(30_in);
+        // onto platform
+        chassis.moveDistance(27_in);
         break;
 
     case 2: // blue stack
-        // setup
-        flywheelMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        chassis.setMaxVelocity(150); // this might fix things
-
-        // actual auton
-        intakeMotor.move_velocity(200);
-        chassis.moveDistanceAsync(37_in); // going to cap with ball under it
-
-        // wait until we intake ball to bot
-        while (!(triggerBL.get_new_press() || triggerBR.get_new_press()) && !(tmp > 400)) // 2 sec timeout
-        {
-            pros::delay(20);
-            tmp++;
-        }
-
-        // theres a ball at the top, we want to pull it down back to the trigger
-        intakeMotor.move_velocity(-200);
-        while (!(triggerTL.get_new_press() || triggerTR.get_new_press()))
-        {
-            pros::delay(20);
-        }
-        intakeMotor.move_velocity(0);
-
-        // there is now a ball in both positions, back for claw flipout
-        chassis.moveDistance(-6_in);
-
-        // turn and park
-        chassis.turnAngle(560);
-        chassis.moveDistance(8_in);
-        chassis.moveDistance(23_in);
-
-        // turn for shoot
-        flywheelMotor.move_velocity(550);
-        chassis.turnAngle(-210);
-        chassis.turnAngleAsync(0);
-
-        // shoot ball when ready
-        while (!(flywheelMotor.get_actual_velocity() > 545))
-        {
-            pros::delay(20);
-        }
-        intakeMotor.move_velocity(200);
-        pros::delay(500);
-        intakeMotor.move_velocity(0);
-
-        pros::delay(500);
-        flywheelMotor.move_velocity(0);
         break;
     case 3: // red close, mid and top flag and park
         break;
 
     case 4: // red front heavy
-        // setup
-        flywheelMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        chassis.setMaxVelocity(150); // this might fix things
-
-        // actual auton
-        intakeMotor.move_velocity(200);
-        chassis.moveDistanceAsync(37_in); // going to cap with ball under it
-
-        // wait until we intake ball to bot
-        while (!(triggerBL.get_new_press() || triggerBR.get_new_press()) && !(tmp > 100)) // 2 sec timeout
-        {
-            pros::delay(20);
-            tmp++;
-        }
-
-        // theres a ball at the top, we want to pull it down back to the trigger
-        intakeMotor.move_velocity(-200);
-        while (!(triggerTL.get_new_press() || triggerTR.get_new_press()))
-        {
-            pros::delay(20);
-        }
-        intakeMotor.move_velocity(0);
-
-        // there is now a ball in both positions
-        flywheelMotor.move_velocity(600);
-        chassis.moveDistance(-38_in);
-        // back and turn into shooting position
-        chassis.turnAngle(-575);
-        chassis.moveDistance(-7_in);
-        chassis.turnAngleAsync(-10);
-        // shoot first ball when ready
-        while (!(flywheelMotor.get_actual_velocity() > 590))
-        {
-            pros::delay(20);
-        }
-        intakeMotor.move_velocity(200);
-        pros::delay(500);
-        intakeMotor.move_velocity(0);
-
-        // second ball shot position
-        chassis.moveDistance(27_in);
-
-        // shoot second ball
-        while (!(flywheelMotor.get_actual_velocity() > 590))
-        {
-            pros::delay(20);
-        }
-        intakeMotor.move_velocity(200);
-        pros::delay(600);
-        intakeMotor.move_velocity(-200);
-        flywheelMotor.move_velocity(0);
-
-        // hit third flag
-        chassis.turnAngle(-70);
-        chassis.moveDistance(26_in);
-        chassis.turnAngle(50);
-
-        // its parking time
-        chassis.setMaxVelocity(200);
-        chassis.moveDistance(-67_in);
-
-        // turn to drive onto platform
-        chassis.turnAngle(520);
-
-        // align with platform
-        chassis.moveDistance(17_in);
-        intakeMotor.move_velocity(200);
-
-        // drive onto platform
-        chassis.moveDistanceAsync(30_in);
         break;
-
     case 5: // red far
-            // setup
-        flywheelMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        chassis.setMaxVelocity(150); // this might fix things
-
-        // actual auton
-        intakeMotor.move_velocity(200);
-        chassis.moveDistanceAsync(37_in); // going to cap with ball under it
-
-        // wait until we intake ball to bot
-        while (!(triggerBL.get_new_press() || triggerBR.get_new_press()) && !(tmp > 400)) // 2 sec timeout
-        {
-            pros::delay(20);
-            tmp++;
-        }
-
-        // theres a ball at the top, we want to pull it down back to the trigger
-        intakeMotor.move_velocity(-200);
-        while (!(triggerTL.get_new_press() || triggerTR.get_new_press()))
-        {
-            pros::delay(20);
-        }
-        intakeMotor.move_velocity(0);
-
-        // there is now a ball in both positions, back for claw flipout
-        chassis.moveDistance(-7_in);
-
-        // turn and park
-        chassis.turnAngle(-560);
-        chassis.moveDistance(7_in);
-        chassis.moveDistance(23_in);
-
-        // turn for shoot
-        flywheelMotor.move_velocity(550);
-        chassis.turnAngle(220);
-        chassis.turnAngleAsync(0);
-
-        // shoot ball when ready
-        while (!(flywheelMotor.get_actual_velocity() > 545))
-        {
-            pros::delay(20);
-        }
-        intakeMotor.move_velocity(200);
-        pros::delay(500);
-        intakeMotor.move_velocity(0);
-        pros::delay(500);
-        // second ball
-        flywheelMotor.move_velocity(480);
-        // shoot ball when ready
-        while (!(flywheelMotor.get_actual_velocity() > 475))
-        {
-            pros::delay(20);
-        }
-        intakeMotor.move_velocity(200);
-        pros::delay(500);
-        intakeMotor.move_velocity(0);
-
-        flywheelMotor.move_velocity(0);
         break;
     default:
         break;

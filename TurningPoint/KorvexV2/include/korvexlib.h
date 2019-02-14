@@ -15,8 +15,9 @@ const int LIFT_MTR = 7;
 const int CAPFLIP_MTR = 8;
 
 // flywheel and intake motors
-const int FLY_MTR = 9;
-const int INTAKE_MTR = 10;
+const int FLY_MTR1 = 9;
+const int FLY_MTR2 = 10;
+const int INTAKE_MTR = 6;
 
 // sensors
 const int TRIGGER_BL = 2;
@@ -33,14 +34,13 @@ extern pros::Motor chassisLeft2;
 extern pros::Motor chassisRight1;
 extern pros::Motor chassisRight2;
 extern pros::Motor liftMotor;
-extern pros::Motor flywheelMotor;
+// extern pros::Motor flywheelMotor;
+extern okapi::MotorGroup flywheelController;
 extern pros::Motor capflipMotor;
 extern pros::Motor intakeMotor;
-extern pros::Motor descoreMotor;
 
 // other declerations
 extern pros::Controller controllerPros;
-extern okapi::Controller controller;
 extern pros::ADIDigitalIn triggerBL;
 extern pros::ADIDigitalIn triggerBR;
 extern pros::ADIDigitalIn triggerTL;
