@@ -11,6 +11,7 @@
 // called when a button is released or long pressed
 
 int autonSelection = -3;
+bool autonPark = true;
 
 static lv_res_t redBtnmAction(lv_obj_t *btnm, const char *txt)
 {
@@ -66,6 +67,7 @@ static lv_res_t parkBtnAction(lv_obj_t *btn)
 	uint8_t id = lv_obj_get_free_num(btn);
 
 	printf("Btn %d is long pressed %d\n", btn);
+	autonPark = false;
 
 	return LV_RES_OK;
 }
@@ -102,7 +104,7 @@ void initialize()
 	lv_obj_align(redBtnm, NULL, LV_ALIGN_CENTER, 0, 0);
 
 	// auton switches
-	lv_obj_t *redBtn1 = lv_sw_create(redTab, NULL); // TODO: this thing
+	lv_obj_t *redBtn1 = lv_btn_create(redTab, NULL); // TODO: this thing
 	lv_obj_t *redBtn1Label = lv_label_create(redBtn1, NULL);
 	lv_label_set_text(redBtn1Label, "Park");
 	lv_btn_set_action(redBtn1, LV_BTN_ACTION_LONG_PR, parkBtnAction);

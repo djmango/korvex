@@ -27,6 +27,7 @@ const int TRIGGER_TR = 5;
 
 // auton
 extern int autonSelection;
+extern bool autonPark;
 
 // motor declerations
 extern pros::Motor chassisLeft1;

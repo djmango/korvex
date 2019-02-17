@@ -362,7 +362,7 @@ void opcontrol()
 			// wait for first ball to get shot
 			isFlySpunUp = false;
 			pros::delay(100);
-			chassis.moveDistance(20_in);
+			chassis.moveDistance(25_in);
 
 			// shoot 2nd ball
 			intakeMotor.move_relative(1000, 200);
