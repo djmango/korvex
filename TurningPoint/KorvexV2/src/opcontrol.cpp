@@ -31,7 +31,7 @@ const int FLY_PRESETS[5][3] = {
 const int FLY_PRESETS_LEN = 3; // lowered cuz big boy driver onl used 3
 
 const int CAPFLIP_PRESETS[4] = {
-	0, -445, -560, -700};
+	0, -450, -565, -700};
 const int CAPFLIP_PRESETS_LEN = 3;
 
 // globals
@@ -73,6 +73,31 @@ void isFlySpunUpCheck(void *)
 	}
 }
 
+void flywheelPresetSwitch(int presetIterate) {
+	switch (presetIterate) // here we look at the current position, and change it to the next in line, if max is hit we reset
+	{
+	case 0: // close up, change to mid
+		controllerPros.print(2, 0, "Pos %d: Mid  ", presetIterate);
+		break;
+
+	case 1: // mid, change to platform
+		controllerPros.print(2, 0, "Pos %d: Plat ", presetIterate);
+		break;
+
+	case 2: // platform, change to full
+		controllerPros.print(2, 0, "Pos %d: Full ", presetIterate);
+		break;
+
+	case 3: // full, change to cross
+		controllerPros.print(2, 0, "Pos %d: Cross", presetIterate);
+		break;
+
+	case 4: // cross, change to close up
+		controllerPros.print(2, 0, "Pos %d: Close", presetIterate);
+		break;
+	}
+}
+
 void opcontrol()
 {
 
@@ -93,16 +118,6 @@ void opcontrol()
 	bool intakeToggle = false;		// for user toggle
 	bool ballTriggerBottom = false; // these are for detecting if the intake
 	bool ballTriggerTop = false;	// triggers are activated
-
-	// check for balls
-	if (triggerBL.get_new_press() || triggerBR.get_new_press())
-	{
-		ballTriggerBottom = true;
-	}
-	if (triggerTL.get_new_press() || triggerTR.get_new_press())
-	{
-		ballTriggerTop = true;
-	}
 
 	// we got time
 	int cycles = 0;			  // cycle counter
@@ -139,7 +154,7 @@ void opcontrol()
 		if ((triggerBL.get_new_press() || triggerBR.get_new_press()) && intakeToggle == true && ballTriggerBottom == false && ballTriggerTop == true)
 		{
 			// printf("bot triggered\n");
-			controllerPros.rumble("-");
+			controllerPros.rumble("..");
 
 			// if theres a ball at the top, we want to pull it down back to the trigger
 			intakeMotor.move_velocity(-200);
@@ -173,12 +188,10 @@ void opcontrol()
 		// ensure that neither sensor is pushed, if so, tell the bot that the ball is no longer in position
 		if (!triggerBL.get_value() && !triggerBR.get_value() && intakeToggle == false)
 		{
-			// printf("bot not triggered\n");
 			ballTriggerBottom = false;
 		}
 		if (!triggerTL.get_value() && !triggerTR.get_value() && intakeToggle == false)
 		{
-			// printf("top not triggered\n");
 			ballTriggerTop = false;
 		}
 
@@ -204,6 +217,31 @@ void opcontrol()
 		else if (intakeToggle == false && ballTriggerBottom == false && ballTriggerTop == false)
 		{
 			intakeMotor.move_velocity(0);
+		}
+
+		// flywheel preset switcher (revamped)
+		if (controllerPros.get_digital_new_press(DIGITAL_UP)) // go to next fly preset
+		{
+			flywheelIterate++;
+			if (capflipIterate >= CAPFLIP_PRESETS_LEN) // dont wanna go above
+			{
+				capflipIterate = CAPFLIP_PRESETS_LEN;
+			}
+			flywheelPresetSwitch(flywheelIterate);
+		}
+		else if (controllerPros.get_digital_new_press(DIGITAL_DOWN)) // go to prev fly preset
+		{
+			flywheelIterate--;
+			if (capflipIterate > 0) // dont wanna go below
+			{
+				capflipIterate = 0;
+			}
+			flywheelPresetSwitch(flywheelIterate);
+		}
+		else if (controllerPros.get_digital_new_press(DIGITAL_LEFT)) // go to first fly preset
+		{
+			flywheelIterate = 0;
+			flywheelPresetSwitch(flywheelIterate);
 		}
 
 		// auto shoot controller (not the actual functions btw you should switch it to functions cuz rn it sucks so uh TODO: do the thing)
@@ -300,6 +338,7 @@ void opcontrol()
 				cycles++;
 				pros::delay(20);
 			}
+			chassis.tank(0, 0);
 
 			isFlySpunUp = false;
 			// shot first ball
@@ -307,7 +346,7 @@ void opcontrol()
 			// aggro spindown
 			flywheelController.moveVelocity(0);
 			cyclesHold = cycles;
-			while (cyclesHold + 5 > cycles)
+			while (cyclesHold + 4 > cycles)
 			{
 				chassis.tank((controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) * 0.00787401574),
 							 controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y) * 0.00787401574);
@@ -319,7 +358,7 @@ void opcontrol()
 			flywheelTarget = 490;
 			flywheelController.moveVelocity(flywheelTarget);
 			isFlySpunUp == false;
-			pros::delay(100);
+			pros::delay(200);
 
 			// wait for spinup
 			cyclesHold = cycles;
@@ -387,8 +426,24 @@ void opcontrol()
 		// std::cout << chassis.getSensorVals()[0] << std::endl;
 		// std::cout << chassis.getSensorVals()[1] << std::endl;
 		// std::cout << capflipMotor.get_position() << std::endl;
-		std::cout << "temp "<< flywheelController.getTemperature() << std::endl;
-		std::cout << "eff "<< flywheelController.getEfficiency() << std::endl;
+		// std::cout << "temp "<< flywheelController.getTemperature() << std::endl;
+		// std::cout << "eff "<< flywheelController.getEfficiency() << std::endl;
+		// if (triggerBR.get_value())
+		// {
+		// 	printf("BR\n");
+		// }
+		// if (triggerBL.get_value())
+		// {
+		// 	printf("BL\n");
+		// }
+		// if (triggerTR.get_value())
+		// {
+		// 	printf("TR\n");
+		// }
+		// if (triggerTL.get_value())
+		// {
+		// 	printf("TL\n");
+		// }
 
 		// update motors
 		if (flywheelController.getEfficiency() > 10 || flywheelLastTarg == 0) { // make sure we are moving somewhat relative to the voltage we are drawing
