@@ -24,7 +24,7 @@ void autonomous()
     // 1 = blue close, all flags and park
     // 2 = blue far, opponent descore
     // 3 = red close, mid and top flag and park
-    int auton = 4;
+    int auton = 0;
 
     if (autonSelection != -3) {
         auton = autonSelection; // this is to enable auton selector
@@ -34,7 +34,7 @@ void autonomous()
     switch (auton)
     {
     case -2: // test
-        chassis.moveDistance(20_in);
+        chassis.moveDistance(24_in);
         break;
     case -1: // skills
         break;

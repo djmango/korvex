@@ -16,14 +16,14 @@ using namespace okapi;
  */
 
 // factory constructs
-// auto chassis = okapi::ChassisControllerFactory::create(
+// auto chassisA = okapi::ChassisControllerFactory::create(
 //     {LEFT_MTR1, LEFT_MTR2},               // Left motors
 //     {-RIGHT_MTR1, -RIGHT_MTR2},           // Right motors
 //     okapi::AbstractMotor::gearset::green, // Normal gearset
 //     {4_in, 12.5_in}                       // 4 inch wheels, 12.5 inch wheelbase width
 // );
 
-auto chassis = ChassisControllerFactory::create( // .002 .0005 .002
+auto chassisA = ChassisControllerFactory::create( // .002 .0005 .002
     {LEFT_MTR1, LEFT_MTR2},                      // Left motors
     {-RIGHT_MTR1, -RIGHT_MTR2},                  // Right motors
     // IterativePosPIDController::Gains{0.007, 0.000, 0.007}, // distance args
@@ -38,13 +38,6 @@ auto chassis = ChassisControllerFactory::create( // .002 .0005 .002
     {4_in, 12.5_in}                // 4 inch wheels, 12.5 inch wheelbase width
 );
 
-auto chassisController = okapi::AsyncControllerFactory::motionProfile(
-    1.0,    // Maximum linear velocity of the Chassis in m/s
-    2.0,    // Maximum linear acceleration of the Chassis in m/s/s
-    5.0,    // Maximum linear jerk of the Chassis in m/s/s/s
-    chassis // Chassis Controller
-);
-
 pros::Motor flywheelMotor_A1(FLY_MTR1, pros::E_MOTOR_GEARSET_06, true);
 pros::Motor flywheelMotor_A2(FLY_MTR2, pros::E_MOTOR_GEARSET_06, true);
 pros::Motor intakeMotor_A(INTAKE_MTR, pros::E_MOTOR_GEARSET_18, true);
@@ -57,13 +50,13 @@ pros::ADIDigitalIn triggerTR_A(TRIGGER_TR);
 
 void autonomous()
 {
-    chassis.resetSensors();
+    chassisA.resetSensors();
     // -1 = skills
     // 0 = blue close, mid and top flag and park
     // 1 = blue close, all flags and park
     // 2 = blue far, opponent descore
     // 3 = red close, mid and top flag and park
-    int auton = 0;
+    int auton = -2;
     // int auton = autonSelection;
     int tmp = 0;
     switch (auton)
@@ -72,27 +65,27 @@ void autonomous()
         liftMotor_A.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor_A1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor_A2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        chassis.setMaxVelocity(200); // this might fix things
+        chassisA.setMaxVelocity(200); // this might fix things
 
         // actual auton
-        chassis.moveDistance(8_in);
-        // chassis.waitUntilSettled();
-        // chassis.moveDistance(-8_in);
-        // chassis.turnAngle(350);
-        // chassis.waitUntilSettled();
-        // chassis.turnAngle(-350);
-        chassis.stop();
+        chassisA.moveDistance(8_in);
+        // chassisA.waitUntilSettled();
+        // chassisA.moveDistance(-8_in);
+        // chassisA.turnAngle(350);
+        // chassisA.waitUntilSettled();
+        // chassisA.turnAngle(-350);
+        chassisA.stop();
         break;
     case -1: // skills
         // setup
         liftMotor_A.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor_A1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor_A2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        chassis.setMaxVelocity(100); // this might fix things
+        chassisA.setMaxVelocity(100); // this might fix things
 
         // actual auton
         intakeMotor_A.move_velocity(200);
-        chassis.moveDistanceAsync(37_in); // going to cap with ball under it
+        chassisA.moveDistanceAsync(37_in); // going to cap with ball under it
 
         // wait until we intake ball to bot
         while (!(triggerBL_A.get_new_press() || triggerBR_A.get_new_press()) && !(tmp > 200)) // 1 sec timeout
@@ -112,10 +105,10 @@ void autonomous()
         // there is now a ball in both positions
         flywheelMotor_A1.move_velocity(600);
         flywheelMotor_A2.move_velocity(600);
-        chassis.moveDistance(-39_in);
+        chassisA.moveDistance(-39_in);
         // back and turn into shooting position
-        chassis.turnAngle(-267);
-        chassis.moveDistance(-15_in);
+        chassisA.turnAngle(-267);
+        chassisA.moveDistance(-15_in);
         // shoot first ball when ready
         while (!(flywheelMotor_A1.get_actual_velocity() > 590))
         {
@@ -126,7 +119,7 @@ void autonomous()
         intakeMotor_A.move_velocity(0);
 
         // second ball shot position
-        chassis.moveDistance(33_in);
+        chassisA.moveDistance(33_in);
 
         // shoot second ball
         while (!(flywheelMotor_A1.get_actual_velocity() > 590))
@@ -140,22 +133,22 @@ void autonomous()
         flywheelMotor_A2.move_velocity(0);
 
         // run into bot flag
-        chassis.turnAngle(-25);
-        chassis.moveDistance(24_in);
-        chassis.turnAngle(15);
+        chassisA.turnAngle(-25);
+        chassisA.moveDistance(24_in);
+        chassisA.turnAngle(15);
 
         // line up for far cap
-        chassis.moveDistance(-64_in);
-        chassis.turnAngle(280);
+        chassisA.moveDistance(-64_in);
+        chassisA.turnAngle(280);
 
         // park
-        chassis.moveDistance(18_in);
-        chassis.moveDistance(48_in);
+        chassisA.moveDistance(18_in);
+        chassisA.moveDistance(48_in);
 
         // move to get far cap
         // intakeMotor_A.move_velocity(200);
         // flywheelMotor_A1.move_velocity(550);
-        // chassis.moveDistance(44_in);
+        // chassisA.moveDistance(44_in);
 
         // // intake ball
         // while (!(triggerTL_A.get_new_press() || triggerTR_A.get_new_press()))
@@ -165,7 +158,7 @@ void autonomous()
         // intakeMotor_A.move_velocity(0);
 
         // // aim for mid flag and shoot
-        // chassis.turnAngle(-280);
+        // chassisA.turnAngle(-280);
         // while (!(flywheelMotor_A1.get_actual_velocity() > 540))
         // {
         //     pros::delay(20);
@@ -175,23 +168,23 @@ void autonomous()
         // intakeMotor_A.move_velocity(0);
 
         // // turn for park
-        // chassis.turnAngle(-250);
-        // chassis.moveDistance(8_in);
-        // chassis.turnAngle(270);
+        // chassisA.turnAngle(-250);
+        // chassisA.moveDistance(8_in);
+        // chassisA.turnAngle(270);
 
         // // park
-        // chassis.moveDistance(30_in);
+        // chassisA.moveDistance(30_in);
         break;
     case 0: // blue close, mid and top flag and park
         // setup
         liftMotor_A.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor_A1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor_A2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        chassis.setMaxVelocity(150); // this might fix things
+        chassisA.setMaxVelocity(150); // this might fix things
 
         // actual auton
         intakeMotor_A.move_velocity(200);
-        chassis.moveDistanceAsync(37_in); // going to cap with ball under it
+        chassisA.moveDistanceAsync(37_in); // going to cap with ball under it
 
         // wait until we intake ball to bot
         while (!(triggerBL_A.get_new_press() || triggerBR_A.get_new_press()) && !(tmp > 100)) // 2 sec timeout
@@ -211,10 +204,10 @@ void autonomous()
         // there is now a ball in both positions
         flywheelMotor_A1.move_velocity(600);
         flywheelMotor_A2.move_velocity(600);
-        chassis.moveDistance(-36_in);
+        chassisA.moveDistance(-36_in);
         // back and turn into shooting position
-        chassis.turnAngle(500);
-        chassis.moveDistance(-7_in);
+        chassisA.turnAngle(500);
+        chassisA.moveDistance(-7_in);
         // shoot first ball when ready
         while (!(flywheelMotor_A1.get_actual_velocity() > 590))
         {
@@ -225,7 +218,7 @@ void autonomous()
         intakeMotor_A.move_velocity(0);
 
         // second ball shot position
-        chassis.moveDistance(27_in);
+        chassisA.moveDistance(27_in);
 
         // shoot second ball
         while (!(flywheelMotor_A1.get_actual_velocity() > 590))
@@ -239,18 +232,18 @@ void autonomous()
         flywheelMotor_A2.move_velocity(0);
 
         // move to park
-        chassis.setMaxVelocity(200);
-        chassis.moveDistance(-45_in);
+        chassisA.setMaxVelocity(200);
+        chassisA.moveDistance(-45_in);
 
         // turn to drive onto platform
-        chassis.turnAngle(-550);
+        chassisA.turnAngle(-550);
 
         // align with platform
-        chassis.moveDistance(16_in);
+        chassisA.moveDistance(16_in);
         
         // drive onto platform
-        chassis.moveDistance(25_in);
-        chassis.stop();
+        chassisA.moveDistance(25_in);
+        chassisA.stop();
         break;
 
     case 1: // blue far
@@ -261,11 +254,11 @@ void autonomous()
         liftMotor_A.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor_A1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor_A2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        chassis.setMaxVelocity(150); // this might fix things
+        chassisA.setMaxVelocity(150); // this might fix things
 
         // actual auton
         intakeMotor_A.move_velocity(200);
-        chassis.moveDistanceAsync(37_in); // going to cap with ball under it
+        chassisA.moveDistanceAsync(37_in); // going to cap with ball under it
 
         // wait until we intake ball to bot
         while (!(triggerBL_A.get_new_press() || triggerBR_A.get_new_press()) && !(tmp > 400)) // 2 sec timeout
@@ -283,26 +276,26 @@ void autonomous()
         intakeMotor_A.move_velocity(0);
 
         // there is now a ball in both positions, back for claw flipout
-        chassis.moveDistance(-18_in);
+        chassisA.moveDistance(-18_in);
 
         // turn around to pick up cap and flipout
-        chassis.turnAngleAsync(1100);
+        chassisA.turnAngleAsync(1100);
         liftMotor_A.move_absolute(300, 200);
         pros::delay(800);
         liftMotor_A.move_absolute(-70, 100);
         pros::delay(600);
 
         // grab cap
-        chassis.moveDistance(-20_in);
+        chassisA.moveDistance(-20_in);
         liftMotor_A.move_absolute(1200, 100);
 
         // drive and turn for post align
-        chassis.moveDistance(20_in);
-        chassis.turnAngle(-525);
+        chassisA.moveDistance(20_in);
+        chassisA.turnAngle(-525);
 
         // drive into post
         liftMotor_A.move_absolute(1400, 150);
-        chassis.moveDistance(-24.5_in);
+        chassisA.moveDistance(-24.5_in);
 
         // drop cap on post
         pros::delay(1000);
@@ -310,11 +303,11 @@ void autonomous()
         pros::delay(800);
 
         // back out
-        chassis.moveDistance(13_in);
+        chassisA.moveDistance(13_in);
         liftMotor_A.move_absolute(0, 150);
 
         // flip the bad bois top flag
-        // chassis.turnAngle(-240);
+        // chassisA.turnAngle(-240);
         // flywheelMotor_A1.move_velocity(590);
         // flywheelMotor_A2.move_velocity(590);
 
@@ -332,21 +325,21 @@ void autonomous()
         // flywheelMotor_A2.move_velocity(0);
 
         // parkk
-        chassis.turnAngle(-300);
-        chassis.moveDistance(17_in);
-        chassis.turnAngle(180);
-        chassis.moveDistance(24_in);
-        chassis.stop();
+        chassisA.turnAngle(-300);
+        chassisA.moveDistance(17_in);
+        chassisA.turnAngle(180);
+        chassisA.moveDistance(24_in);
+        chassisA.stop();
         break;
     case 3: // red close, mid and top flag and park
         // setup
         liftMotor_A.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor_A1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        chassis.setMaxVelocity(130); // this might fix things
+        chassisA.setMaxVelocity(130); // this might fix things
 
         // actual auton
         intakeMotor_A.move_velocity(200);
-        chassis.moveDistanceAsync(37_in); // going to cap with ball under it
+        chassisA.moveDistanceAsync(37_in); // going to cap with ball under it
 
         // wait until we intake ball to bot
         while (!(triggerBL_A.get_new_press() || triggerBR_A.get_new_press()) && !(tmp > 200)) // 1 sec timeout
@@ -365,10 +358,10 @@ void autonomous()
 
         // there is now a ball in both positions
         flywheelMotor_A1.move_velocity(600);
-        chassis.moveDistance(-37_in);
+        chassisA.moveDistance(-37_in);
         // back and turn into shooting position
-        chassis.turnAngle(-269);
-        chassis.moveDistance(-14_in);
+        chassisA.turnAngle(-269);
+        chassisA.moveDistance(-14_in);
         // shoot first ball when ready
         while (!(flywheelMotor_A1.get_actual_velocity() > 590))
         {
@@ -379,8 +372,8 @@ void autonomous()
         intakeMotor_A.move_velocity(0);
 
         // second ball shot position
-        chassis.moveDistance(30_in);
-        chassis.setMaxVelocity(180);
+        chassisA.moveDistance(30_in);
+        chassisA.setMaxVelocity(180);
 
         // shoot second ball
         while (!(flywheelMotor_A1.get_actual_velocity() > 590))
@@ -393,21 +386,21 @@ void autonomous()
         flywheelMotor_A1.move_velocity(0);
 
         // move to park
-        chassis.moveDistance(-42_in);
-        chassis.turnAngle(230);
-        chassis.moveDistance(18_in);
-        chassis.moveDistance(32_in);
+        chassisA.moveDistance(-42_in);
+        chassisA.turnAngle(230);
+        chassisA.moveDistance(18_in);
+        chassisA.moveDistance(32_in);
         break;
 
     case 4: // red elim setup, mid flags
         // setup
         liftMotor_A.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor_A1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        chassis.setMaxVelocity(110); // this might fix things
+        chassisA.setMaxVelocity(110); // this might fix things
 
         // actual auton
         intakeMotor_A.move_velocity(200);
-        chassis.moveDistanceAsync(37_in); // going to cap with ball under it
+        chassisA.moveDistanceAsync(37_in); // going to cap with ball under it
 
         // wait until we intake ball to bot
         while (!(triggerBL_A.get_new_press() || triggerBR_A.get_new_press()) && !(tmp > 200)) // 1 sec timeout
@@ -426,11 +419,11 @@ void autonomous()
 
         // there is now a ball in both positions
         flywheelMotor_A1.move_velocity(475);
-        chassis.moveDistance(-37_in);
+        chassisA.moveDistance(-37_in);
 
         // back and turn into shooting position
-        chassis.turnAngle(-274);
-        chassis.moveDistance(-7_in);
+        chassisA.turnAngle(-274);
+        chassisA.moveDistance(-7_in);
 
         // shoot first ball when ready
         while (!(flywheelMotor_A1.get_actual_velocity() > 475))
@@ -443,8 +436,8 @@ void autonomous()
 
         // second ball shot
         flywheelMotor_A1.move_velocity(518);
-        // chassis.moveDistance(30_in);
-        // chassis.setMaxVelocity(180);
+        // chassisA.moveDistance(30_in);
+        // chassisA.setMaxVelocity(180);
 
         // shoot second ball
         while (!(flywheelMotor_A1.get_actual_velocity() > 518))
@@ -457,21 +450,21 @@ void autonomous()
         flywheelMotor_A1.move_velocity(0);
 
         // move to park
-        chassis.moveDistance(29_in);
-        chassis.turnAngle(230);
-        chassis.moveDistance(18_in);
-        chassis.moveDistance(32_in);
+        chassisA.moveDistance(29_in);
+        chassisA.turnAngle(230);
+        chassisA.moveDistance(18_in);
+        chassisA.moveDistance(32_in);
         break;
 
     case 5: // red far
         // setup
         liftMotor_A.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         flywheelMotor_A1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        chassis.setMaxVelocity(110); // this might fix things
+        chassisA.setMaxVelocity(110); // this might fix things
 
         // actual auton
         intakeMotor_A.move_velocity(200);
-        chassis.moveDistanceAsync(37_in); // going to cap with ball under it
+        chassisA.moveDistanceAsync(37_in); // going to cap with ball under it
 
         // wait until we intake ball to bot
         while (!(triggerBL_A.get_new_press() || triggerBR_A.get_new_press()) && !(tmp > 200)) // 1 sec timeout
@@ -492,8 +485,8 @@ void autonomous()
         flywheelMotor_A1.move_velocity(585);
 
         // backup for shooting and park location
-        chassis.moveDistance(-8_in);
-        chassis.turnAngle(-260);
+        chassisA.moveDistance(-8_in);
+        chassisA.turnAngle(-260);
 
         // shoot first ball when ready
         while (!(flywheelMotor_A1.get_actual_velocity() > 580))
@@ -508,8 +501,8 @@ void autonomous()
 
         // prepare next shot
         flywheelMotor_A1.move_velocity(580);
-        chassis.moveDistance(5_in);
-        chassis.moveDistance(-5_in);
+        chassisA.moveDistance(5_in);
+        chassisA.moveDistance(-5_in);
 
         while (!(flywheelMotor_A1.get_actual_velocity() > 575))
         {
@@ -522,8 +515,8 @@ void autonomous()
         flywheelMotor_A1.move_velocity(0);
 
         // park
-        chassis.moveDistance(5_in);
-        chassis.moveDistance(26_in);
+        chassisA.moveDistance(5_in);
+        chassisA.moveDistance(26_in);
 
         break;
     default:
