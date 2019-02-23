@@ -29,13 +29,15 @@ const int TRIGGER_TR = 5;
 extern int autonSelection;
 extern bool autonPark;
 
+// globals
+extern int timeHold;
+
 // motor declerations
 extern pros::Motor chassisLeft1;
 extern pros::Motor chassisLeft2;
 extern pros::Motor chassisRight1;
 extern pros::Motor chassisRight2;
 extern pros::Motor liftMotor;
-// extern pros::Motor flywheelMotor;
 extern okapi::MotorGroup flywheelController;
 extern pros::Motor capflipMotor;
 extern pros::Motor intakeMotor;
@@ -48,21 +50,3 @@ extern pros::ADIDigitalIn triggerTL;
 extern pros::ADIDigitalIn triggerTR;
 extern okapi::ChassisControllerPID chassis;
 extern okapi::IterativePosPIDController liftControllerPID;
-
-// debug enabler
-// bool debugGlobal; // set this to true whenever you want print statements in terminal
-
-// rerun globals
-// bool isRecording; // ill get to this stuff eventually :wink:
-// bool isReplaying;
-
-// other globals
-// extern int flywheelTarget;
-
-namespace korvex
-{
-
-// motor functions
-void motorTBH(pros::Motor &motor, int target, int buffer, int gain);
-void motorPID(void*);
-} // namespace korvex
