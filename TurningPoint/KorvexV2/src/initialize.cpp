@@ -10,7 +10,7 @@
 
 // called when a button is released or long pressed
 
-int autonSelection = -3;
+int autonSelection = 10;
 bool autonPark = true;
 int timeHold = 0; // just so we have this later
 
@@ -134,6 +134,8 @@ void initialize()
 	// flywheel motor group setup
 	flywheelController.setGearing(okapi::AbstractMotor::gearset::blue);
 	flywheelController.setBrakeMode(okapi::AbstractMotor::brakeMode::hold);
+
+	okapi::ADIGyro gyro(1, 1); // port, multiplier
 }
 
 /**

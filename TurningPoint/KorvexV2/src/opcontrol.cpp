@@ -252,7 +252,7 @@ void opcontrol()
 		if (flyArmed == 1 && isFlySpunUp == true && flywheelTarget != 0) // shoot one ball
 		{
 			chassis.tank(0, 0);
-			intakeMotor.move_velocity(200);
+			intakeMotor.move_relative(800, 200);
 			intakeToggle = true;
 			ballTriggerTop = false; // we are shooting this ball so its gone
 
@@ -272,67 +272,124 @@ void opcontrol()
 			}
 			// disarm flywheel
 			flyArmed = 0;
-			intakeMotor.move_velocity(0);
 			intakeToggle = false;
 			flywheelIterate = 0;
 			flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
 		}
 		if (flyArmed == 2 && isFlySpunUp == true && flywheelTarget != 0) // upper then lower
 		{
-			flywheelIterate = 1;
-			flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
-			flywheelController.moveVelocity(flywheelTarget);
-			chassis.tank(0, 0);
+			if (shootingPosition == 0) { // front
+				flywheelIterate = 1;
+				flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
+				flywheelController.moveVelocity(flywheelTarget);
+				chassis.tank(0, 0);
 
-			// wait for spinup for first shot
-			timeHold = pros::millis();
-			while (isFlySpunUp == false && (timeHold + 500 > pros::millis()))
-			{
-				// to make sure we dont get stuck
-				chassis.tank((controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) * 0.00787401574),
-							 controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y) * 0.00787401574);
-				pros::delay(20);
+				// wait for spinup for first shot
+				timeHold = pros::millis();
+				while (isFlySpunUp == false && (timeHold + 500 > pros::millis()))
+				{
+					// to make sure we dont get stuck
+					chassis.tank((controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) * 0.00787401574),
+								 controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y) * 0.00787401574);
+					pros::delay(20);
+				}
+				intakeMotor.move_relative(1400, 200);
+
+				// wait for first ball to get shot
+				while (timeHold + 100 > pros::millis() && !(flywheelController.getActualVelocity() <= FLY_PRESETS[shootingPosition][2]))
+				{
+					chassis.tank((controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) * 0.00787401574),
+								 controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y) * 0.00787401574);
+					pros::delay(20);
+				}
+
+				// quick switch to mid flag, so when flywheel power lowers cuz of stress of launch, we can use the decel to improve speed
+				flywheelIterate = 2;
+				flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
+				flywheelController.moveVelocity(flywheelTarget);
+				chassis.tank(0, 0);
+				isFlySpunUp == false;
+				pros::delay(200);
+
+				// wait for spinup
+				timeHold = pros::millis();
+				while (isFlySpunUp == false && (timeHold + 1000 > pros::millis()))
+				{
+					// to make sure we dont get stuck
+					chassis.tank((controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) * 0.00787401574),
+								 controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y) * 0.00787401574);
+					pros::delay(20);
+				}
+				// shoot 2nd ball
+				intakeMotor.move_relative(1200, 200);
+				// wait for second ball to get shot
+				chassis.tank(0, 0);
+				pros::delay(400);
+
+				// cleanup
+				ballTriggerTop = false; // we are shooting the balls so they gone
+				ballTriggerBottom = false;
+				// disarm the flywheel
+				flyArmed = 0;
+				flywheelIterate = 0;
+				flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
 			}
-			intakeMotor.move_relative(1400, 200);
+			else if (shootingPosition == 1) {
+				flywheelIterate = 1;
+				flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
+				flywheelController.moveVelocity(flywheelTarget);
+				chassis.tank(0, 0);
 
-			// wait for first ball to get shot
-			while (timeHold + 100 > pros::millis() && !(flywheelController.getActualVelocity() <= FLY_PRESETS[shootingPosition][2]))
-			{
-				chassis.tank((controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) * 0.00787401574),
-							 controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y) * 0.00787401574);
-				pros::delay(20);
+				// wait for spinup for first shot
+				timeHold = pros::millis();
+				while (isFlySpunUp == false && (timeHold + 1000 > pros::millis()))
+				{
+					// to make sure we dont get stuck
+					chassis.tank((controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) * 0.00787401574),
+								 controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y) * 0.00787401574);
+					pros::delay(20);
+				}
+				intakeMotor.move_relative(1400, 200);
+
+				// wait for first ball to get shot
+				while (timeHold + 100 > pros::millis() && !(flywheelController.getActualVelocity() <= FLY_PRESETS[shootingPosition][2]))
+				{
+					chassis.tank((controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) * 0.00787401574),
+								 controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y) * 0.00787401574);
+					pros::delay(20);
+				}
+
+				// quick switch to mid flag, so when flywheel power lowers cuz of stress of launch, we can use the decel to improve speed
+				flywheelIterate = 2;
+				flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
+				flywheelController.moveVelocity(flywheelTarget);
+				chassis.tank(0, 0);
+				isFlySpunUp == false;
+				pros::delay(1000);
+
+				// wait for spinup
+				timeHold = pros::millis();
+				while (isFlySpunUp == false && (timeHold + 1000 > pros::millis()))
+				{
+					// to make sure we dont get stuck
+					chassis.tank((controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) * 0.00787401574),
+								 controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y) * 0.00787401574);
+					pros::delay(20);
+				}
+				// shoot 2nd ball
+				intakeMotor.move_relative(1200, 200);
+				// wait for second ball to get shot
+				chassis.tank(0, 0);
+				pros::delay(400);
+
+				// cleanup
+				ballTriggerTop = false; // we are shooting the balls so they gone
+				ballTriggerBottom = false;
+				// disarm the flywheel
+				flyArmed = 0;
+				flywheelIterate = 0;
+				flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
 			}
-
-			// quick switch to mid flag, so when flywheel power lowers cuz of stress of launch, we can use the decel to improve speed
-			flywheelIterate = 2;
-			flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
-			flywheelController.moveVelocity(flywheelTarget);
-			chassis.tank(0, 0);
-			isFlySpunUp == false;
-			pros::delay(200);
-
-			// wait for spinup
-			timeHold = pros::millis();
-			while (isFlySpunUp == false && (timeHold + 1000 > pros::millis()))
-			{
-				// to make sure we dont get stuck
-				chassis.tank((controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) * 0.00787401574),
-							 controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y) * 0.00787401574);
-				pros::delay(20);
-			}
-			// shoot 2nd ball
-			intakeMotor.move_relative(1200, 200);
-			// wait for second ball to get shot
-			chassis.tank(0, 0);
-			pros::delay(400);
-
-			// cleanup
-			ballTriggerTop = false; // we are shooting the balls so they gone
-			ballTriggerBottom = false;
-			// disarm the flywheel
-			flyArmed = 0;
-			flywheelIterate = 0;
-			flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
 		}
 		if (flyArmed == 3 && isFlySpunUp == true && flywheelTarget != 0) // both flags 600 macro
 		{
@@ -368,72 +425,14 @@ void opcontrol()
 			flywheelIterate = 0;
 			flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
 		}
-		if (flyArmed == 4 && isFlySpunUp == true && flywheelTarget != 0) // lower then upper
-		{
-			flywheelIterate = 2;
-			flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
-			flywheelController.moveVelocity(flywheelTarget);
-			chassis.tank(0, 0);
-			// wait for spinup for first shot
-			timeHold = pros::millis();
-			while (isFlySpunUp == false && (timeHold + 500 > pros::millis()))
-			{
-				// to make sure we dont get stuck
-				chassis.tank((controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) * 0.00787401574),
-							 controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y) * 0.00787401574);
-				pros::delay(20);
-			}
-			intakeMotor.move_relative(1400, 200);
-			// wait for first ball to get shot
-			timeHold = pros::millis();
-			// im replacing the delays with delay-loops to allow chassis control
-			while (timeHold + 100 > pros::millis())
-			{
-				chassis.tank((controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) * 0.00787401574),
-							 controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y) * 0.00787401574);
-				pros::delay(20);
-			}
-			chassis.tank(0, 0);
-			isFlySpunUp = false;
-			// shot first ball
-
-			// change flywheel power
-			flywheelIterate = 1;
-			flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
-			flywheelController.moveVelocity(flywheelTarget);
-			isFlySpunUp == false;
-			pros::delay(800);
-
-			// wait for spinup
-			timeHold = pros::millis();
-			while (isFlySpunUp == false && (timeHold + 1000 > pros::millis()))
-			{
-				// to make sure we dont get stuck
-				chassis.tank((controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) * 0.00787401574),
-							 controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y) * 0.00787401574);
-				pros::delay(20);
-			}
-			// shoot 2nd ball
-			intakeMotor.move_relative(800, 200);
-			// wait for second ball to get shot
-			chassis.tank(0, 0);
-			pros::delay(200);
-
-			// cleanup
-			ballTriggerTop = false; // we are shooting the balls so they gone
-			ballTriggerBottom = false;
-			// disarm the flywheel
-			flyArmed = 0;
-			flywheelIterate = 0;
-			flywheelTarget = FLY_PRESETS[shootingPosition][flywheelIterate];
-		}
 
 		// debug
 		// std::cout << chassis.getSensorVals()[0] << std::endl;
 		// std::cout << chassis.getSensorVals()[1] << std::endl;
 		// std::cout << capflipMotor.get_position() << std::endl;
-		std::cout << "temp " << flywheelController.getTemperature() << std::endl;
-		std::cout << "eff " << flywheelController.getEfficiency() << std::endl;
+		// std::cout << "temp " << flywheelController.getTemperature() << std::endl;
+		// std::cout << "eff " << flywheelController.getEfficiency() << std::endl;
+		std::cout << "gyro " << gyro.get() << std::endl;
 		// std::cout << "temp " << intakeMotor.get_temperature() << std::endl;
 		// std::cout << "eff " << intakeMotor.get_efficiency() << std::endl;
 		// if (triggerBR.get_value())

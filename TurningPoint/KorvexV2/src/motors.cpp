@@ -30,16 +30,13 @@ okapi::ChassisControllerPID chassis = okapi::ChassisControllerFactory::create(
 
     IterativePosPIDController::Gains{0.003, 0.001, 0.000004}, // distance args
     IterativePosPIDController::Gains{0.0014, 0.0008, 0.000},  // angle args (keeps robot straight)
-    IterativePosPIDController::Gains{0.004, 0.0045, 0.000055},  // turn args
+    IterativePosPIDController::Gains{0.0035, 0.005, 0.000055},  // turn args
 
     AbstractMotor::gearset::green, // normal gearset
     {4_in, 12.5_in}                // 4 inch wheels, 12.5 inch wheelbase width
 );
 
-okapi::IterativePosPIDController liftControllerPID = okapi::IterativeControllerFactory::posPID(
-    LIFT_MTR,
-    0.01, 0.0, 0.005, 0 // ikP, ikI, ikD, ikBias,
-);
+okapi::ADIGyro gyro(1, 1); // port, multiplier
 
 /*
 a fun hack to force the compiler to spit out an error that shows you the type of something (fun for working with auto)

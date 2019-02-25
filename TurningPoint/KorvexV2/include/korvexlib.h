@@ -50,3 +50,4 @@ extern pros::ADIDigitalIn triggerTL;
 extern pros::ADIDigitalIn triggerTR;
 extern okapi::ChassisControllerPID chassis;
 extern okapi::IterativePosPIDController liftControllerPID;
+extern okapi::ADIGyro gyro;
