@@ -19,7 +19,6 @@ using namespace okapi;
 
 // module constants
 
-// 5 for 5 shooting positions, close, middle, platform, full, and cross
 // 3 for 0, second, and third flag
 const int FLY_PRESETS[2][3] = {
 	{0, 580, 430}, // close
@@ -93,6 +92,8 @@ void opcontrol()
 	int timeHold = 0;		  // temp thing for counting
 	int flywheelLastTarg = 0; // the last target we had the flywheel set to
 	int flywheelOffTime = 0; // the cycle when we turned the flywheel off
+
+	chassis.stop();
 
 	while (true)
 	{
@@ -405,14 +406,14 @@ void opcontrol()
 							 controllerPros.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y) * 0.00787401574);
 				pros::delay(20);
 			}
-			intakeMotor.move_relative(2000, 200);
+			intakeMotor.move_relative(1700, 200);
 			// wait for first ball to get shot
 			isFlySpunUp = false;
 			pros::delay(100);
-			chassis.moveDistance(32_in);
+			chassis.moveDistance(30_in);
 
 			// shoot 2nd ball
-			intakeMotor.move_relative(1000, 200);
+			intakeMotor.move_relative(1500, 200);
 			// wait for second ball to get shot
 			chassis.tank(0, 0);
 			pros::delay(50);
@@ -461,16 +462,11 @@ void opcontrol()
 
 		// prevent flywheel jams
 		// use last fly targ, if not 0 and current is 0 then we are stopping so initiate the intake halt
-		if (flywheelLastTarg != 0 && flywheelTarget == 0)
-		{							   // the flywheel just got set to 0
+		if (flywheelLastTarg != 0 && flywheelTarget == 0) // the flywheel just got set to 0						   
 			flywheelOffTime = pros::millis(); // store when we turned the flywheel off
-		}
 
 		if (flywheelOffTime + 1600 > pros::millis() && (triggerTL.get_value() || triggerTR.get_value()) && cycles > 100) // cycles over 100 bcuz false positive at start
-		{																										// stop the intake if flywheel is spinning down
-			// 50 is temp, do whatever the stop time is in milliseconds for flywheel divided by 20
-			intakeMotor.move_velocity(0);
-		}
+			intakeMotor.move_velocity(0); // stop the intake if flywheel is spinning down
 
 		// storage of whatever
 		flywheelLastTarg = flywheelTarget;

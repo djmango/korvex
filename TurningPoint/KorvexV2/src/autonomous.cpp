@@ -19,10 +19,10 @@ void gyroTurn(int target, int timeoutVal)
 {
 
     // tune vals
-    float kP = 0.0055;
-    float kI = 0.004;
-    float kD = 0.006;
-    int iDeadband = 100; // 0 for disable
+    float kP = 0.002;
+    float kI = 0.005;
+    float kD = 0.0004;
+    int iDeadband = 400; // 0 for disable
     int tolerance = 0;
 
     // vars
@@ -83,9 +83,8 @@ void autonomous()
 {
     int autonStart = pros::millis(); // note the start time
     chassis.resetSensors();
-    okapi::ADIGyro gyro(1, 1); // port, multiplier
     gyro.reset();
-    int auton = 5;
+    int auton = 0;
 
     if (autonSelection != 10)
     {
@@ -95,12 +94,98 @@ void autonomous()
     switch (auton)
     {
     case 5: // test
-        gyroTurn(900, 3000);
-        // chassis.turnAngle(90_deg);
-        // pros::delay(2000);
-        // chassis.turnAngle(-87_deg);
+        chassis.setMaxVelocity(130);
+        chassis.turnAngle(270);
         break;
     case 0: // skills
+        // setup
+        chassis.setMaxVelocity(130);
+
+        // actual auton
+        intakeMotor.move_velocity(200);
+        chassis.moveDistance(37_in); // going to cap with ball under it
+
+        // wait until we intake ball to bot
+        timeHold = pros::millis();
+        while (!(triggerBL.get_new_press() || triggerBR.get_new_press()) && (timeHold + 2000 > pros::millis()))
+        {
+            pros::delay(20);
+        }
+
+        // theres a ball at the top, we want to pull it down back to the trigger
+        pros::delay(100);
+        intakeMotor.move_relative(-500, 200);
+        // there is now a ball in both positions
+
+        // back and turn for descore
+        chassis.moveDistance(-4_in);
+        flywheelController.moveVelocity(520);
+        chassis.setMaxVelocity(180);
+        chassis.turnAngle(-51_deg);
+        chassis.setMaxVelocity(130);
+        pros::delay(500);
+        intakeMotor.move_relative(1500, 200);
+        pros::delay(300);
+
+        // second ball
+        flywheelController.moveVelocity(555);
+        pros::delay(1500);
+        intakeMotor.move_relative(1000, 200);
+        pros::delay(500);
+        flywheelController.moveVelocity(0);
+
+        // move and turn for scrape
+        chassis.turnAngle(55_deg);
+        chassis.moveDistance(-10_in);
+        chassis.turnAngle(270); // things are weird so 270 = 90_deg
+        chassis.moveDistance(22_in);
+        chassis.turnAngle(-85_deg);
+        chassis.moveDistance(6_in);
+
+        // scrape
+        capflipMotor.move_absolute(-565, 200);
+        intakeMotor.move_velocity(200);
+        pros::delay(300);
+        chassis.moveDistanceAsync(-10_in);
+
+        // wait for first ball to get to top pos
+        while (!(triggerTL.get_new_press() || triggerTR.get_new_press()))
+        {
+            pros::delay(20);
+        }
+
+        // wait for second ball to get to bot pos, might not have worked so 2 sec timeout
+        timeHold = pros::millis();
+        while (!(triggerBL.get_new_press() || triggerBR.get_new_press()) && (timeHold + 2000 > pros::millis()))
+        {
+            pros::delay(20);
+        }
+        if (triggerBL.get_new_press() || triggerBR.get_new_press()) // if we got a second ball, let it pull up a bit
+            pros::delay(100);
+        intakeMotor.move_relative(-500, 200);
+
+        // we now have atleast one ball (i could do adaptave auton cuz we know how many balls we have but dont have time nor energy to do it)
+        capflipMotor.move_absolute(0, 200);
+        chassis.turnAngle(270);
+
+        // move for front flags, start with closest to red
+        chassis.moveDistance(38_in);
+        chassis.turnAngle(270);
+        flywheelController.moveVelocity(540);
+        chassis.moveDistance(68_in);
+
+        // shoot closest pole to red
+        pros::delay(500);
+        intakeMotor.move_relative(1500, 200);
+        pros::delay(300);
+
+        // second ball
+        flywheelController.moveVelocity(580);
+        pros::delay(1500);
+        intakeMotor.move_relative(1000, 200);
+        pros::delay(500);
+        flywheelController.moveVelocity(0);
+
         break;
     case 1: // blue close, full post, capflip and park
         break;
@@ -158,7 +243,7 @@ void autonomous()
         // // move and turn for park
         // chassis.turnAngle(-90_deg);
         // chassis.moveDistance(-10_in);
-        chassis.turnAngle(90_deg);
+        chassis.turnAngle(270);
 
         // park
         chassis.moveDistance(7_in);
@@ -182,28 +267,31 @@ void autonomous()
 
         // theres a ball at the top, we want to pull it down back to the trigger
         pros::delay(100);
-        intakeMotor.move_relative(-400, 200);
+        intakeMotor.move_relative(-500, 200);
         // there is now a ball in both positions
 
         // back and turn for descore
-        chassis.moveDistance(-2_in);
-        flywheelController.moveVelocity(500);
-        chassis.turnAngle(60_deg);
+        chassis.moveDistance(-4_in);
+        flywheelController.moveVelocity(520);
+        // gyroTurn(600, 1000);
+        chassis.setMaxVelocity(180);
+        chassis.turnAngle(59_deg);
+        chassis.setMaxVelocity(130);
         pros::delay(3000); // wait for them to shoot
         intakeMotor.move_relative(1500, 200);
         pros::delay(300);
 
         // second ball
-        flywheelController.moveVelocity(520);
+        flywheelController.moveVelocity(540);
         pros::delay(1500);
         intakeMotor.move_relative(1000, 200);
         pros::delay(500);
         flywheelController.moveVelocity(0);
 
         // move and turn for park
-        chassis.turnAngle(-60_deg);
-        chassis.moveDistance(-7_in);
-        chassis.turnAngle(90_deg);
+        chassis.turnAngle(-59_deg);
+        chassis.moveDistance(-5_in);
+        chassis.turnAngle(270);
 
         // park
         chassis.moveDistance(7_in);
@@ -217,7 +305,7 @@ void autonomous()
 
     case -3: // red descore (far only)
         // setup
-        chassis.setMaxVelocity(140);
+        chassis.setMaxVelocity(130);
 
         // actual auton
         intakeMotor.move_velocity(200);
@@ -232,35 +320,35 @@ void autonomous()
 
         // theres a ball at the top, we want to pull it down back to the trigger
         pros::delay(100);
-        intakeMotor.move_relative(-400, 200);
+        intakeMotor.move_relative(-500, 200);
         // there is now a ball in both positions
 
         // back and turn for descore
-        chassis.moveDistance(-3_in);
+        chassis.moveDistance(-4_in);
         flywheelController.moveVelocity(520);
+        // gyroTurn(600, 1000);
         chassis.setMaxVelocity(180);
-        chassis.turnAngle(-57_deg);
-        chassis.setMaxVelocity(140);
+        chassis.turnAngle(-51_deg);
+        chassis.setMaxVelocity(130);
         pros::delay(3000); // wait for them to shoot
         intakeMotor.move_relative(1500, 200);
         pros::delay(300);
 
         // second ball
-        flywheelController.moveVelocity(540);
-        pros::delay(1000);
+        flywheelController.moveVelocity(555);
+        pros::delay(1500);
         intakeMotor.move_relative(1000, 200);
         pros::delay(500);
         flywheelController.moveVelocity(0);
 
         // move and turn for park
-        chassis.turnAngle(60_deg);
-        chassis.moveDistance(-2_in);
-        chassis.setMaxVelocity(200);
-        chassis.turnAngle(-87_deg);
+        chassis.turnAngle(51_deg);
+        chassis.moveDistance(-3_in);
+        chassis.turnAngle(-89_deg);
 
         // park
-        chassis.moveDistance(7_in);
-        chassis.moveDistance(26_in);
+        chassis.moveDistance(10_in);
+        chassis.moveDistance(28_in);
         break;
     default:
         break;
