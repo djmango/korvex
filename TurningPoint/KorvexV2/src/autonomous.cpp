@@ -73,7 +73,7 @@ void gyroTurn(int target, int timeoutVal)
 
         if (abs(error) - tolerance <= 0 && abs(lastError) - tolerance <= 0)
             stable = true;
-        
+
         pros::delay(10);
     }
     chassis.rotate(0);
@@ -95,7 +95,8 @@ void autonomous()
     {
     case 5: // test
         chassis.setMaxVelocity(130);
-        chassis.turnAngle(270);
+        chassis.turnAngle(-90_deg);
+        chassis.turnAngle(90_deg);
         break;
     case 0: // skills
         // setup
@@ -103,7 +104,9 @@ void autonomous()
 
         // actual auton
         intakeMotor.move_velocity(200);
+        capflipMotor.move_absolute(-420, 200);
         chassis.moveDistance(37_in); // going to cap with ball under it
+        capflipMotor.move_absolute(0, 200);
 
         // wait until we intake ball to bot
         timeHold = pros::millis();
@@ -119,60 +122,75 @@ void autonomous()
 
         // back and turn for descore
         chassis.moveDistance(-4_in);
-        flywheelController.moveVelocity(520);
-        chassis.setMaxVelocity(180);
-        chassis.turnAngle(-51_deg);
-        chassis.setMaxVelocity(130);
+        flywheelController.moveVelocity(500);
+        chassis.turnAngle(-57_deg);
         pros::delay(500);
         intakeMotor.move_relative(1500, 200);
         pros::delay(300);
 
         // second ball
-        flywheelController.moveVelocity(555);
+        flywheelController.moveVelocity(540);
         pros::delay(1500);
         intakeMotor.move_relative(1000, 200);
         pros::delay(500);
         flywheelController.moveVelocity(0);
 
         // move and turn for scrape
-        chassis.turnAngle(55_deg);
+        chassis.turnAngle(60_deg);
         chassis.moveDistance(-10_in);
         chassis.turnAngle(270); // things are weird so 270 = 90_deg
-        chassis.moveDistance(22_in);
-        chassis.turnAngle(-85_deg);
-        chassis.moveDistance(6_in);
+        chassis.moveDistance(23_in);
+        chassis.turnAngle(-80_deg);
+        chassis.moveDistance(7_in);
 
         // scrape
         capflipMotor.move_absolute(-565, 200);
         intakeMotor.move_velocity(200);
-        pros::delay(300);
-        chassis.moveDistanceAsync(-10_in);
+        pros::delay(200);
+        chassis.moveDistance(-10_in);
+        chassis.moveDistanceAsync(-22_in);
 
         // wait for first ball to get to top pos
         while (!(triggerTL.get_new_press() || triggerTR.get_new_press()))
         {
+            ballTriggerTop = true;
             pros::delay(20);
         }
 
-        // wait for second ball to get to bot pos, might not have worked so 2 sec timeout
+        // wait for second ball to get to bot pos
         timeHold = pros::millis();
-        while (!(triggerBL.get_new_press() || triggerBR.get_new_press()) && (timeHold + 2000 > pros::millis()))
+        while (!(triggerBL.get_new_press() || triggerBR.get_new_press()))
         {
+            // shake if we havent intaked
+            // if (timeHold + 3000 > pros::millis())
+            // {
+            //     timeHold = pros::millis();
+            //     chassis.waitUntilSettled();
+            //     chassis.turnAngle(200);
+            //     chassis.turnAngle(-200);
+            // }
             pros::delay(20);
         }
-        if (triggerBL.get_new_press() || triggerBR.get_new_press()) // if we got a second ball, let it pull up a bit
-            pros::delay(100);
+
+        if (triggerBL.get_new_press() || triggerBR.get_new_press()){
+            ballTriggerBottom = true;
+        }
+
+        // we got a second ball, let it pull up a bit
+        intakeMotor.move_relative(400, 200);
         intakeMotor.move_relative(-500, 200);
 
-        // we now have atleast one ball (i could do adaptave auton cuz we know how many balls we have but dont have time nor energy to do it)
         capflipMotor.move_absolute(0, 200);
-        chassis.turnAngle(270);
+        chassis.waitUntilSettled();
+        chassis.turnAngle(-270);
+
+        // align with wall
+        chassis.forward(-1);
+        pros::delay(400);
 
         // move for front flags, start with closest to red
-        chassis.moveDistance(38_in);
-        chassis.turnAngle(270);
         flywheelController.moveVelocity(540);
-        chassis.moveDistance(68_in);
+        chassis.moveDistance(65_in);
 
         // shoot closest pole to red
         pros::delay(500);

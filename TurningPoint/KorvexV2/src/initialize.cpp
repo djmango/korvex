@@ -10,9 +10,12 @@
 
 // called when a button is released or long pressed
 
+// base global defenitions
 int autonSelection = 10;
 bool autonPark = true;
 int timeHold = 0; // just so we have this later
+bool ballTriggerBottom = false;
+bool ballTriggerTop = false;
 
 static lv_res_t redBtnmAction(lv_obj_t *btnm, const char *txt)
 {
@@ -20,15 +23,15 @@ static lv_res_t redBtnmAction(lv_obj_t *btnm, const char *txt)
 
 	if (txt == "Close")
 	{
-		autonSelection = 3; // or whatever red close is
+		autonSelection = -1; // or whatever red close is
 	}
 	if (txt == "Far")
 	{
-		autonSelection = 4;
+		autonSelection = -2;
 	}
-	if (txt == "Stack")
+	if (txt == "Descore")
 	{
-		autonSelection = 5;
+		autonSelection = -3;
 	}
 
 	return LV_RES_OK; // return OK because the button matrix is not deleted
@@ -40,27 +43,24 @@ static lv_res_t blueBtnmAction(lv_obj_t *btnm, const char *txt)
 
 	if (txt == "Close")
 	{
-		autonSelection = 0;
+		autonSelection = 1;
 	}
 	if (txt == "Far")
 	{
-		autonSelection = 1;
-	}
-	if (txt == "Stack")
-	{
 		autonSelection = 2;
 	}
+	if (txt == "Descore")
+	{
+		autonSelection = 3;
+	}
 
-		return LV_RES_OK; // return OK because the button matrix is not deleted
+	return LV_RES_OK;
 }
 
 static lv_res_t skillsBtnAction(lv_obj_t *btn)
 {
-	uint8_t id = lv_obj_get_free_num(btn);
-
-	printf("Button %d is released\n", id);
-
-	return LV_RES_OK; // return OK because the button matrix is not deleted
+	autonSelection = 0;
+	return LV_RES_OK;
 }
 
 static lv_res_t parkBtnAction(lv_obj_t *btn)
@@ -74,7 +74,7 @@ static lv_res_t parkBtnAction(lv_obj_t *btn)
 }
 
 /*Create a button descriptor string array*/
-static const char *btnmMap[] = {"Close", "Far", "Stack", ""};
+static const char *btnmMap[] = {"Close", "Far", "Descore", ""};
 
 void initialize()
 {
@@ -95,7 +95,7 @@ void initialize()
 	// add content to the tabs
 
 	// red tab
-	
+
 	// button matrix
 	lv_obj_t *redBtnm = lv_btnm_create(redTab, NULL);
 	lv_btnm_set_map(redBtnm, btnmMap);
@@ -143,7 +143,8 @@ void initialize()
  * the VEX Competition Switch, following either autonomous or opcontrol. When
  * the robot is enabled, this task will exit.
  */
-void disabled() {
+void disabled()
+{
 	chassis.stop();
 }
 

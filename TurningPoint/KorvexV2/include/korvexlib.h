@@ -31,6 +31,8 @@ extern bool autonPark;
 
 // globals
 extern int timeHold;
+extern bool ballTriggerBottom;
+extern bool ballTriggerTop;
 
 // motor declerations
 extern pros::Motor chassisLeft1;
