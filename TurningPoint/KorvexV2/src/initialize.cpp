@@ -105,7 +105,7 @@ void initialize()
 	lv_obj_align(redBtnm, NULL, LV_ALIGN_CENTER, 0, 0);
 
 	// auton switches
-	lv_obj_t *redBtn1 = lv_btn_create(redTab, NULL); // TODO: this thing
+	lv_obj_t *redBtn1 = lv_btn_create(redTab, NULL);
 	lv_obj_t *redBtn1Label = lv_label_create(redBtn1, NULL);
 	lv_label_set_text(redBtn1Label, "Park");
 	lv_btn_set_action(redBtn1, LV_BTN_ACTION_LONG_PR, parkBtnAction);
@@ -120,6 +120,15 @@ void initialize()
 	lv_obj_set_size(blueBtnm, 450, 50);
 	lv_obj_set_pos(blueBtnm, 0, 100);
 	lv_obj_align(blueBtnm, NULL, LV_ALIGN_CENTER, 0, 0);
+
+	// auton switches
+	lv_obj_t *blueBtn1 = lv_btn_create(blueTab, NULL);
+	lv_obj_t *blueBtn1Label = lv_label_create(blueBtn1, NULL);
+	lv_label_set_text(blueBtn1Label, "Park");
+	lv_btn_set_action(blueBtn1, LV_BTN_ACTION_LONG_PR, parkBtnAction);
+	lv_obj_set_size(blueBtn1, 100, 40);
+	lv_obj_set_pos(blueBtn1, 0, 200);
+	lv_obj_align(blueBtn1, NULL, LV_ALIGN_CENTER, 0, 0);
 
 	// skills tab
 	lv_obj_t *skillsBtn = lv_btn_create(skillsTab, NULL);
