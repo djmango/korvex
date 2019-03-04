@@ -22,7 +22,7 @@ using namespace okapi;
 // 3 for 0, second, and third flag
 const int FLY_PRESETS[2][3] = {
 	{0, 580, 430}, // close
-	{0, 520, 480}, // full
+	{0, 550, 510}, // full
 };
 const int FLY_PRESETS_LEN = 2; // make sure we dont go over our set length
 

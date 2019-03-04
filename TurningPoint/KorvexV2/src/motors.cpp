@@ -28,8 +28,8 @@ okapi::ChassisControllerPID chassis = okapi::ChassisControllerFactory::create(
     {LEFT_MTR2, LEFT_MTR1},     // Left motors (the sensor vals are read from first motor on each side)
     {-RIGHT_MTR2, -RIGHT_MTR1}, // Right motors
 
-    IterativePosPIDController::Gains{0.0035, 0.001, 0.000006}, // distance args
-    IterativePosPIDController::Gains{0.0018, 0.000, 0.000},  // angle args (keeps robot straight)
+    IterativePosPIDController::Gains{0.003, 0.0012, 0.000012}, // distance args
+    IterativePosPIDController::Gains{0.0004, 0.0005, 0.0002},  // angle args (keeps robot straight)
     IterativePosPIDController::Gains{0.003, 0.0065, 0.000045},  // turn args
 
     AbstractMotor::gearset::green, // normal gearset
