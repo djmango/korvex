@@ -254,9 +254,9 @@ void opcontrol() {
 	while (true) {
 		// basic lift control, with an intake reverse at the end of lift
 		if (bumperRD.isPressed()) {
-			liftMotor.move_voltage(-12000);
+			liftMotor.move_velocity(-100);
 		} else if (bumperRU.isPressed()) {
-			liftMotor.move_voltage(12000);
+			liftMotor.move_velocity(100);
 		} else if (bumperRD.changedToReleased() and liftMotor.get_position() > 100) {
 			intakeMotor1.move_relative(-2000, 100);
 			intakeMotor2.move_relative(-2000, 100);
@@ -266,32 +266,46 @@ void opcontrol() {
 
 		// basic intake control (maybe leave intake spinning during opcontrol at lower speed?)
 		if (bumperLU.isPressed()) {
-			intakeMotor1.move_voltage(12000);
-			intakeMotor2.move_voltage(12000);
+			intakeMotor1.move_velocity(100);
+			intakeMotor2.move_velocity(100);
 		} else if (bumperLD.isPressed()) {
-			intakeMotor1.move_voltage(-12000);
-			intakeMotor2.move_voltage(-12000);
+			intakeMotor1.move_velocity(-100);
+			intakeMotor2.move_velocity(-100);
 		}
 		else if (not shift.isPressed() and not (bumperLU.isPressed() or bumperLD.isPressed())) {
-			intakeMotor1.move_voltage(0);
-			intakeMotor2.move_voltage(0);
+			intakeMotor1.move_velocity(0);
+			intakeMotor2.move_velocity(0);
 		}
 
 		// tray control using shift key
 		if (shift.isPressed()) { //shift key
 			if (bumperLU.isPressed()) { // tray forward
-				trayMotor.move_voltage(-12000);
-				intakeMotor1.move_voltage(-12000);
-				intakeMotor2.move_voltage(-12000);
+				trayMotor.move_velocity(-100);
+				intakeMotor1.move_velocity(-32);
+				intakeMotor2.move_velocity(-32);
 			} else if (bumperLD.isPressed()) { // tray backward
-				trayMotor.move_voltage(12000);
+				trayMotor.move_velocity(100);
 				// reverses rollers automatically
-				intakeMotor1.move_voltage(12000);
-				intakeMotor2.move_voltage(12000);
+				intakeMotor1.move_velocity(32);
+				intakeMotor2.move_velocity(32);
 			}
 		}
 		else {
 			trayMotor.move_voltage(0);
+		}
+
+		if (shift.isPressed()) { // brake when we stacking
+			chassisLeftFront.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+			chassisLeftBack.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+			chassisRightFront.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+			chassisRightBack.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+
+		}
+		else { // return to normal after we stacked
+			chassisLeftFront.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+			chassisLeftBack.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+			chassisRightFront.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+			chassisRightBack.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
 		}
 
 		//drive control
