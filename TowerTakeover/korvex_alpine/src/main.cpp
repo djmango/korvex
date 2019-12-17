@@ -145,14 +145,14 @@ void competition_initialize() {}
  * from where it left off.
  */
 
-int velCap = 100; //velCap limits the change in velocity and must be global
+int velCap = 100; // velCap limits the change in velocity and must be global
 int targetLeft;
 int targetRight;
 
 int motorTemps[10];
 
 void driveP(){
-  chassisLeftBack.tare_position(); //reset base encoders
+  chassisLeftBack.tare_position(); // reset base encoders
   chassisRightBack.tare_position();
   int errorLeft;
   int errorRight;
@@ -180,29 +180,29 @@ void driveP(){
     signRight = errorRight / abs(errorRight);
 
     if(signLeft == signRight){
-      voltageLeft = errorLeft * kp; //intended voltage is error times constant
+      voltageLeft = errorLeft * kp; // intended voltage is error times constant
       voltageRight = errorRight * kp;
-	  velCap = velCap + acc;  //slew rate
+	  velCap = velCap + acc;  // slew rate
     }
     else{
-      voltageLeft = errorLeft * kpTurn; //same logic with different turn value
+      voltageLeft = errorLeft * kpTurn; // same logic with different turn value
       voltageRight = errorRight * kpTurn;
 	  velCap = velCap + accTurn;  // turn slew rate
     }
     
     if(velCap > 115){
-      velCap = 115; //velCap cannot exceed 115
+      velCap = 115; // velCap cannot exceed 115
     }
 
-    if(abs(voltageLeft) > velCap){ //limit the voltage
+    if(abs(voltageLeft) > velCap){ // limit the voltage
       voltageLeft = velCap * signLeft;
     }
 
-    if(abs(voltageRight) > velCap){ //ditto
+    if(abs(voltageRight) > velCap){ // ditto
       voltageRight = velCap * signRight;
     }
 
-    chassisLeftFront.move(voltageLeft); //set the motors to the intended speed
+    chassisLeftFront.move(voltageLeft); // set the motors to the intended speed
     chassisLeftBack.move(voltageLeft);
     chassisRightFront.move(voltageRight);
     chassisRightBack.move(voltageRight);
@@ -219,7 +219,7 @@ void driveP(){
     pros::delay(20);
 
 	// exit paramaters
-	if (((abs(errorRight) + abs(errorLeft)) / 2) < 2 or sameErrCycles >= 25) { // allowing for smol error or exit if we stay the same err for .5 second
+	if ((((abs(errorRight) + abs(errorLeft)) / 2) < 2 and abs(lastErr) < 2) or sameErrCycles >= 25) { // allowing for smol error or exit if we stay the same err for .5 second
 		std::cout << "task complete with error " << (abs(errorRight) + abs(errorLeft)) / 2 << std::endl;
 		return;
 	}
@@ -259,8 +259,8 @@ void autonomous() {
 		break;
 
 	case 1:
-		// red left
-		std::cout << "eeeee " << autonSelection << std::endl;
+		// red left LKOOOK HERE ANISHeeeeeeeee
+		std::cout << "eeeee " << autonSelection << std::endl; // eeeeee
 		drive(-400, 400);
 		pros::delay(200);
 		drive(400, -400);
