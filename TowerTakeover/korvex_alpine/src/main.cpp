@@ -77,10 +77,10 @@ void initialize()
 	tabview = lv_tabview_create(lv_scr_act(), NULL);
 
 	// add 4 tabs (the tabs are page (lv_page) and can be scrolled
+	lv_obj_t *telemetryTab = lv_tabview_add_tab(tabview, "Telemetry");
 	lv_obj_t *redTab = lv_tabview_add_tab(tabview, "Red");
 	lv_obj_t *blueTab = lv_tabview_add_tab(tabview, "Blue");
 	lv_obj_t *skillsTab = lv_tabview_add_tab(tabview, "Skills");
-	lv_obj_t *telemetryTab = lv_tabview_add_tab(tabview, "Telemetry");
 
 	// add content to the tabs
 
@@ -149,22 +149,27 @@ int velCap = 100; //velCap limits the change in velocity and must be global
 int targetLeft;
 int targetRight;
 
+int motorTemps[10];
+
 void driveP(){
   chassisLeftBack.tare_position(); //reset base encoders
   chassisRightBack.tare_position();
   int errorLeft;
   int errorRight;
-
-  // the touchables ;))))))))
-  float kp = 0.075;
-  float kpTurn = 0.2;
-  int acc = 5;
+ 
+  // the touchables ;)))))))) touch me uwu :):):)
+  float kp = 0.15;
+  float acc = 3.5;
+  float kpTurn = 0.7;
+  float accTurn = 4;
 
   // the untouchables
   int voltageLeft = 0;
   int voltageRight = 0;
   int signLeft;
   int signRight;
+  int lastErr = 0;
+  int sameErrCycles = 0;
   pros::delay(20); // dunno
 
   while(autonomous){
@@ -177,13 +182,14 @@ void driveP(){
     if(signLeft == signRight){
       voltageLeft = errorLeft * kp; //intended voltage is error times constant
       voltageRight = errorRight * kp;
+	  velCap = velCap + acc;  //slew rate
     }
     else{
       voltageLeft = errorLeft * kpTurn; //same logic with different turn value
       voltageRight = errorRight * kpTurn;
+	  velCap = velCap + accTurn;  // turn slew rate
     }
-
-    velCap = velCap + acc;  //slew rate
+    
     if(velCap > 115){
       velCap = 115; //velCap cannot exceed 115
     }
@@ -201,17 +207,40 @@ void driveP(){
     chassisRightFront.move(voltageRight);
     chassisRightBack.move(voltageRight);
 
+	// timeout utility
+	if (lastErr == (abs(errorRight) + abs(errorLeft)) / 2) {
+		sameErrCycles += 1;
+	}
+	else {
+		sameErrCycles = 0;
+	}
+
+	lastErr = (abs(errorRight) + abs(errorLeft)) / 2;
     pros::delay(20);
+
+	// exit paramaters
+	if (((abs(errorRight) + abs(errorLeft)) / 2) < 2 or sameErrCycles >= 25) { // allowing for smol error or exit if we stay the same err for .5 second
+		std::cout << "task complete with error " << (abs(errorRight) + abs(errorLeft)) / 2 << std::endl;
+		return;
+	}
+	
+	// debug
+	if (sameErrCycles == 0) {
+		std::cout << "error  " << (abs(errorRight) + abs(errorLeft)) / 2 << std::endl;
+		std::cout << "voltageLeft  " << voltageLeft << std::endl;
+	}
   }
 }
 
 void drive(int left, int right){
-  targetLeft = targetLeft + left;
-  targetRight = targetRight + right;
+  targetLeft = left;
+  targetRight = right;
   velCap = 0; //reset velocity cap for slew rate
+  driveP();
 }
 
 void autonomous() {
+	// motor setup
 	chassisLeftFront.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 	chassisLeftBack.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 	chassisRightFront.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
@@ -220,9 +249,21 @@ void autonomous() {
 	intakeMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
+	// debug
+	autonSelection = 1;
+	std::cout << "auton  " << autonSelection << std::endl;
+
 	switch (autonSelection) {
 	case 0:
 		// skillsss
+		break;
+
+	case 1:
+		// red left
+		std::cout << "eeeee " << autonSelection << std::endl;
+		drive(-400, 400);
+		pros::delay(200);
+		drive(400, -400);
 		break;
 	
 	default:
@@ -281,13 +322,19 @@ void opcontrol() {
 		if (shift.isPressed()) { //shift key
 			if (bumperLU.isPressed()) { // tray forward
 				trayMotor.move_velocity(-100);
-				intakeMotor1.move_velocity(-32);
-				intakeMotor2.move_velocity(-32);
+				// if tray and intake are interacting, move the intake
+				intakeMotor1.move_velocity(-15);
+				intakeMotor2.move_velocity(-15);
+		
 			} else if (bumperLD.isPressed()) { // tray backward
 				trayMotor.move_velocity(100);
-				// reverses rollers automatically
-				intakeMotor1.move_velocity(32);
-				intakeMotor2.move_velocity(32);
+				// if tray and intake are interacting, move the intake
+				intakeMotor1.move_velocity(15);
+				intakeMotor2.move_velocity(15);
+			}
+			else if (not (bumperLU.isPressed() or bumperLD.isPressed())) {
+				intakeMotor1.move_velocity(0);
+				intakeMotor2.move_velocity(0);
 			}
 		}
 		else {
@@ -307,6 +354,9 @@ void opcontrol() {
 			chassisRightFront.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
 			chassisRightBack.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
 		}
+
+		// debug
+		// std::cout << "angle " << trayMotor.get_position() << std::endl;
 
 		//drive control
 		chassisLeftFront.move(masterController.getAnalog(okapi::ControllerAnalog::leftY) * 127);

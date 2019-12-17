@@ -8,7 +8,7 @@ pros::Motor chassisLeftBack(LEFT_MTR2, pros::E_MOTOR_GEARSET_18, true);
 pros::Motor chassisRightFront(RIGHT_MTR1, pros::E_MOTOR_GEARSET_18, false);
 pros::Motor chassisRightBack(RIGHT_MTR2, pros::E_MOTOR_GEARSET_18, false);
 
-pros::Motor liftMotor(LIFT_MTR, pros::E_MOTOR_GEARSET_18, true);
+pros::Motor liftMotor(LIFT_MTR, pros::E_MOTOR_GEARSET_36, true);
 pros::Motor trayMotor(TRAY_MTR, pros::E_MOTOR_GEARSET_36, true);
 pros::Motor intakeMotor1(INTAKE_MTR1, pros::E_MOTOR_GEARSET_36, true);
 pros::Motor intakeMotor2(INTAKE_MTR2, pros::E_MOTOR_GEARSET_36, false);
