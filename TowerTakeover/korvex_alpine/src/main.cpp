@@ -62,6 +62,12 @@ static lv_res_t skillsBtnAction(lv_obj_t *btn)
 	return LV_RES_OK;
 }
 
+static lv_res_t tempUpdateAction(lv_obj_t *btn)
+{
+	// lv_table_set_cell_value(tempTable, 0, 0, "eels");
+	return LV_RES_OK;
+}
+
 /*Create a button descriptor string array*/
 static const char *btnmMap[] = {"Left", "Right", "Rick", ""};
 
@@ -83,6 +89,22 @@ void initialize()
 	lv_obj_t *skillsTab = lv_tabview_add_tab(tabview, "Skills");
 
 	// add content to the tabs
+	// telemtetry tab
+
+	// temperature table
+	lv_obj_t *tempTable = lv_table_create(telemetryTab, NULL);
+	lv_table_set_row_cnt(tempTable, 10);
+	lv_table_set_col_cnt(tempTable, 2);
+
+	// temperature update
+	lv_obj_t *tempUpdate = lv_btn_create(telemetryTab, NULL);
+	lv_btn_set_action(tempUpdate, LV_BTN_ACTION_CLICK,  tempUpdateAction);
+	lv_obj_set_size(tempUpdate, 150, 50);
+	lv_obj_set_pos(tempUpdate, 0, 100);
+	lv_obj_t *tempLabel = lv_label_create(tempUpdate, NULL);
+	lv_label_set_text(tempLabel, "rick from r");
+	lv_obj_align(tempUpdate, NULL, LV_ALIGN_IN_TOP_RIGHT, 0, 0);
+
 
 	// red tab
 
@@ -145,13 +167,13 @@ void competition_initialize() {}
  * from where it left off.
  */
 
-int velCap = 100; // velCap limits the change in velocity and must be global
+int voltageCap = 100; // voltageCap limits the change in velocity and must be global
 int targetLeft;
 int targetRight;
 
 int motorTemps[10];
 
-void driveP(){
+void driveP(int voltageMax=115){
   chassisLeftBack.tare_position(); // reset base encoders
   chassisRightBack.tare_position();
   int errorLeft;
@@ -182,24 +204,24 @@ void driveP(){
     if(signLeft == signRight){
       voltageLeft = errorLeft * kp; // intended voltage is error times constant
       voltageRight = errorRight * kp;
-	  velCap = velCap + acc;  // slew rate
+	  voltageCap = voltageCap + acc;  // slew rate
     }
     else{
       voltageLeft = errorLeft * kpTurn; // same logic with different turn value
       voltageRight = errorRight * kpTurn;
-	  velCap = velCap + accTurn;  // turn slew rate
+	  voltageCap = voltageCap + accTurn;  // turn slew rate
     }
     
-    if(velCap > 115){
-      velCap = 115; // velCap cannot exceed 115
+    if(voltageCap > voltageMax){
+      voltageCap = voltageMax; // voltageCap cannot exceed 115
     }
 
-    if(abs(voltageLeft) > velCap){ // limit the voltage
-      voltageLeft = velCap * signLeft;
+    if(abs(voltageLeft) > voltageCap){ // limit the voltage
+      voltageLeft = voltageCap * signLeft;
     }
 
-    if(abs(voltageRight) > velCap){ // ditto
-      voltageRight = velCap * signRight;
+    if(abs(voltageRight) > voltageCap){ // ditto
+      voltageRight = voltageCap * signRight;
     }
 
     chassisLeftFront.move(voltageLeft); // set the motors to the intended speed
@@ -232,11 +254,16 @@ void driveP(){
   }
 }
 
-void drive(int left, int right){
+void drive(int left, int right, int voltageMax=0){
   targetLeft = left;
   targetRight = right;
-  velCap = 0; //reset velocity cap for slew rate
-  driveP();
+  voltageCap = 0; //reset velocity cap for slew rate
+  if (not voltageMax == 0) {
+	driveP(voltageMax);
+  }
+  else {
+  	driveP();
+  }
 }
 
 void autonomous() {
@@ -250,7 +277,7 @@ void autonomous() {
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
 	// debug
-	autonSelection = 1;
+	autonSelection = -1;
 	std::cout << "auton  " << autonSelection << std::endl;
 
 	switch (autonSelection) {
@@ -258,12 +285,32 @@ void autonomous() {
 		// skillsss
 		break;
 
-	case 1:
-		// red left LKOOOK HERE ANISHeeeeeeeee
-		std::cout << "eeeee " << autonSelection << std::endl; // eeeeee
-		drive(-400, 400);
+	case -1:
+		// red left
+		
+		// flip. out.
+		trayMotor.move_absolute(-1000, 100);
 		pros::delay(200);
-		drive(400, -400);
+		liftMotor.move_absolute(2300, 100);
+		pros::delay(1300);
+		liftMotor.move_absolute(0, 100);
+		trayMotor.move_absolute(0, 100);
+		pros::delay(300);
+		// move forward and intake and hope you get the b i g s t a c k
+		intakeMotor1.move_velocity(100);
+		intakeMotor2.move_velocity(100);
+		drive(2200, 2200, 60);
+		// turn for last cube
+		intakeMotor1.move_velocity(70);
+		intakeMotor2.move_velocity(70);
+		drive(-520, 520);
+		// move and intake last cube
+		drive(1400, 1400);
+		intakeMotor1.move_velocity(0);
+		intakeMotor2.move_velocity(0);
+		// turn for stack
+		drive(900, 1200);
+		// stack
 		break;
 	
 	default:
@@ -329,8 +376,8 @@ void opcontrol() {
 			} else if (bumperLD.isPressed()) { // tray backward
 				trayMotor.move_velocity(100);
 				// if tray and intake are interacting, move the intake
-				intakeMotor1.move_velocity(15);
-				intakeMotor2.move_velocity(15);
+				intakeMotor1.move_velocity(35);
+				intakeMotor2.move_velocity(35);
 			}
 			else if (not (bumperLU.isPressed() or bumperLD.isPressed())) {
 				intakeMotor1.move_velocity(0);
@@ -356,7 +403,7 @@ void opcontrol() {
 		}
 
 		// debug
-		// std::cout << "angle " << trayMotor.get_position() << std::endl;
+		// std::cout << "angle " << liftMotor.get_position() << std::endl;
 
 		//drive control
 		chassisLeftFront.move(masterController.getAnalog(okapi::ControllerAnalog::leftY) * 127);
