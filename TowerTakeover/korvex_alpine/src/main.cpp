@@ -12,10 +12,6 @@
 // base global defenitions
 int autonSelection = 42; // hitchhikers anyone?
 
-void telemetry() {
-	// update
-}
-
 static lv_res_t redBtnmAction(lv_obj_t *btnm, const char *txt)
 {
 	printf("red button: %s released\n", txt);
@@ -79,8 +75,7 @@ void initialize()
 	lv_theme_set_current(th);
 
 	// create a tab view object
-	lv_obj_t *tabview;
-	tabview = lv_tabview_create(lv_scr_act(), NULL);
+	lv_obj_t *tabview = lv_tabview_create(lv_scr_act(), NULL);
 
 	// add 4 tabs (the tabs are page (lv_page) and can be scrolled
 	lv_obj_t *telemetryTab = lv_tabview_add_tab(tabview, "Telemetry");
@@ -93,7 +88,7 @@ void initialize()
 
 	// temperature table
 	lv_obj_t *tempTable = lv_table_create(telemetryTab, NULL);
-	lv_table_set_row_cnt(tempTable, 10);
+	lv_table_set_row_cnt(tempTable, 4);
 	lv_table_set_col_cnt(tempTable, 2);
 
 	// temperature update
@@ -134,7 +129,12 @@ void initialize()
 	lv_obj_set_pos(skillsBtn, 0, 100);
 	lv_obj_align(skillsBtn, NULL, LV_ALIGN_CENTER, 0, 0);
 
-	// for telemetry, make a function that updates the vals of temp= or whatever once every x seconds
+	// telemetry update task
+	// pros::Task (tempUpdate, (lv_obj_t*)"tempTable", TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "tempUpdateTask");
+}
+
+void tempUpdate(lv_obj_t* tempTable) {
+	lv_table_set_cell_value(tempTable, 0, 0, "rick");
 }
 
 /**
@@ -173,7 +173,7 @@ int targetRight;
 
 int motorTemps[10];
 
-void driveP(int voltageMax=115){
+void driveP(int voltageMax) {
   chassisLeftBack.tare_position(); // reset base encoders
   chassisRightBack.tare_position();
   int errorLeft;
@@ -190,13 +190,15 @@ void driveP(int voltageMax=115){
   int voltageRight = 0;
   int signLeft;
   int signRight;
-  int lastErr = 0;
+  int errorCurrent = 0;
+  int errorLast = 0;
   int sameErrCycles = 0;
   pros::delay(20); // dunno
 
   while(autonomous){
     errorLeft = targetLeft - chassisLeftBack.get_position(); // error is target minus actual value
     errorRight = targetRight - chassisRightBack.get_position();
+	errorCurrent = (abs(errorRight) + abs(errorLeft)) / 2;
 
     signLeft = errorLeft / abs(errorLeft); // + or - 1
     signRight = errorRight / abs(errorRight);
@@ -224,46 +226,44 @@ void driveP(int voltageMax=115){
       voltageRight = voltageCap * signRight;
     }
 
-    chassisLeftFront.move(voltageLeft); // set the motors to the intended speed
+	// set the motors to the intended speed
+    chassisLeftFront.move(voltageLeft); 
     chassisLeftBack.move(voltageLeft);
     chassisRightFront.move(voltageRight);
     chassisRightBack.move(voltageRight);
 
 	// timeout utility
-	if (lastErr == (abs(errorRight) + abs(errorLeft)) / 2) {
+	if (errorLast == errorCurrent) {
 		sameErrCycles += 1;
 	}
 	else {
 		sameErrCycles = 0;
 	}
 
-	lastErr = (abs(errorRight) + abs(errorLeft)) / 2;
-    pros::delay(20);
 
 	// exit paramaters
-	if ((((abs(errorRight) + abs(errorLeft)) / 2) < 2 and abs(lastErr) < 2) or sameErrCycles >= 25) { // allowing for smol error or exit if we stay the same err for .5 second
-		std::cout << "task complete with error " << (abs(errorRight) + abs(errorLeft)) / 2 << std::endl;
+	if ((errorCurrent < 2 and errorLast < 2) or sameErrCycles >= 25) { // allowing for smol error or exit if we stay the same err for .5 second
+		std::cout << "task complete with error " << errorCurrent << std::endl;
 		return;
 	}
 	
 	// debug
 	if (sameErrCycles == 0) {
-		std::cout << "error  " << (abs(errorRight) + abs(errorLeft)) / 2 << std::endl;
+		std::cout << "error  " << errorCurrent << std::endl;
 		std::cout << "voltageLeft  " << voltageLeft << std::endl;
 	}
+
+	// nothing goes after this
+	errorLast = errorCurrent;
+    pros::delay(20);
   }
 }
 
-void drive(int left, int right, int voltageMax=0){
+void drive(int left, int right, int voltageMax=115){
   targetLeft = left;
   targetRight = right;
   voltageCap = 0; //reset velocity cap for slew rate
-  if (not voltageMax == 0) {
-	driveP(voltageMax);
-  }
-  else {
-  	driveP();
-  }
+  driveP(voltageMax);
 }
 
 void autonomous() {
@@ -289,27 +289,51 @@ void autonomous() {
 		// red left
 		
 		// flip. out.
-		trayMotor.move_absolute(-1000, 100);
-		pros::delay(200);
-		liftMotor.move_absolute(2300, 100);
-		pros::delay(1300);
+		liftMotor.move_absolute(1400, 100);
+		pros::delay(1200);
 		liftMotor.move_absolute(0, 100);
-		trayMotor.move_absolute(0, 100);
 		pros::delay(300);
 		// move forward and intake and hope you get the b i g s t a c k
 		intakeMotor1.move_velocity(100);
 		intakeMotor2.move_velocity(100);
 		drive(2200, 2200, 60);
+		intakeMotor1.move_velocity(20);
+		intakeMotor2.move_velocity(20);
 		// turn for last cube
-		intakeMotor1.move_velocity(70);
-		intakeMotor2.move_velocity(70);
 		drive(-520, 520);
+		intakeMotor1.move_velocity(100);
+		intakeMotor2.move_velocity(100);
 		// move and intake last cube
 		drive(1400, 1400);
 		intakeMotor1.move_velocity(0);
 		intakeMotor2.move_velocity(0);
 		// turn for stack
-		drive(900, 1200);
+		drive(-120, 120);
+		drive(1000, 1000);
+		// stack
+		break;
+
+	case -2:
+		// red right
+		
+		// flip. out.
+		liftMotor.move_absolute(1400, 100);
+		pros::delay(1200);
+		liftMotor.move_absolute(0, 100);
+		pros::delay(300);
+		// move forward and intake and hope you get the b i g s t a c k
+		intakeMotor1.move_velocity(100);
+		intakeMotor2.move_velocity(100);
+		drive(2200, 2200, 60);
+		intakeMotor1.move_velocity(50);
+		intakeMotor2.move_velocity(50);
+		// back
+		drive(-2000, -2000);
+		// turn for stack
+		intakeMotor1.move_velocity(0);
+		intakeMotor2.move_velocity(0);
+		drive(-400, 400);
+		drive(600, 600);
 		// stack
 		break;
 	
@@ -337,6 +361,8 @@ void opcontrol() {
 	intakeMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 	intakeMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+	
+	// debug
 	
 	// main loop
 	while (true) {
@@ -403,7 +429,7 @@ void opcontrol() {
 		}
 
 		// debug
-		// std::cout << "angle " << liftMotor.get_position() << std::endl;
+		// std::cout << pros::millis() << ": angle " << liftMotor.get_position() << std::endl;
 
 		//drive control
 		chassisLeftFront.move(masterController.getAnalog(okapi::ControllerAnalog::leftY) * 127);
