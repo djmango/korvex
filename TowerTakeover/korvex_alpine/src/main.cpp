@@ -36,11 +36,11 @@ static lv_res_t blueBtnmAction(lv_obj_t *btnm, const char *txt)
 {
 	printf("blue button: %s released\n", txt);
 
-	if (txt == "Right")
+	if (txt == "Left")
 	{
 		autonSelection = 1;
 	}
-	if (txt == "Left")
+	if (txt == "Right")
 	{
 		autonSelection = 2;
 	}
@@ -277,20 +277,34 @@ void autonomous() {
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
 	// debug
-	autonSelection = -1;
+	// autonSelection = -1;
 	std::cout << "auton  " << autonSelection << std::endl;
 
 	switch (autonSelection) {
 	case 0:
-		// skillsss
+		// skillsss doesnt exist.
+		chassisLeftFront.move_velocity(-100);
+		chassisLeftBack.move_velocity(-100);
+		chassisRightFront.move_velocity(-100);
+		chassisRightBack.move_velocity(-100);
+		pros::delay(1500);
+		chassisLeftFront.move_velocity(100);
+		chassisLeftBack.move_velocity(100);
+		chassisRightFront.move_velocity(100);
+		chassisRightBack.move_velocity(100);
+		pros::delay(1500);
+		chassisLeftFront.move_velocity(0);
+		chassisLeftBack.move_velocity(0);
+		chassisRightFront.move_velocity(0);
+		chassisRightBack.move_velocity(0);
 		break;
 
 	case -1:
 		// red left
 		
 		// flip. out.
-		liftMotor.move_absolute(1400, 100);
-		pros::delay(1200);
+		liftMotor.move_absolute(1600, 100);
+		pros::delay(1300);
 		liftMotor.move_absolute(0, 100);
 		pros::delay(300);
 		// move forward and intake and hope you get the b i g s t a c k
@@ -300,7 +314,7 @@ void autonomous() {
 		intakeMotor1.move_velocity(20);
 		intakeMotor2.move_velocity(20);
 		// turn for last cube
-		drive(-520, 520);
+		drive(-535, 535);
 		intakeMotor1.move_velocity(100);
 		intakeMotor2.move_velocity(100);
 		// move and intake last cube
@@ -309,8 +323,13 @@ void autonomous() {
 		intakeMotor2.move_velocity(0);
 		// turn for stack
 		drive(-120, 120);
-		drive(1000, 1000);
+		drive(1200, 1200);
 		// stack
+		intakeMotor1.move_velocity(-15);
+		intakeMotor2.move_velocity(-15);
+		trayMotor.move_absolute(-4500, 100);
+		pros::delay(1200);
+		drive(-1000, -1000);
 		break;
 
 	case -2:
@@ -332,9 +351,77 @@ void autonomous() {
 		// turn for stack
 		intakeMotor1.move_velocity(0);
 		intakeMotor2.move_velocity(0);
-		drive(-400, 400);
-		drive(600, 600);
+		drive(400, -400);
+		drive(1500, 1500);
 		// stack
+		intakeMotor1.move_velocity(-15);
+		intakeMotor2.move_velocity(-15);
+		trayMotor.move_absolute(-4500, 100);
+		pros::delay(1200);
+		drive(-1000, -1000);
+		break;
+	
+	case 1:
+		// blue left
+		
+		// flip. out.
+		liftMotor.move_absolute(1400, 100);
+		pros::delay(1200);
+		liftMotor.move_absolute(0, 100);
+		pros::delay(300);
+		// move forward and intake and hope you get the b i g s t a c k
+		intakeMotor1.move_velocity(100);
+		intakeMotor2.move_velocity(100);
+		drive(2200, 2200, 60);
+		intakeMotor1.move_velocity(20);
+		intakeMotor2.move_velocity(20);
+		// back
+		drive(-2000, -2000);
+		// turn for stack
+		intakeMotor1.move_velocity(0);
+		intakeMotor2.move_velocity(0);
+		drive(-400, 400);
+		drive(1500, 1500);
+		// stack
+		intakeMotor1.move_velocity(-15);
+		intakeMotor2.move_velocity(-15);
+		trayMotor.move_absolute(-4500, 100);
+		pros::delay(1200);
+		drive(-1000, -1000);
+		break;
+	case 2:
+		// blue right
+		
+		// flip. out.
+		liftMotor.move_absolute(1600, 100);
+		pros::delay(1300);
+		liftMotor.move_absolute(0, 100);
+		pros::delay(300);
+		// move forward and intake and hope you get the b i g s t a c k
+		intakeMotor1.move_velocity(100);
+		intakeMotor2.move_velocity(100);
+		drive(2200, 2200, 60);
+		intakeMotor1.move_velocity(20);
+		intakeMotor2.move_velocity(20);
+		// turn for last cube
+		drive(535, -535);
+		intakeMotor1.move_velocity(100);
+		intakeMotor2.move_velocity(100);
+		// move and intake last cube
+		drive(1400, 1400);
+		intakeMotor1.move_velocity(0);
+		intakeMotor2.move_velocity(0);
+		// turn for stack
+		drive(120, -120);
+		drive(1200, 1200);
+		// stack
+		intakeMotor1.move_velocity(-15);
+		intakeMotor2.move_velocity(-15);
+		trayMotor.move_absolute(-4500, 100);
+		pros::delay(1200);
+		drive(-1000, -1000);
+		break;
+		
 		break;
 	
 	default:

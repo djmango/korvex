@@ -16,7 +16,7 @@ const int LIFT_MTR = 8;
 
 // flywheel and intake motors
 const int INTAKE_MTR1 = 4;
-const int INTAKE_MTR2 = 5;
+const int INTAKE_MTR2 = 7;
 
 // auton
 extern int autonSelection;
