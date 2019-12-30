@@ -11,12 +11,15 @@ const int RIGHT_MTR1 = 2;
 const int RIGHT_MTR2 = 1;
 
 // lift and tray motors
-const int TRAY_MTR = 6;
-const int LIFT_MTR = 8;
+const int TRAY_MTR = 7;
+const int LIFT_MTR = 13;
 
 // flywheel and intake motors
-const int INTAKE_MTR1 = 4;
-const int INTAKE_MTR2 = 7;
+const int INTAKE_MTR1 = 11;
+const int INTAKE_MTR2 = 20;
+
+// sensors
+const int IMU = 6;
 
 // auton
 extern int autonSelection;
