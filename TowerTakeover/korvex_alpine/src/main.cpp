@@ -429,6 +429,19 @@ void autonomous() {
 	}
 }
 
+void traySlew(bool forward) {
+	if (forward) {
+		double x = trayMotor.get_position();
+		double speed = std::round(100 + 0.001102151*x - 0.000001478495* std::pow(x, 2));
+		trayMotor.move_velocity(speed);
+
+		std::cout << x << ": speed " << speed << std::endl;
+	}
+	else {
+		trayMotor.move_velocity(-100);
+	}
+}
+
 /**
  * Runs the operator control code. This function will be started in its own task
  * with the default priority and stack size whenever the robot is enabled via
@@ -448,8 +461,9 @@ void opcontrol() {
 	intakeMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 	intakeMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-	
-	// debug
+
+	// local vars
+	int chassisModifier = 127;
 	
 	// main loop
 	while (true) {
@@ -458,9 +472,6 @@ void opcontrol() {
 			liftMotor.move_velocity(-100);
 		} else if (bumperRU.isPressed()) {
 			liftMotor.move_velocity(100);
-		} else if (bumperRD.changedToReleased() and liftMotor.get_position() > 100) {
-			intakeMotor1.move_relative(-2000, 100);
-			intakeMotor2.move_relative(-2000, 100);
 		} else {
 			liftMotor.move_voltage(0);
 		}
@@ -481,13 +492,16 @@ void opcontrol() {
 		// tray control using shift key
 		if (shift.isPressed()) { //shift key
 			if (bumperLU.isPressed()) { // tray forward
-				trayMotor.move_velocity(-100);
+				traySlew(true);
+				// LOOK HERE IS MY SLEW GRAPH https://mycurvefit.com/share/0198b8c4-edce-4161-8198-b30318545d7c
+
+				// 6200 is max
 				// if tray and intake are interacting, move the intake
 				intakeMotor1.move_velocity(-15);
 				intakeMotor2.move_velocity(-15);
 		
 			} else if (bumperLD.isPressed()) { // tray backward
-				trayMotor.move_velocity(100);
+				traySlew(false);
 				// if tray and intake are interacting, move the intake
 				intakeMotor1.move_velocity(35);
 				intakeMotor2.move_velocity(35);
@@ -501,28 +515,29 @@ void opcontrol() {
 			trayMotor.move_voltage(0);
 		}
 
-		if (shift.isPressed()) { // brake when we stacking
+		// chassis mod
+		if (shift.isPressed()) { // brake and slow when we stacking
 			chassisLeftFront.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 			chassisLeftBack.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 			chassisRightFront.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 			chassisRightBack.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-
+			chassisModifier = 80;
 		}
 		else { // return to normal after we stacked
 			chassisLeftFront.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
 			chassisLeftBack.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
 			chassisRightFront.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
 			chassisRightBack.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+			chassisModifier = 127;
 		}
+		
+		chassisLeftFront.move(masterController.getAnalog(okapi::ControllerAnalog::leftY) * chassisModifier);
+		chassisLeftBack.move(masterController.getAnalog(okapi::ControllerAnalog::leftY) * chassisModifier);
+		chassisRightFront.move(masterController.getAnalog(okapi::ControllerAnalog::rightY) * chassisModifier);
+		chassisRightBack.move(masterController.getAnalog(okapi::ControllerAnalog::rightY) * chassisModifier);
 
 		// debug
-		// std::cout << pros::millis() << ": angle " << liftMotor.get_position() << std::endl;
-
-		//drive control
-		chassisLeftFront.move(masterController.getAnalog(okapi::ControllerAnalog::leftY) * 127);
-		chassisLeftBack.move(masterController.getAnalog(okapi::ControllerAnalog::leftY) * 127);
-		chassisRightFront.move(masterController.getAnalog(okapi::ControllerAnalog::rightY) * 127);
-		chassisRightBack.move(masterController.getAnalog(okapi::ControllerAnalog::rightY) * 127);
+		// std::cout << pros::millis() << ": angle " << trayMotor.get_position() << std::endl;
 		pros::delay(20);
 	}
 }
