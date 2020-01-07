@@ -16,11 +16,11 @@ static lv_res_t redBtnmAction(lv_obj_t *btnm, const char *txt)
 {
 	printf("red button: %s released\n", txt);
 
-	if (txt == "Left")
+	if (txt == "Unprotec")
 	{
 		autonSelection = -1; // or whatever red left is
 	}
-	if (txt == "Right")
+	if (txt == "Protec")
 	{
 		autonSelection = -2;
 	}
@@ -36,11 +36,11 @@ static lv_res_t blueBtnmAction(lv_obj_t *btnm, const char *txt)
 {
 	printf("blue button: %s released\n", txt);
 
-	if (txt == "Left")
+	if (txt == "Unprotec")
 	{
 		autonSelection = 1;
 	}
-	if (txt == "Right")
+	if (txt == "Protec")
 	{
 		autonSelection = 2;
 	}
@@ -240,7 +240,6 @@ void driveP(int voltageMax) {
 		sameErrCycles = 0;
 	}
 
-
 	// exit paramaters
 	if ((errorCurrent < 2 and errorLast < 2) or sameErrCycles >= 25) { // allowing for smol error or exit if we stay the same err for .5 second
 		std::cout << "task complete with error " << errorCurrent << std::endl;
@@ -277,151 +276,83 @@ void autonomous() {
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
 	// debug
-	// autonSelection = -1;
+	autonSelection = 2;
 	std::cout << "auton  " << autonSelection << std::endl;
 
 	switch (autonSelection) {
 	case 0:
 		// skillsss doesnt exist.
-		chassisLeftFront.move_velocity(-100);
-		chassisLeftBack.move_velocity(-100);
-		chassisRightFront.move_velocity(-100);
-		chassisRightBack.move_velocity(-100);
-		pros::delay(1500);
-		chassisLeftFront.move_velocity(100);
-		chassisLeftBack.move_velocity(100);
-		chassisRightFront.move_velocity(100);
-		chassisRightBack.move_velocity(100);
-		pros::delay(1500);
-		chassisLeftFront.move_velocity(0);
-		chassisLeftBack.move_velocity(0);
-		chassisRightFront.move_velocity(0);
-		chassisRightBack.move_velocity(0);
 		break;
 
 	case -1:
-		// red left
-		
-		// flip. out.
-		liftMotor.move_absolute(1600, 100);
-		pros::delay(1300);
-		liftMotor.move_absolute(0, 100);
-		pros::delay(300);
-		// move forward and intake and hope you get the b i g s t a c k
-		intakeMotor1.move_velocity(100);
-		intakeMotor2.move_velocity(100);
-		drive(2200, 2200, 60);
-		intakeMotor1.move_velocity(20);
-		intakeMotor2.move_velocity(20);
-		// turn for last cube
-		drive(-535, 535);
-		intakeMotor1.move_velocity(100);
-		intakeMotor2.move_velocity(100);
-		// move and intake last cube
-		drive(1400, 1400);
-		intakeMotor1.move_velocity(0);
-		intakeMotor2.move_velocity(0);
-		// turn for stack
-		drive(-120, 120);
-		drive(1200, 1200);
-		// stack
-		intakeMotor1.move_velocity(-15);
-		intakeMotor2.move_velocity(-15);
-		trayMotor.move_absolute(-4500, 100);
-		pros::delay(1200);
-		drive(-1000, -1000);
+		// red unprotec
 		break;
 
 	case -2:
-		// red right
+		// red protec
 		
 		// flip. out.
-		liftMotor.move_absolute(1400, 100);
-		pros::delay(1200);
-		liftMotor.move_absolute(0, 100);
-		pros::delay(300);
+		liftMotor.move_absolute(1500, 100);
+		pros::delay(1000);
+		liftMotor.move_absolute(-200, 100);
+		pros::delay(400);
 		// move forward and intake and hope you get the b i g s t a c k
 		intakeMotor1.move_velocity(100);
 		intakeMotor2.move_velocity(100);
-		drive(2200, 2200, 60);
-		intakeMotor1.move_velocity(50);
-		intakeMotor2.move_velocity(50);
+		drive(2500, 2500, 40);
+		intakeMotor1.move_relative(300, 100);
+		intakeMotor2.move_relative(300, 100);
+		liftMotor.move_voltage(0);
 		// back
-		drive(-2000, -2000);
+		drive(-1300, -1300, 80);
 		// turn for stack
-		intakeMotor1.move_velocity(0);
-		intakeMotor2.move_velocity(0);
-		drive(400, -400);
-		drive(1500, 1500);
+		drive(600, -600, 60);
+		intakeMotor1.move_relative(-500, 100);
+		intakeMotor2.move_relative(-500, 100);
+		// drive to stack
+		drive(1400, 1400, 60);
 		// stack
 		intakeMotor1.move_velocity(-15);
 		intakeMotor2.move_velocity(-15);
-		trayMotor.move_absolute(-4500, 100);
-		pros::delay(1200);
-		drive(-1000, -1000);
+		trayMotor.move_absolute(6200, 100);
+		pros::delay(1800);
+		trayMotor.move_absolute(0, 100);
+		drive(-800, -800);
 		break;
 	
 	case 1:
-		// blue left
-		
-		// flip. out.
-		liftMotor.move_absolute(1400, 100);
-		pros::delay(1200);
-		liftMotor.move_absolute(0, 100);
-		pros::delay(300);
-		// move forward and intake and hope you get the b i g s t a c k
-		intakeMotor1.move_velocity(100);
-		intakeMotor2.move_velocity(100);
-		drive(2200, 2200, 60);
-		intakeMotor1.move_velocity(20);
-		intakeMotor2.move_velocity(20);
-		// back
-		drive(-2000, -2000);
-		// turn for stack
-		intakeMotor1.move_velocity(0);
-		intakeMotor2.move_velocity(0);
-		drive(-400, 400);
-		drive(1500, 1500);
-		// stack
-		intakeMotor1.move_velocity(-15);
-		intakeMotor2.move_velocity(-15);
-		trayMotor.move_absolute(-4500, 100);
-		pros::delay(1200);
-		drive(-1000, -1000);
+		// blue unprotec
 		break;
 	case 2:
-		// blue right
-		
+		// blue protec
+
 		// flip. out.
-		liftMotor.move_absolute(1600, 100);
-		pros::delay(1300);
-		liftMotor.move_absolute(0, 100);
-		pros::delay(300);
+		liftMotor.move_absolute(1500, 100);
+		pros::delay(1000);
+		liftMotor.move_absolute(-200, 100);
+		pros::delay(400);
 		// move forward and intake and hope you get the b i g s t a c k
 		intakeMotor1.move_velocity(100);
 		intakeMotor2.move_velocity(100);
-		drive(2200, 2200, 60);
-		intakeMotor1.move_velocity(20);
-		intakeMotor2.move_velocity(20);
-		// turn for last cube
-		drive(535, -535);
-		intakeMotor1.move_velocity(100);
-		intakeMotor2.move_velocity(100);
-		// move and intake last cube
-		drive(1400, 1400);
-		intakeMotor1.move_velocity(0);
-		intakeMotor2.move_velocity(0);
+		drive(2500, 2500, 40);
+		intakeMotor1.move_relative(300, 100);
+		intakeMotor2.move_relative(300, 100);
+		liftMotor.move_voltage(0);
+		// back
+		drive(-1300, -1300, 80);
 		// turn for stack
-		drive(120, -120);
-		drive(1200, 1200);
+		drive(-600, 600, 60);
+		intakeMotor1.move_relative(-500, 100);
+		intakeMotor2.move_relative(-500, 100);
+		// drive to stack
+		drive(1400, 1400, 60);
 		// stack
 		intakeMotor1.move_velocity(-15);
 		intakeMotor2.move_velocity(-15);
-		trayMotor.move_absolute(-4500, 100);
-		pros::delay(1200);
-		drive(-1000, -1000);
-		break;
-		
+		trayMotor.move_absolute(6200, 100);
+		pros::delay(1800);
+		trayMotor.move_absolute(0, 100);
+		drive(-800, -800);
 		break;
 	
 	default:
@@ -431,6 +362,8 @@ void autonomous() {
 
 void traySlew(bool forward) {
 	if (forward) {
+		// motion profile/slew: https://mycurvefit.com/share/0198b8c4-edce-4161-8198-b30318545d7c
+		// 6200 is max (in theory, possible to go higher)
 		double x = trayMotor.get_position();
 		double speed = std::round(100 + 0.001102151*x - 0.000001478495* std::pow(x, 2));
 		trayMotor.move_velocity(speed);
@@ -460,7 +393,7 @@ void opcontrol() {
 	// motor setup
 	intakeMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 	intakeMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
 
 	// local vars
 	int chassisModifier = 127;
@@ -489,20 +422,26 @@ void opcontrol() {
 			intakeMotor2.move_velocity(0);
 		}
 
+		// dont brake intake if tray is up
+		if (trayMotor.get_position() > 2000) {
+			intakeMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+			intakeMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+		}
+		else {
+			intakeMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+			intakeMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+		}
+
 		// tray control using shift key
 		if (shift.isPressed()) { //shift key
 			if (bumperLU.isPressed()) { // tray forward
 				traySlew(true);
-				// LOOK HERE IS MY SLEW GRAPH https://mycurvefit.com/share/0198b8c4-edce-4161-8198-b30318545d7c
-
-				// 6200 is max
 				// if tray and intake are interacting, move the intake
 				intakeMotor1.move_velocity(-15);
 				intakeMotor2.move_velocity(-15);
 		
 			} else if (bumperLD.isPressed()) { // tray backward
 				traySlew(false);
-				// if tray and intake are interacting, move the intake
 				intakeMotor1.move_velocity(35);
 				intakeMotor2.move_velocity(35);
 			}
@@ -537,7 +476,7 @@ void opcontrol() {
 		chassisRightBack.move(masterController.getAnalog(okapi::ControllerAnalog::rightY) * chassisModifier);
 
 		// debug
-		// std::cout << pros::millis() << ": angle " << trayMotor.get_position() << std::endl;
+		std::cout << pros::millis() << ": angle " << intakeMotor1.get_position() << std::endl;
 		pros::delay(20);
 	}
 }
