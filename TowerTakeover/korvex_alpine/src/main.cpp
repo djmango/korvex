@@ -12,6 +12,9 @@
 // base global defenitions
 int autonSelection = 42; // hitchhikers anyone?
 
+// create a button descriptor string array
+static const char *btnmMap[] = {"Left", "Right", "Rick", ""};
+
 static lv_res_t redBtnmAction(lv_obj_t *btnm, const char *txt)
 {
 	printf("red button: %s released\n", txt);
@@ -58,20 +61,22 @@ static lv_res_t skillsBtnAction(lv_obj_t *btn)
 	return LV_RES_OK;
 }
 
-static lv_res_t tempUpdateAction(lv_obj_t *btn)
+static lv_res_t ddlist_action(lv_obj_t * ddlist)
 {
-	// lv_table_set_cell_value(tempTable, 0, 0, "eels");
-	return LV_RES_OK;
-}
 
-/*Create a button descriptor string array*/
-static const char *btnmMap[] = {"Left", "Right", "Rick", ""};
+    char sel_str[32];
+    lv_ddlist_get_selected_str(ddlist, sel_str);
+    printf("new option: %s \n", sel_str);
+
+    return LV_RES_OK; /*Return OK if the drop down list is not deleted*/
+}
 
 void initialize()
 {
 	// lvgl theme
 
-	lv_theme_t *th = lv_theme_alien_init(280, NULL); //Set a HUE value and keep font default
+	// lv_theme_t *th = lv_theme_alien_init(280, NULL); //Set a HUE value and keep font default
+	lv_theme_t *th = lv_theme_night_init(210, NULL); //Set a HUE value and a Font for the Night Theme
 	lv_theme_set_current(th);
 
 	// create a tab view object
@@ -83,23 +88,20 @@ void initialize()
 	lv_obj_t *blueTab = lv_tabview_add_tab(tabview, "Blue");
 	lv_obj_t *skillsTab = lv_tabview_add_tab(tabview, "Skills");
 
-	// add content to the tabs
-	// telemtetry tab
+	// telemetry tab
 
-	// temperature table
-	lv_obj_t *tempTable = lv_table_create(telemetryTab, NULL);
-	lv_table_set_row_cnt(tempTable, 4);
-	lv_table_set_col_cnt(tempTable, 2);
-
-	// temperature update
-	lv_obj_t *tempUpdate = lv_btn_create(telemetryTab, NULL);
-	lv_btn_set_action(tempUpdate, LV_BTN_ACTION_CLICK,  tempUpdateAction);
-	lv_obj_set_size(tempUpdate, 150, 50);
-	lv_obj_set_pos(tempUpdate, 0, 100);
-	lv_obj_t *tempLabel = lv_label_create(tempUpdate, NULL);
-	lv_label_set_text(tempLabel, "rick from r");
-	lv_obj_align(tempUpdate, NULL, LV_ALIGN_IN_TOP_RIGHT, 0, 0);
-
+	// drop down list
+	lv_obj_t * ddl1 = lv_ddlist_create(lv_scr_act(), NULL);
+	lv_ddlist_set_options(ddl1, "Apple\n"
+								"Banana\n"
+								"Orange\n"
+								"Melon\n"
+								"Grape\n"
+								"Raspberry");
+	lv_obj_align(ddl1, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 80);
+	lv_ddlist_set_sb_mode(ddl1, LV_SB_MODE_ON);
+	lv_obj_set_free_num(ddl1, 1);               /*Set a unique ID*/
+	lv_ddlist_set_action(ddl1, ddlist_action);
 
 	// red tab
 
@@ -128,13 +130,6 @@ void initialize()
 	lv_obj_set_size(skillsBtn, 450, 50);
 	lv_obj_set_pos(skillsBtn, 0, 100);
 	lv_obj_align(skillsBtn, NULL, LV_ALIGN_CENTER, 0, 0);
-
-	// telemetry update task
-	// pros::Task (tempUpdate, (lv_obj_t*)"tempTable", TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "tempUpdateTask");
-}
-
-void tempUpdate(lv_obj_t* tempTable) {
-	lv_table_set_cell_value(tempTable, 0, 0, "rick");
 }
 
 /**
@@ -276,7 +271,7 @@ void autonomous() {
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
 	// debug
-	autonSelection = 2;
+	autonSelection = -2;
 	std::cout << "auton  " << autonSelection << std::endl;
 
 	switch (autonSelection) {
@@ -286,17 +281,15 @@ void autonomous() {
 
 	case -1:
 		// red unprotec
-		break;
 
-	case -2:
-		// red protec
-		
 		// flip. out.
-		liftMotor.move_absolute(1500, 100);
-		pros::delay(1000);
+		liftMotor.move_absolute(1700, 100);
+		while (liftMotor.get_position() < 1700) { // wait until we initiate flipout
+			pros::delay(20);
+		}
 		liftMotor.move_absolute(-200, 100);
 		pros::delay(400);
-		// move forward and intake and hope you get the b i g s t a c k
+		// move forward and intake and get the 4 laid in a line
 		intakeMotor1.move_velocity(100);
 		intakeMotor2.move_velocity(100);
 		drive(2500, 2500, 40);
@@ -319,19 +312,53 @@ void autonomous() {
 		trayMotor.move_absolute(0, 100);
 		drive(-800, -800);
 		break;
-	
-	case 1:
-		// blue unprotec
-		break;
-	case 2:
-		// blue protec
+
+	case -2:
+		// red protec
 
 		// flip. out.
-		liftMotor.move_absolute(1500, 100);
-		pros::delay(1000);
+		liftMotor.move_absolute(1700, 100);
+		while (liftMotor.get_position() < 1700) { // wait until we initiate flipout
+			pros::delay(20);
+		}
 		liftMotor.move_absolute(-200, 100);
 		pros::delay(400);
 		// move forward and intake and hope you get the b i g s t a c k
+		intakeMotor1.move_velocity(100);
+		intakeMotor2.move_velocity(100);
+		drive(2200, 2200, 60);
+		liftMotor.move_voltage(0);
+		// turn for last cube
+		drive(-550, 550);
+		intakeMotor1.move_velocity(100);
+		intakeMotor2.move_velocity(100);
+		// move and intake last cube
+		drive(1400, 1400);
+		intakeMotor1.move_velocity(0);
+		intakeMotor2.move_velocity(0);
+		// turn for stack
+		drive(-140, 140);
+		drive(1000, 1000);
+		// stack
+		intakeMotor1.move_velocity(-15);
+		intakeMotor2.move_velocity(-15);
+		trayMotor.move_absolute(6200, 100);
+		pros::delay(1800);
+		trayMotor.move_absolute(0, 100);
+		drive(-800, -800);
+		break;
+	
+	case 1:
+		// blue unprotec
+
+		// flip. out.
+		liftMotor.move_absolute(1700, 100);
+		while (liftMotor.get_position() < 1700) { // wait until we initiate flipout
+			pros::delay(20);
+		}
+		liftMotor.move_absolute(-200, 100);
+		pros::delay(400);
+		// move forward and intake and get the 4 laid in a line
 		intakeMotor1.move_velocity(100);
 		intakeMotor2.move_velocity(100);
 		drive(2500, 2500, 40);
@@ -353,6 +380,10 @@ void autonomous() {
 		pros::delay(1800);
 		trayMotor.move_absolute(0, 100);
 		drive(-800, -800);
+		break;
+	case 2:
+		// blue protec
+
 		break;
 	
 	default:
