@@ -19,7 +19,7 @@ const int INTAKE_MTR1 = 11;
 const int INTAKE_MTR2 = 20;
 
 // sensors
-const int IMU = 6;
+const int IMU_PORT = 6;
 
 // auton
 extern int autonSelection;
@@ -38,6 +38,7 @@ extern pros::Motor intakeMotor2;
 
 // other declerations
 extern okapi::Controller masterController;
+extern pros::Imu imu;
 
 extern okapi::ControllerButton bumperLU;
 extern okapi::ControllerButton bumperLD;

@@ -130,6 +130,21 @@ void initialize()
 	lv_obj_set_size(skillsBtn, 450, 50);
 	lv_obj_set_pos(skillsBtn, 0, 100);
 	lv_obj_align(skillsBtn, NULL, LV_ALIGN_CENTER, 0, 0);
+
+	// debug
+	lv_obj_t *msgBox = lv_mbox_create(telemetryTab, NULL);
+	lv_mbox_set_text(msgBox, "rick from r");
+	lv_mbox_set_anim_time(msgBox, 100);
+	lv_mbox_start_auto_close(msgBox, 1000);
+
+	// wait for calibrate
+	imu.reset();
+	pros::delay(100);
+	while (imu.is_calibrating())
+	{
+		std::cout << pros::millis() << ": calibrating imu" << std::endl;
+		pros::delay(20);
+	}
 }
 
 /**
@@ -165,6 +180,8 @@ void competition_initialize() {}
 int voltageCap = 100; // voltageCap limits the change in velocity and must be global
 int targetLeft;
 int targetRight;
+int targetTurn;
+int targetTurnRelative;
 
 int motorTemps[10];
 
@@ -188,6 +205,7 @@ void driveP(int voltageMax) {
   int errorCurrent = 0;
   int errorLast = 0;
   int sameErrCycles = 0;
+  int same0ErrCycles = 0;
   pros::delay(20); // dunno
 
   while(autonomous){
@@ -229,14 +247,22 @@ void driveP(int voltageMax) {
 
 	// timeout utility
 	if (errorLast == errorCurrent) {
+		if (errorLast < 2 and errorCurrent < 2) {
+			same0ErrCycles +=1;
+		}
 		sameErrCycles += 1;
 	}
 	else {
 		sameErrCycles = 0;
+		same0ErrCycles = 0;
 	}
 
 	// exit paramaters
-	if ((errorCurrent < 2 and errorLast < 2) or sameErrCycles >= 25) { // allowing for smol error or exit if we stay the same err for .5 second
+	if (same0ErrCycles >= 30 or sameErrCycles >= 100) { // allowing for smol error or exit if we stay the same err for 1 second
+		chassisLeftFront.move_velocity(0); 
+		chassisLeftBack.move_velocity(0);
+		chassisRightFront.move_velocity(0);
+		chassisRightBack.move_velocity(0);
 		std::cout << "task complete with error " << errorCurrent << std::endl;
 		return;
 	}
@@ -260,6 +286,85 @@ void drive(int left, int right, int voltageMax=115){
   driveP(voltageMax);
 }
 
+void turnP(int voltageMax) {
+ 
+  // the touchables ;)))))))) touch me uwu :):):)
+  float kp = 2;
+  float acc = 1.6;
+
+  // the untouchables
+  int voltage = 0;
+  int errorCurrent = 0;
+  int errorLast = 0;
+  int sameErrCycles = 0;
+  int same0ErrCycles = 0;
+  int sign;
+  double error;
+  pros::delay(20); // dunno
+
+  while(autonomous){
+    error = targetTurn - imu.get_rotation();
+	errorCurrent = abs(error);
+	sign = targetTurnRelative / abs(targetTurnRelative); // -1 or 1
+
+	voltage = (error * kp); // intended voltage is error times constant
+	voltageCap = voltageCap + acc;  // slew rate
+    
+    if(voltageCap > voltageMax){
+      voltageCap = voltageMax; // voltageCap cannot exceed 115
+    }
+
+    if(abs(voltage) > voltageCap){ // limit the voltage
+      voltage = voltageCap * sign;
+    }
+
+	// set the motors to the intended speed
+    chassisLeftFront.move(voltage); 
+    chassisLeftBack.move(voltage);
+    chassisRightFront.move(voltage * -1);
+    chassisRightBack.move(voltage * -1);
+
+	// timeout utility
+	if (errorLast == errorCurrent) {
+		if (errorLast < 2 and errorCurrent < 2) {
+			same0ErrCycles +=1;
+		}
+		sameErrCycles += 1;
+	}
+	else {
+		sameErrCycles = 0;
+		same0ErrCycles = 0;
+	}
+
+	// exit paramaters
+	if (same0ErrCycles >= 300 or sameErrCycles >= 100) { // allowing for smol error or exit if we stay the same err for 1 second
+		chassisLeftFront.move_velocity(0); 
+		chassisLeftBack.move_velocity(0);
+		chassisRightFront.move_velocity(0);
+		chassisRightBack.move_velocity(0);
+		std::cout << "task complete with error " << errorCurrent << std::endl;
+		return;
+	}
+	
+	// debug
+	if (sameErrCycles == 0) {
+		std::cout << "error  " << errorCurrent << std::endl;
+		std::cout << "voltage " << voltage << std::endl;
+	}
+
+	// nothing goes after this
+	errorLast = errorCurrent;
+    pros::delay(10);
+  }
+}
+
+void turn(int target, int voltageMax=115){
+  targetTurn = target + imu.get_rotation();
+  targetTurnRelative = target;
+  voltageCap = 0; //reset velocity cap for slew rate
+  turnP(voltageMax);
+}
+
 void autonomous() {
 	// motor setup
 	chassisLeftFront.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
@@ -271,12 +376,16 @@ void autonomous() {
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
 	// debug
-	autonSelection = -2;
+	autonSelection = 0; // -2
 	std::cout << "auton  " << autonSelection << std::endl;
 
 	switch (autonSelection) {
 	case 0:
 		// skillsss doesnt exist.
+		turn(90);
+		turn(-45);
+		turn(45);
+		turn(-90);
 		break;
 
 	case -1:
@@ -308,7 +417,9 @@ void autonomous() {
 		intakeMotor1.move_velocity(-15);
 		intakeMotor2.move_velocity(-15);
 		trayMotor.move_absolute(6200, 100);
-		pros::delay(1800);
+		while (trayMotor.get_position() < 6100) {
+			pros::delay(20);
+		}
 		trayMotor.move_absolute(0, 100);
 		drive(-800, -800);
 		break;
@@ -327,25 +438,31 @@ void autonomous() {
 		intakeMotor1.move_velocity(100);
 		intakeMotor2.move_velocity(100);
 		drive(2200, 2200, 60);
-		liftMotor.move_voltage(0);
-		// turn for last cube
-		drive(-550, 550);
-		intakeMotor1.move_velocity(100);
-		intakeMotor2.move_velocity(100);
-		// move and intake last cube
-		drive(1400, 1400);
 		intakeMotor1.move_velocity(0);
 		intakeMotor2.move_velocity(0);
+		liftMotor.move_voltage(0);
+		// turn for last cube
+		drive(-550, 550, 80);
+		intakeMotor1.move_velocity(30);
+		intakeMotor2.move_velocity(30);
+		// move and intake last cube
+		drive(1400, 1400);
+		intakeMotor1.move_velocity(100);
+		intakeMotor2.move_velocity(100);
 		// turn for stack
 		drive(-140, 140);
-		drive(1000, 1000);
 		// stack
+		intakeMotor1.move_relative(-700, 100);
+		intakeMotor2.move_relative(-700, 100);
+		drive(1200, 1200, 70);
 		intakeMotor1.move_velocity(-15);
 		intakeMotor2.move_velocity(-15);
 		trayMotor.move_absolute(6200, 100);
-		pros::delay(1800);
+		while (trayMotor.get_position() < 6100) {
+			pros::delay(20);
+		}
 		trayMotor.move_absolute(0, 100);
-		drive(-800, -800);
+		drive(-1000, -1000);
 		break;
 	
 	case 1:
@@ -377,7 +494,9 @@ void autonomous() {
 		intakeMotor1.move_velocity(-15);
 		intakeMotor2.move_velocity(-15);
 		trayMotor.move_absolute(6200, 100);
-		pros::delay(1800);
+		while (trayMotor.get_position() < 6100) {
+			pros::delay(20);
+		}
 		trayMotor.move_absolute(0, 100);
 		drive(-800, -800);
 		break;
@@ -402,7 +521,12 @@ void traySlew(bool forward) {
 		std::cout << x << ": speed " << speed << std::endl;
 	}
 	else {
-		trayMotor.move_velocity(-100);
+		if (trayMotor.get_position() < 1000) {
+			trayMotor.move_velocity(-60);
+		}
+		else {
+			trayMotor.move_velocity(-100);
+		}
 	}
 }
 
@@ -424,11 +548,11 @@ void opcontrol() {
 	// motor setup
 	intakeMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 	intakeMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
 	// local vars
 	int chassisModifier = 127;
-	
+
 	// main loop
 	while (true) {
 		// basic lift control, with an intake reverse at the end of lift
@@ -507,7 +631,7 @@ void opcontrol() {
 		chassisRightBack.move(masterController.getAnalog(okapi::ControllerAnalog::rightY) * chassisModifier);
 
 		// debug
-		std::cout << pros::millis() << ": angle " << intakeMotor1.get_position() << std::endl;
+		std::cout << pros::millis() << ": angle " << imu.get_rotation() << std::endl;
 		pros::delay(20);
 	}
 }
