@@ -21,10 +21,8 @@ const int INTAKE_MTR2 = 20;
 // sensors
 const int IMU_PORT = 6;
 
-// auton
-extern int autonSelection;
-
 // globals
+extern int autonSelection;
 
 // motor declerations
 extern pros::Motor chassisLeftFront;
@@ -45,3 +43,4 @@ extern okapi::ControllerButton bumperLD;
 extern okapi::ControllerButton bumperRU;
 extern okapi::ControllerButton bumperRD;
 extern okapi::ControllerButton shift;
+extern okapi::ControllerButton liftReset;

@@ -247,7 +247,7 @@ void driveP(int voltageMax) {
 
 	// timeout utility
 	if (errorLast == errorCurrent) {
-		if (errorLast < 2 and errorCurrent < 2) {
+		if (errorCurrent < 2) {
 			same0ErrCycles +=1;
 		}
 		sameErrCycles += 1;
@@ -258,7 +258,7 @@ void driveP(int voltageMax) {
 	}
 
 	// exit paramaters
-	if (same0ErrCycles >= 30 or sameErrCycles >= 100) { // allowing for smol error or exit if we stay the same err for 1 second
+	if ((errorLast < 4 and errorCurrent < 4) or sameErrCycles >= 10) { // allowing for smol error or exit if we stay the same err for .2 second
 		chassisLeftFront.move_velocity(0); 
 		chassisLeftBack.move_velocity(0);
 		chassisRightFront.move_velocity(0);
@@ -289,15 +289,22 @@ void drive(int left, int right, int voltageMax=115){
 void turnP(int voltageMax) {
  
   // the touchables ;)))))))) touch me uwu :):):)
-  float kp = 2;
+  float kp = 1.6;
+  float ki = 0.7;
+  float kd = 0;
   float acc = 1.6;
 
   // the untouchables
   int voltage = 0;
-  int errorCurrent = 0;
-  int errorLast = 0;
+  float errorCurrent;
+  float errorLast;
+  int errorCurrentInt;
+  int errorLastInt;
   int sameErrCycles = 0;
   int same0ErrCycles = 0;
+  int p;
+  float i;
+  int d;
   int sign;
   double error;
   pros::delay(20); // dunno
@@ -305,12 +312,20 @@ void turnP(int voltageMax) {
   while(autonomous){
     error = targetTurn - imu.get_rotation();
 	errorCurrent = abs(error);
+	errorCurrentInt = errorCurrent;
 	sign = targetTurnRelative / abs(targetTurnRelative); // -1 or 1
 
-	voltage = (error * kp); // intended voltage is error times constant
+	p = (error * kp);
+	if (abs(error) < 10) // if we are in range for I to be desireable
+        i = ((i + error) * ki);
+      else
+        i = 0; // constant buffer
+	d = (error - errorLast) * kd;
+	
+	voltage = p + i + d; // intended voltage is error times constant
 	voltageCap = voltageCap + acc;  // slew rate
     
-    if(voltageCap > voltageMax){
+	if(voltageCap > voltageMax){
       voltageCap = voltageMax; // voltageCap cannot exceed 115
     }
 
@@ -325,7 +340,7 @@ void turnP(int voltageMax) {
     chassisRightBack.move(voltage * -1);
 
 	// timeout utility
-	if (errorLast == errorCurrent) {
+	if (errorLastInt == errorCurrentInt) {
 		if (errorLast < 2 and errorCurrent < 2) {
 			same0ErrCycles +=1;
 		}
@@ -337,7 +352,7 @@ void turnP(int voltageMax) {
 	}
 
 	// exit paramaters
-	if (same0ErrCycles >= 300 or sameErrCycles >= 100) { // allowing for smol error or exit if we stay the same err for 1 second
+	if (same0ErrCycles >= 5 or sameErrCycles >= 100) { // allowing for smol error or exit if we stay the same err for 1 second
 		chassisLeftFront.move_velocity(0); 
 		chassisLeftBack.move_velocity(0);
 		chassisRightFront.move_velocity(0);
@@ -354,6 +369,7 @@ void turnP(int voltageMax) {
 
 	// nothing goes after this
 	errorLast = errorCurrent;
+	errorLastInt = errorLast;
     pros::delay(10);
   }
 }
@@ -376,7 +392,7 @@ void autonomous() {
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
 	// debug
-	autonSelection = 0; // -2
+	autonSelection = 0;
 	std::cout << "auton  " << autonSelection << std::endl;
 
 	switch (autonSelection) {
@@ -399,20 +415,18 @@ void autonomous() {
 		liftMotor.move_absolute(-200, 100);
 		pros::delay(400);
 		// move forward and intake and get the 4 laid in a line
-		intakeMotor1.move_velocity(100);
-		intakeMotor2.move_velocity(100);
-		drive(2500, 2500, 40);
+		intakeMotor1.move_velocity(200);
+		intakeMotor2.move_velocity(200);
+		drive(2500, 2500, 80);
 		intakeMotor1.move_relative(300, 100);
 		intakeMotor2.move_relative(300, 100);
 		liftMotor.move_voltage(0);
 		// back
 		drive(-1300, -1300, 80);
 		// turn for stack
-		drive(600, -600, 60);
-		intakeMotor1.move_relative(-500, 100);
-		intakeMotor2.move_relative(-500, 100);
+		drive(600, -600, 80);
 		// drive to stack
-		drive(1400, 1400, 60);
+		drive(1400, 1400, 80);
 		// stack
 		intakeMotor1.move_velocity(-15);
 		intakeMotor2.move_velocity(-15);
@@ -435,8 +449,8 @@ void autonomous() {
 		liftMotor.move_absolute(-200, 100);
 		pros::delay(400);
 		// move forward and intake and hope you get the b i g s t a c k
-		intakeMotor1.move_velocity(100);
-		intakeMotor2.move_velocity(100);
+		intakeMotor1.move_velocity(200);
+		intakeMotor2.move_velocity(200);
 		drive(2200, 2200, 60);
 		intakeMotor1.move_velocity(0);
 		intakeMotor2.move_velocity(0);
@@ -447,8 +461,8 @@ void autonomous() {
 		intakeMotor2.move_velocity(30);
 		// move and intake last cube
 		drive(1400, 1400);
-		intakeMotor1.move_velocity(100);
-		intakeMotor2.move_velocity(100);
+		intakeMotor1.move_velocity(200);
+		intakeMotor2.move_velocity(200);
 		// turn for stack
 		drive(-140, 140);
 		// stack
@@ -465,6 +479,49 @@ void autonomous() {
 		drive(-1000, -1000);
 		break;
 	
+	case -3:
+		// red unprotec 8 cube
+
+		// flip. out.
+		liftMotor.move_absolute(1700, 100);
+		while (liftMotor.get_position() < 1700) { // wait until we initiate flipout
+			pros::delay(20);
+		}
+		liftMotor.move_absolute(-200, 100);
+		pros::delay(400);
+		// move forward and intake and get the first 3 laid in a line
+		intakeMotor1.move_velocity(200);
+		intakeMotor2.move_velocity(200);
+		drive(2300, 2300, 50);
+		intakeMotor1.move_velocity(0);
+		intakeMotor2.move_velocity(0);
+		liftMotor.move_voltage(0);
+		// turn and back for next 4
+		turn(-30);
+		drive(-2700, -2700, 80);
+		turn(30);
+		intakeMotor1.move_velocity(200);
+		intakeMotor2.move_velocity(200);
+		// nab next 4
+		drive(2200, 2200, 40);
+		// back and turn for stack
+		drive(-1300, 1300, 80);
+		turn(135);
+		intakeMotor1.move_relative(-500, 100);
+		intakeMotor2.move_relative(-500, 100);
+		// drive to stack
+		drive(1400, 1400, 60);
+		// stack
+		intakeMotor1.move_velocity(-15);
+		intakeMotor2.move_velocity(-15);
+		trayMotor.move_absolute(6200, 100);
+		while (trayMotor.get_position() < 6100) {
+			pros::delay(20);
+		}
+		trayMotor.move_absolute(0, 100);
+		drive(-800, -800);
+		break;
+	
 	case 1:
 		// blue unprotec
 
@@ -476,8 +533,8 @@ void autonomous() {
 		liftMotor.move_absolute(-200, 100);
 		pros::delay(400);
 		// move forward and intake and get the 4 laid in a line
-		intakeMotor1.move_velocity(100);
-		intakeMotor2.move_velocity(100);
+		intakeMotor1.move_velocity(200);
+		intakeMotor2.move_velocity(200);
 		drive(2500, 2500, 40);
 		intakeMotor1.move_relative(300, 100);
 		intakeMotor2.move_relative(300, 100);
@@ -546,9 +603,10 @@ void traySlew(bool forward) {
 
 void opcontrol() {
 	// motor setup
-	intakeMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-	intakeMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+	intakeMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+	intakeMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+	trayMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
 	// local vars
 	int chassisModifier = 127;
@@ -556,21 +614,19 @@ void opcontrol() {
 	// main loop
 	while (true) {
 		// basic lift control, with an intake reverse at the end of lift
-		if (bumperRD.isPressed()) {
-			liftMotor.move_velocity(-100);
-		} else if (bumperRU.isPressed()) {
-			liftMotor.move_velocity(100);
-		} else {
-			liftMotor.move_voltage(0);
-		}
+		if (bumperRD.isPressed()) liftMotor.move_velocity(-100);
+		else if (bumperRU.isPressed()) liftMotor.move_velocity(100);
+		else if (liftReset.isPressed()) liftMotor.move_absolute(0, 100);
+		else liftMotor.move_voltage(0);
 
 		// basic intake control (maybe leave intake spinning during opcontrol at lower speed?)
 		if (bumperLU.isPressed()) {
-			intakeMotor1.move_velocity(100);
-			intakeMotor2.move_velocity(100);
-		} else if (bumperLD.isPressed()) {
-			intakeMotor1.move_velocity(-100);
-			intakeMotor2.move_velocity(-100);
+			intakeMotor1.move_velocity(200);
+			intakeMotor2.move_velocity(200);
+		}
+		else if (bumperLD.isPressed()) {
+			intakeMotor1.move_velocity(-200);
+			intakeMotor2.move_velocity(-200);
 		}
 		else if (not shift.isPressed() and not (bumperLU.isPressed() or bumperLD.isPressed())) {
 			intakeMotor1.move_velocity(0);
