@@ -8,14 +8,20 @@ using namespace okapi;
 auto chassis = ChassisControllerBuilder()
 		.withMotors({-LEFT_MTR1, -LEFT_MTR2}, {RIGHT_MTR1, RIGHT_MTR2})
 		.withGains(
-			{0.001, 0, 0.000}, // Distance controller gains
-			{0.001, 0, 0.000}, // Turn controller gains
-			{0.001, 0, 0.000}  // Angle controller gains (helps drive straight)
+			{0.002, 0.01, 0.000}, // Distance controller gains
+			{0.000, 0.0, 0.000}, // Turn controller gains
+			{0.002, 0.01, 0.000} // Angle controller gains (helps drive straight)
 		)
 		// green gearset, 4 1/8 inch wheel diameter, 8 1/8 inch wheelbase
-		.withDimensions(AbstractMotor::gearset::green, {{4.125_in, 8.125_in}, imev5GreenTPR})
+		.withDimensions(AbstractMotor::gearset::green, {{4_in, 8.125_in}, imev5GreenTPR})
 		.withOdometry() // use the same scales as the chassis (above)
 		.buildOdometry(); // build an odometry chassis
+
+auto profileController =
+  AsyncMotionProfileControllerBuilder()
+    .withLimits({1.0, 1.5, 5.0}) //double maxVel double maxAccel double maxJerk 
+    .withOutput(chassis)
+    .buildMotionProfileController();
 
 // base global defenitions
 int autonSelection = 42; // hitchhikers anyone?
@@ -193,6 +199,103 @@ void disabled() {
  */
 void competition_initialize() {}
 
+int voltageCap = 115; // voltageCap limits the change in velocity and must be global
+int targetTurn;
+int targetTurnRelative;
+
+void turnP(int voltageMax) {
+ 
+  // the touchables ;)))))))) touch me uwu :):):)
+  float kp = 1.6;
+  float ki = 0.7;
+  float kd = 0;
+  float acc = 1.6;
+
+  // the untouchables
+  int voltage = 0;
+  float voltageNormalized;
+  float errorCurrent;
+  float errorLast;
+  int errorCurrentInt;
+  int errorLastInt;
+  int sameErrCycles = 0;
+  int same0ErrCycles = 0;
+  int p;
+  float i;
+  int d;
+  int sign;
+  double error;
+  pros::delay(20); // dunno
+
+  while(autonomous){
+    error = targetTurn - imu.get_rotation();
+	errorCurrent = abs(error);
+	errorCurrentInt = errorCurrent;
+	sign = targetTurnRelative / abs(targetTurnRelative); // -1 or 1
+
+	p = (error * kp);
+	if (abs(error) < 10) // if we are in range for I to be desireable
+        i = ((i + error) * ki);
+      else
+        i = 0;
+	d = (error - errorLast) * kd;
+	
+	voltage = p + i + d;
+	voltageCap = voltageCap + acc;  // slew rate
+    
+	if(voltageCap > voltageMax){
+      voltageCap = voltageMax; // voltageCap cannot exceed 115
+    }
+
+    if(abs(voltage) > voltageCap){ // limit the voltage
+      voltage = voltageCap * sign;
+    }
+
+	// normalize to conform to okapi ivoltage
+	voltageNormalized = voltage / 127; 
+
+	// set the motors to the intended speed
+    chassis->getModel()->tank(voltageNormalized, -voltageNormalized);
+
+	// timeout utility
+	if (errorLastInt == errorCurrentInt) {
+		if (errorLast < 2 and errorCurrent < 2) {
+			same0ErrCycles +=1;
+		}
+		sameErrCycles += 1;
+	}
+	else {
+		sameErrCycles = 0;
+		same0ErrCycles = 0;
+	}
+
+	// exit paramaters
+	if (same0ErrCycles >= 5 or sameErrCycles >= 100) { // allowing for smol error or exit if we stay the same err for 1 second
+		chassis->stop();
+		std::cout << "task complete with error " << errorCurrent << std::endl;
+		return;
+	}
+	
+	// debug
+	if (sameErrCycles == 0) {
+		std::cout << "error  " << errorCurrent << std::endl;
+		std::cout << "voltage " << voltage << std::endl;
+	}
+
+	// nothing goes after this
+	errorLast = errorCurrent;
+	errorLastInt = errorLast;
+    pros::delay(10);
+  }
+}
+
+void turn(int target, int voltageMax=115){
+  targetTurn = target + imu.get_rotation();
+  targetTurnRelative = target;
+  voltageCap = 0; //reset velocity cap for slew rate
+  turnP(voltageMax);
+}
+
 /**
  * Runs the user autonomous code. This function will be started in its own task
  * with the default pchassiosisioriority and stack size whenever the robot is enabled via
@@ -207,8 +310,7 @@ void competition_initialize() {}
 
 
 void autonomous() {
-
-	// SettledUtil(std::unique_ptr<AbstractTimer> iatTargetTimer,
+	// SettledUtil(TimeUtil::getSettledUtilSupplier(),
     //           double iatTargetError = 50,
     //           double iatTargetDerivative = 5,
     //           QTime iatTargetTime = 250_ms);
@@ -225,12 +327,14 @@ void autonomous() {
 	switch (autonSelection) {
 	case 0:
 		// skillsss doesnt exist.
-		chassis->setState({0_in, 0_in, 0_deg});
-		chassis->driveToPoint({1_ft, 0_ft});
-		// turn approximately 45 degrees to end up at 90 degrees
-		chassis->driveToPoint({0_ft, 0_ft});
-		// turn approximately -90 degrees to face {5_ft, 0_ft} which is to the north of the robot
-		// chassis->turnToPoint({5_ft, 0_ft});
+		turn(90);
+		// profileController->generatePath({
+		// 	{0_ft, 0_ft, 0_deg},  // Profile starting position, this will normally be (0, 0, 0)
+		// 	{2_ft, -1_ft, 0_deg}},
+		// 	"A" // Profile name
+		// );
+		// profileController->setTarget("A");
+		// profileController->waitUntilSettled();
 		break;
 
 	case -1:
