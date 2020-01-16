@@ -64,9 +64,19 @@ static lv_res_t skillsBtnAction(lv_obj_t *btn)
 static lv_res_t ddlist_action(lv_obj_t * ddlist)
 {
 
-    char sel_str[32];
-    lv_ddlist_get_selected_str(ddlist, sel_str);
-    printf("new option: %s \n", sel_str);
+    char selectedMotor[32];
+	char motorTemp[2];
+    lv_ddlist_get_selected_str(ddlist, selectedMotor);
+
+	if (selectedMotor == "Intake") {
+		char motorTemp = intakeMotor1.get_temperature();
+	}
+
+	lv_obj_t *msgBox = lv_mbox_create(ddlist, NULL);
+	lv_mbox_set_text(msgBox, selectedMotor); // TODO: fix it retard
+	lv_obj_align(msgBox, ddlist, LV_ALIGN_CENTER, 0, 0);
+	lv_mbox_set_anim_time(msgBox, 300);
+	lv_mbox_start_auto_close(msgBox, 2000);
 
     return LV_RES_OK; /*Return OK if the drop down list is not deleted*/
 }
@@ -92,13 +102,12 @@ void initialize()
 
 	// drop down list
 	lv_obj_t * ddl1 = lv_ddlist_create(lv_scr_act(), NULL);
-	lv_ddlist_set_options(ddl1, "Apple\n"
-								"Banana\n"
-								"Orange\n"
-								"Melon\n"
-								"Grape\n"
-								"Raspberry");
-	lv_obj_align(ddl1, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 80);
+	lv_ddlist_set_options(ddl1, "Intake\n"
+								"Chassis\n"
+								"Lift\n"
+								"Tray\n"
+								"Rick");
+	lv_obj_align(ddl1, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_ddlist_set_sb_mode(ddl1, LV_SB_MODE_ON);
 	lv_obj_set_free_num(ddl1, 1);               /*Set a unique ID*/
 	lv_ddlist_set_action(ddl1, ddlist_action);
@@ -134,8 +143,9 @@ void initialize()
 	// debug
 	lv_obj_t *msgBox = lv_mbox_create(telemetryTab, NULL);
 	lv_mbox_set_text(msgBox, "rick from r");
-	lv_mbox_set_anim_time(msgBox, 100);
-	lv_mbox_start_auto_close(msgBox, 1000);
+	lv_obj_align(msgBox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_mbox_set_anim_time(msgBox, 300);
+	lv_mbox_start_auto_close(msgBox, 2000);
 
 	// wait for calibrate
 	imu.reset();
@@ -182,8 +192,6 @@ int targetLeft;
 int targetRight;
 int targetTurn;
 int targetTurnRelative;
-
-int motorTemps[10];
 
 void driveP(int voltageMax) {
   chassisLeftBack.tare_position(); // reset base encoders
@@ -319,10 +327,10 @@ void turnP(int voltageMax) {
 	if (abs(error) < 10) // if we are in range for I to be desireable
         i = ((i + error) * ki);
       else
-        i = 0; // constant buffer
+        i = 0;
 	d = (error - errorLast) * kd;
 	
-	voltage = p + i + d; // intended voltage is error times constant
+	voltage = p + i + d;
 	voltageCap = voltageCap + acc;  // slew rate
     
 	if(voltageCap > voltageMax){
@@ -392,24 +400,23 @@ void autonomous() {
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
 	// debug
-	autonSelection = 0;
+	autonSelection = -3;
 	std::cout << "auton  " << autonSelection << std::endl;
 
 	switch (autonSelection) {
 	case 0:
 		// skillsss doesnt exist.
-		turn(90);
-		turn(-45);
-		turn(45);
-		turn(-90);
+		intakeMotor1.move_velocity(200);
+		intakeMotor2.move_velocity(200);
+		drive(2500, 2500, 80);
 		break;
 
 	case -1:
 		// red unprotec
 
 		// flip. out.
-		liftMotor.move_absolute(1700, 100);
-		while (liftMotor.get_position() < 1700) { // wait until we initiate flipout
+		liftMotor.move_absolute(1800, 100);
+		while (liftMotor.get_position() < 1800) { // wait until we initiate flipout
 			pros::delay(20);
 		}
 		liftMotor.move_absolute(-200, 100);
@@ -442,8 +449,8 @@ void autonomous() {
 		// red protec
 
 		// flip. out.
-		liftMotor.move_absolute(1700, 100);
-		while (liftMotor.get_position() < 1700) { // wait until we initiate flipout
+		liftMotor.move_absolute(1800, 100);
+		while (liftMotor.get_position() < 1800) { // wait until we initiate flipout
 			pros::delay(20);
 		}
 		liftMotor.move_absolute(-200, 100);
@@ -483,8 +490,8 @@ void autonomous() {
 		// red unprotec 8 cube
 
 		// flip. out.
-		liftMotor.move_absolute(1700, 100);
-		while (liftMotor.get_position() < 1700) { // wait until we initiate flipout
+		liftMotor.move_absolute(1800, 100);
+		while (liftMotor.get_position() < 1800) { // wait until we initiate flipout
 			pros::delay(20);
 		}
 		liftMotor.move_absolute(-200, 100);
@@ -492,25 +499,25 @@ void autonomous() {
 		// move forward and intake and get the first 3 laid in a line
 		intakeMotor1.move_velocity(200);
 		intakeMotor2.move_velocity(200);
-		drive(2300, 2300, 50);
+		drive(2300, 2300, 80);
 		intakeMotor1.move_velocity(0);
 		intakeMotor2.move_velocity(0);
 		liftMotor.move_voltage(0);
 		// turn and back for next 4
-		turn(-30);
-		drive(-2700, -2700, 80);
-		turn(30);
+		turn(-40);
+		drive(-2550, -2550, 100);
+		turn(40);
 		intakeMotor1.move_velocity(200);
 		intakeMotor2.move_velocity(200);
 		// nab next 4
-		drive(2200, 2200, 40);
+		drive(2200, 2200, 80);
 		// back and turn for stack
-		drive(-1300, 1300, 80);
+		drive(-1200, -1200, 100);
 		turn(135);
-		intakeMotor1.move_relative(-500, 100);
-		intakeMotor2.move_relative(-500, 100);
+		intakeMotor1.move_relative(-300, 100);
+		intakeMotor2.move_relative(-300, 100);
 		// drive to stack
-		drive(1400, 1400, 60);
+		drive(1400, 1400, 80);
 		// stack
 		intakeMotor1.move_velocity(-15);
 		intakeMotor2.move_velocity(-15);
@@ -523,39 +530,6 @@ void autonomous() {
 		break;
 	
 	case 1:
-		// blue unprotec
-
-		// flip. out.
-		liftMotor.move_absolute(1700, 100);
-		while (liftMotor.get_position() < 1700) { // wait until we initiate flipout
-			pros::delay(20);
-		}
-		liftMotor.move_absolute(-200, 100);
-		pros::delay(400);
-		// move forward and intake and get the 4 laid in a line
-		intakeMotor1.move_velocity(200);
-		intakeMotor2.move_velocity(200);
-		drive(2500, 2500, 40);
-		intakeMotor1.move_relative(300, 100);
-		intakeMotor2.move_relative(300, 100);
-		liftMotor.move_voltage(0);
-		// back
-		drive(-1300, -1300, 80);
-		// turn for stack
-		drive(-600, 600, 60);
-		intakeMotor1.move_relative(-500, 100);
-		intakeMotor2.move_relative(-500, 100);
-		// drive to stack
-		drive(1400, 1400, 60);
-		// stack
-		intakeMotor1.move_velocity(-15);
-		intakeMotor2.move_velocity(-15);
-		trayMotor.move_absolute(6200, 100);
-		while (trayMotor.get_position() < 6100) {
-			pros::delay(20);
-		}
-		trayMotor.move_absolute(0, 100);
-		drive(-800, -800);
 		break;
 	case 2:
 		// blue protec
@@ -629,8 +603,8 @@ void opcontrol() {
 			intakeMotor2.move_velocity(-200);
 		}
 		else if (not shift.isPressed() and not (bumperLU.isPressed() or bumperLD.isPressed())) {
-			intakeMotor1.move_velocity(0);
-			intakeMotor2.move_velocity(0);
+			intakeMotor1.move(0);
+			intakeMotor2.move(0);
 		}
 
 		// dont brake intake if tray is up
