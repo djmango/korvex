@@ -39,4 +39,4 @@ extern okapi::ControllerButton bumperLD;
 extern okapi::ControllerButton bumperRU;
 extern okapi::ControllerButton bumperRD;
 extern okapi::ControllerButton shift;
-extern okapi::ControllerButton liftReset;
+extern okapi::ControllerButton liftShift;

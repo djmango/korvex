@@ -156,7 +156,6 @@ void initialize()
 	lv_obj_t *label = lv_label_create(skillsBtn, NULL);
 	lv_label_set_text(label, "Skills");
 	lv_btn_set_action(skillsBtn, LV_BTN_ACTION_CLICK, skillsBtnAction);
-	// lv_btn_set_state(skillsBtn, LV_BTN_STATE_TGL_REL);
 	lv_obj_set_size(skillsBtn, 450, 50);
 	lv_obj_set_pos(skillsBtn, 0, 100);
 	lv_obj_align(skillsBtn, NULL, LV_ALIGN_CENTER, 0, 0);
@@ -274,7 +273,7 @@ void driveP(int voltageMax) {
 	}
 
 	// exit paramaters
-	if ((errorLast < 4 and errorCurrent < 4) or sameErrCycles >= 50) { // allowing for smol error or exit if we stay the same err for .2 second
+	if ((errorLast < 4 and errorCurrent < 4) or sameErrCycles >= 10) { // allowing for smol error or exit if we stay the same err for .2 second
 		chassis->stop();
 		std::cout << "task complete with error " << errorCurrent << " in " << (pros::millis() - startTime) << "ms" << std::endl;
 		return;
@@ -362,7 +361,7 @@ void turnP(int voltageMax) {
 	}
 
 	// exit paramaters
-	if (same0ErrCycles >= 5 or sameErrCycles >= 100) { // allowing for smol error or exit if we stay the same err for 1 second
+	if (same0ErrCycles >= 5 or sameErrCycles >= 30) { // allowing for smol error or exit if we stay the same err for .3 second
 		chassis->stop();
 		std::cout << "task complete with error " << errorCurrent << " in " << (pros::millis() - startTime) << "ms" << std::endl;
 		return;
@@ -413,27 +412,30 @@ void autonomous() {
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
 	// debug
-	autonSelection = -1;
+	autonSelection = 1; // help.
 	std::cout << "auton  " << autonSelection << std::endl;
 
 	switch (autonSelection) {
 	case 0:
 		// skills doesnt exist.
-		drive(2300, 2300, 80);
-		drive(-2300, -2300, 80);
-		origAngle = imu.get_rotation();
-		profileController->generatePath({
-			{0_ft, 0_ft, 0_deg},  // Profile starting position, this will normally be (0, 0, 0)
-			{1_ft, -0.5_ft, 0_deg}},
-			"A" // Profile name
-		);
-		// to turn to a true angle after a s curve, use the initial imu reading as a base
-		profileController->setTarget("A");
-		profileController->waitUntilSettled();
-		profileController->setTarget("A", true, true);
-		profileController->waitUntilSettled();
-		turn((-90 - (origAngle + imu.get_rotation()))); // should turn 90 relative to position before s curve
-		// chassisState = chassis->getState().str();
+		drive(-2500, -2500);
+		drive(2500, 2500);
+
+		// drive(2300, 2300, 80);
+		// drive(-2300, -2300, 80);
+		// origAngle = imu.get_rotation();
+		// profileController->generatePath({
+		// 	{0_ft, 0_ft, 0_deg},  // Profile starting position, this will normally be (0, 0, 0)
+		// 	{1_ft, -0.5_ft, 0_deg}},
+		// 	"A" // Profile name
+		// );
+		// // to turn to a true angle after a s curve, use the initial imu reading as a base
+		// profileController->setTarget("A");
+		// profileController->waitUntilSettled();
+		// profileController->setTarget("A", true, true);
+		// profileController->waitUntilSettled();
+		// turn((-90 - (origAngle + imu.get_rotation()))); // should turn 90 relative to position before s curve
+		// // chassisState = chassis->getState().str();
 		break;
 
 	case -1:
@@ -463,6 +465,7 @@ void autonomous() {
 		// stack
 		intakeMotor1.move_velocity(-20);
 		intakeMotor2.move_velocity(-20);
+		liftMotor.move_absolute(-200, 100);
 		trayMotor.move_absolute(6200, 100);
 		while (trayMotor.get_position() < 6150) {
 			pros::delay(20);
@@ -530,6 +533,38 @@ void autonomous() {
 	
 	case 1:
 		// blue unprotec
+		// flip. out.
+		liftMotor.move_velocity(100);
+		while (liftMotor.get_position() < 2000) { // wait until we initiate flipout
+			pros::delay(20);
+		}
+		liftMotor.move_absolute(-200, 100);
+		pros::delay(600);
+		// move forward and intake and get the 4 laid in a line
+		intakeMotor1.move_velocity(200);
+		intakeMotor2.move_velocity(200);
+		drive(2500, 2500, 80);
+		intakeMotor1.move_velocity(0);
+		intakeMotor2.move_velocity(0);
+		liftMotor.move_voltage(0);
+		// back
+		drive(-1300, -1300, 80);
+		// turn for stack
+		drive(-600, 600, 80);
+		// drive to stack
+		intakeMotor1.move_relative(-700, 150);
+		intakeMotor2.move_relative(-700, 150);
+		drive(1350, 1350, 80);
+		// stack
+		intakeMotor1.move_velocity(-20);
+		intakeMotor2.move_velocity(-20);
+		liftMotor.move_absolute(-200, 100);
+		trayMotor.move_absolute(6200, 100);
+		while (trayMotor.get_position() < 6150) {
+			pros::delay(20);
+		}
+		trayMotor.move_absolute(0, 100);
+		drive(-800, -800, 50);
 		break;
 	case 2:
 		// blue protec
@@ -546,7 +581,7 @@ void traySlew(bool forward) {
 		// motion profile/slew: https://mycurvefit.com/share/0198b8c4-edce-4161-8198-b30318545d7c
 		// 6200 is max (in theory, possible to go higher)
 		double x = trayMotor.get_position();
-		double speed = std::round(100 + 0.001102151*x - 0.000001478495* std::pow(x, 2));
+		double speed = std::round(101.375 - 0.003474228*x - 0.000001611398*std::pow(x, 2));
 		trayMotor.move_velocity(speed);
 
 		std::cout << x << ": speed " << speed << std::endl;
@@ -583,15 +618,16 @@ void opcontrol() {
 	intakeMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
 	intakeMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-	trayMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+	trayMotor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
 
 	// main loop
 	while (true) {
 		// basic lift control, with an intake reverse at the end of lift
-		if (bumperRD.isPressed()) liftMotor.move_velocity(-100);
-		else if (bumperRU.isPressed()) liftMotor.move_velocity(100);
-		else if (liftReset.isPressed()) liftMotor.move_absolute(0, 100);
-		else liftMotor.move_voltage(0);
+		if (bumperRD.isPressed() and liftShift.isPressed()) liftMotor.move_velocity(-40);
+		else if (bumperRD.isPressed() and not liftShift.isPressed()) liftMotor.move_velocity(-100);
+		else if (bumperRU.isPressed() and liftShift.isPressed()) liftMotor.move_velocity(40);
+		else if (bumperRU.isPressed() and not liftShift.isPressed()) liftMotor.move_velocity(100);
+		else liftMotor.move_voltage(-2000);
 
 		// basic intake control (maybe leave intake spinning during opcontrol at lower speed?)
 		if (bumperLU.isPressed()) {
@@ -607,16 +643,6 @@ void opcontrol() {
 			intakeMotor2.move(0);
 		}
 
-		// dont brake intake if tray is up
-		if (trayMotor.get_position() > 2000) {
-			intakeMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
-			intakeMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
-		}
-		else {
-			intakeMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-			intakeMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-		}
-
 		// tray control using shift key
 		if (shift.isPressed()) { //shift key
 			if (bumperLU.isPressed()) { // tray forward
@@ -627,8 +653,8 @@ void opcontrol() {
 		
 			} else if (bumperLD.isPressed()) { // tray backward
 				traySlew(false);
-				intakeMotor1.move_velocity(35);
-				intakeMotor2.move_velocity(35);
+				intakeMotor1.move_velocity(25);
+				intakeMotor2.move_velocity(25);
 			}
 			else if (not (bumperLU.isPressed() or bumperLD.isPressed())) {
 				intakeMotor1.move_velocity(0);
@@ -639,18 +665,23 @@ void opcontrol() {
 			trayMotor.move_voltage(0);
 		}
 
-		// chassis mod
-		if (shift.changedToPressed()) { // brake and slow when we stacking
-			chassis->setMaxVelocity(140);
+		// tray stacking mods
+		if (trayMotor.get_position() > 2000) { // brake and slow when we stacking
+			chassis->setMaxVelocity(150);
+			liftMotor.move_absolute(-150, 100);
+			intakeMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+			intakeMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
 			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
 		}
-		else if (shift.changedToReleased()){ // return to normal after we stacked
+		else { // return to normal after we stacked
 			chassis->setMaxVelocity(200);
+			intakeMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+			intakeMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 		}
 		
 		chassis->getModel()->tank(masterController.getAnalog(ControllerAnalog::leftY),
-                            masterController.getAnalog(ControllerAnalog::rightY));
+								masterController.getAnalog(ControllerAnalog::rightY));
 
 		// debug
 		// std::cout << pros::millis() << ": angle " << liftMotor.get_position() << std::endl;

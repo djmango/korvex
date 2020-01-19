@@ -16,7 +16,7 @@ ControllerButton bumperRD(ControllerDigital::R2);
 ControllerButton bumperLU(ControllerDigital::L1);
 ControllerButton bumperLD(ControllerDigital::L2);
 ControllerButton shift(ControllerDigital::Y);
-ControllerButton liftReset(ControllerDigital::X);
+ControllerButton liftShift(ControllerDigital::X);
 
 // other
 pros::Imu imu(IMU_PORT);
