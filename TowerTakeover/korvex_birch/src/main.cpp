@@ -6,7 +6,7 @@ using namespace okapi;
 // chassis
 
 auto chassis = ChassisControllerBuilder()
-		.withMotors({-LEFT_MTR2, -LEFT_MTR1}, {RIGHT_MTR2, RIGHT_MTR1})
+		.withMotors({LEFT_MTR2, LEFT_MTR1}, {-RIGHT_MTR2, -RIGHT_MTR1})
 		.withGains(
 			{0.002, 0.01, 0.000}, // Distance controller gains
 			{0.000, 0.0, 0.000}, // Turn controller gains
@@ -281,7 +281,10 @@ void driveP(int voltageMax) {
 	
 	// debug
 	std::cout << "error  " << errorCurrent << std::endl;
+	std::cout << "errorLeft  " << errorLeft << std::endl;
+	std::cout << "errorRight  " << errorRight << std::endl;
 	std::cout << "voltageLeft  " << voltageLeft << std::endl;
+	std::cout << "voltageRight  " << voltageRight << std::endl;
 
 	// nothing goes after this
 	errorLast = errorCurrent;
@@ -299,9 +302,9 @@ void drive(int left, int right, int voltageMax=115){
 void turnP(int voltageMax) {
  
   // the touchables ;)))))))) touch me uwu :):):)
-  float kp = 1.7;
-  float ki = 0.8;
-  float kd = 0;
+  float kp = 1.6;
+  float ki = 0.7;
+  float kd = 0.1;
   float acc = 20;
 
   // the untouchables
@@ -369,7 +372,7 @@ void turnP(int voltageMax) {
 	
 	// debug
 	// std::cout << "error " << errorCurrent << std::endl;
-	std::cout << "voltage " << voltage << std::endl;
+	// std::cout << "voltage " << voltage << std::endl;
 
 	// for csv output, graphing the function
 	// std::cout << pros::millis() << "," << error << "," << voltage << std::endl;
@@ -386,6 +389,37 @@ void turn(int target, int voltageMax=115){
   targetTurnRelative = target;
   voltageCap = 0; //reset velocity cap for slew rate
   turnP(voltageMax);
+}
+
+void flipout() { // a blocking flipout function
+	trayMotor.move_absolute(1000, 100);
+	liftMotor.move_velocity(100);
+	while (liftMotor.get_position() < 2000) { // wait until we initiate flipout
+		pros::delay(20);
+	}
+	liftMotor.move_absolute(-200, 100);
+	pros::delay(600);
+	trayMotor.move_absolute(0, 100);
+}
+
+void traySlew(bool forward) {
+	if (forward) {
+		// motion profile/slew: https://mycurvefit.com/share/0198b8c4-edce-4161-8198-b30318545d7c
+		// 6200 is max (in theory, possible to go higher)
+		double x = trayMotor.get_position();
+		double speed = std::round(101.375 - 0.003474228*x - 0.000001611398*std::pow(x, 2));
+		trayMotor.move_velocity(speed);
+
+		std::cout << x << ": speed " << speed << std::endl;
+	}
+	else {
+		if (trayMotor.get_position() < 1000) {
+			trayMotor.move_velocity(-60);
+		}
+		else {
+			trayMotor.move_velocity(-100);
+		}
+	}
 }
 
 /**
@@ -412,41 +446,33 @@ void autonomous() {
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
 	// debug
-	autonSelection = 1; // help.
+	autonSelection = 0; // help.
 	std::cout << "auton  " << autonSelection << std::endl;
 
 	switch (autonSelection) {
 	case 0:
 		// skills doesnt exist.
-		drive(-2500, -2500);
-		drive(2500, 2500);
+		drive(1000, 1000, 80);
 
-		// drive(2300, 2300, 80);
-		// drive(-2300, -2300, 80);
-		// origAngle = imu.get_rotation();
-		// profileController->generatePath({
-		// 	{0_ft, 0_ft, 0_deg},  // Profile starting position, this will normally be (0, 0, 0)
-		// 	{1_ft, -0.5_ft, 0_deg}},
-		// 	"A" // Profile name
-		// );
-		// // to turn to a true angle after a s curve, use the initial imu reading as a base
-		// profileController->setTarget("A");
-		// profileController->waitUntilSettled();
-		// profileController->setTarget("A", true, true);
-		// profileController->waitUntilSettled();
-		// turn((-90 - (origAngle + imu.get_rotation()))); // should turn 90 relative to position before s curve
-		// // chassisState = chassis->getState().str();
+		origAngle = imu.get_rotation();
+		profileController->generatePath({
+			{0_ft, 0_ft, 0_deg},  // Profile starting position, this will normally be (0, 0, 0)
+			{2_ft, 1_ft, 0_deg}},
+			"A" // Profile name
+		);
+		// to turn to a true angle after a s curve, use the initial imu reading as a base
+		profileController->setTarget("A");
+		profileController->waitUntilSettled();
+		profileController->setTarget("A", true, true);
+		profileController->waitUntilSettled();
+		turn((-90 - (origAngle + imu.get_rotation()))); // should turn 90 relative to position before s curve
+		// chassisState = chassis->getState().str();
 		break;
 
 	case -1:
 		// red unprotec
 		// flip. out.
-		liftMotor.move_velocity(100);
-		while (liftMotor.get_position() < 2000) { // wait until we initiate flipout
-			pros::delay(20);
-		}
-		liftMotor.move_absolute(-200, 100);
-		pros::delay(600);
+		flipout();
 		// move forward and intake and get the 4 laid in a line
 		intakeMotor1.move_velocity(200);
 		intakeMotor2.move_velocity(200);
@@ -479,16 +505,10 @@ void autonomous() {
 		break;
 	
 	case -3:
-		// red unprotec 8 cube
+		// red unprotec 8 cube (rick)
 		// flip. out.
 		origAngle = imu.get_rotation();
-		liftMotor.move_velocity(100);
-
-		while (liftMotor.get_position() < 2000) { // wait until we initiate flipout
-			pros::delay(20);
-		}
-		liftMotor.move_absolute(-200, 100);
-		pros::delay(600);
+		flipout();
 		// move forward and intake and get the 4 laid in a line
 		intakeMotor1.move_velocity(200);
 		intakeMotor2.move_velocity(200);
@@ -514,7 +534,7 @@ void autonomous() {
 		intakeMotor1.move_relative(100, 100);
 		intakeMotor2.move_relative(100, 100);
 		turn(-(origAngle + imu.get_rotation()));
-		// point turn to face unprotec zone
+		// point turn to face unprotec zone and drive to it
 		turn(120);
 		drive(2700, 2700);
 		// stack
@@ -527,7 +547,7 @@ void autonomous() {
 		intakeMotor1.move_velocity(15);
 		intakeMotor2.move_velocity(15);
 		trayMotor.move_absolute(0, 100);
-		// drive(-800, -800);
+		drive(-800, -800);
 		break;
 		break;
 	
@@ -573,26 +593,6 @@ void autonomous() {
 	
 	default:
 		break;
-	}
-}
-
-void traySlew(bool forward) {
-	if (forward) {
-		// motion profile/slew: https://mycurvefit.com/share/0198b8c4-edce-4161-8198-b30318545d7c
-		// 6200 is max (in theory, possible to go higher)
-		double x = trayMotor.get_position();
-		double speed = std::round(101.375 - 0.003474228*x - 0.000001611398*std::pow(x, 2));
-		trayMotor.move_velocity(speed);
-
-		std::cout << x << ": speed " << speed << std::endl;
-	}
-	else {
-		if (trayMotor.get_position() < 1000) {
-			trayMotor.move_velocity(-60);
-		}
-		else {
-			trayMotor.move_velocity(-100);
-		}
 	}
 }
 
@@ -685,7 +685,8 @@ void opcontrol() {
 
 		// debug
 		// std::cout << pros::millis() << ": angle " << liftMotor.get_position() << std::endl;
-		// std::cout << pros::millis() << ": drive " << chassis->getModel()->getSensorVals()[0] << std::endl;
+		// std::cout << pros::millis() << ": left " << chassis->getModel()->getSensorVals()[0] << std::endl;
+		// std::cout << pros::millis() << ": right " << chassis->getModel()->getSensorVals()[1] << std::endl;
 		pros::delay(20);
 	}
 }
