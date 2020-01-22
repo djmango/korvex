@@ -24,6 +24,7 @@ auto profileController = AsyncMotionProfileControllerBuilder()
 
 // base global defenitions
 int autonSelection = 42; // hitchhikers anyone?
+const int LIFT_STACKING_HEIGHT = 700; // the motor ticks above which we are stacking
 
 // create a button descriptor string array
 static const char *btnmMap[] = {"Left", "Right", "Rick", ""};
@@ -82,7 +83,7 @@ static lv_res_t ddlist_action(lv_obj_t * ddlist)
     lv_ddlist_get_selected_str(ddlist, selectedMotor);
 
 	if (selectedMotor == "Intake") {
-		char motorTemp = intakeMotor1.get_temperature();
+		char motorTemp = intakeMotors.getTemperature();
 	}
 
 	lv_obj_t *msgBox = lv_mbox_create(ddlist, NULL);
@@ -408,7 +409,10 @@ void traySlew(bool forward) {
 		// 6200 is max (in theory, possible to go higher)
 		double x = trayMotor.get_position();
 		double speed = std::round(101.375 - 0.003474228*x - 0.000001611398*std::pow(x, 2));
-		trayMotor.move_velocity(speed);
+		// trayMotor.move_velocity(speed);
+
+		if (x > 4000) trayMotor.move_velocity(40);
+		else trayMotor.move_velocity(100);
 
 		std::cout << x << ": speed " << speed << std::endl;
 	}
@@ -441,8 +445,7 @@ void autonomous() {
 	auto chassisState = chassis->getState().str();
 	
 	// motor setup
-	intakeMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-	intakeMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+	intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
 	// debug
@@ -474,23 +477,19 @@ void autonomous() {
 		// flip. out.
 		flipout();
 		// move forward and intake and get the 4 laid in a line
-		intakeMotor1.move_velocity(200);
-		intakeMotor2.move_velocity(200);
+		intakeMotors.moveVelocity(200);
 		drive(2500, 2500, 80);
-		intakeMotor1.move_velocity(0);
-		intakeMotor2.move_velocity(0);
+		intakeMotors.moveVelocity(0);
 		liftMotor.move_voltage(0);
 		// back
 		drive(-1300, -1300, 80);
 		// turn for stack
 		drive(600, -600, 80);
 		// drive to stack
-		intakeMotor1.move_relative(-700, 150);
-		intakeMotor2.move_relative(-700, 150);
+		intakeMotors.moveRelative(-700, 150);
 		drive(1350, 1350, 80);
 		// stack
-		intakeMotor1.move_velocity(-20);
-		intakeMotor2.move_velocity(-20);
+		intakeMotors.moveVelocity(-20);
 		liftMotor.move_absolute(-200, 100);
 		trayMotor.move_absolute(6200, 100);
 		while (trayMotor.get_position() < 6150) {
@@ -510,11 +509,9 @@ void autonomous() {
 		origAngle = imu.get_rotation();
 		flipout();
 		// move forward and intake and get the 4 laid in a line
-		intakeMotor1.move_velocity(200);
-		intakeMotor2.move_velocity(200);
+		intakeMotors.moveVelocity(200);
 		drive(2300, 2300, 80);
-		intakeMotor1.move_velocity(0);
-		intakeMotor2.move_velocity(0);
+		intakeMotors.moveVelocity(0);
 		liftMotor.move_voltage(0);
 		// s curve to back and line up with next 4
 		chassis->setMaxVelocity(150);
@@ -528,24 +525,20 @@ void autonomous() {
 		// turn for next 4
 		turn(-(origAngle + imu.get_rotation()));
 		// intake next 4
-		intakeMotor1.move_velocity(200);
-		intakeMotor2.move_velocity(200);
+		intakeMotors.moveVelocity(200);
 		drive(2000, 2000, 80);
-		intakeMotor1.move_relative(100, 100);
-		intakeMotor2.move_relative(100, 100);
+		intakeMotors.moveRelative(100, 100);
 		turn(-(origAngle + imu.get_rotation()));
 		// point turn to face unprotec zone and drive to it
 		turn(120);
 		drive(2700, 2700);
 		// stack
-		intakeMotor1.move_velocity(-15);
-		intakeMotor2.move_velocity(-15);
+		intakeMotors.moveVelocity(-15);
 		trayMotor.move_absolute(6200, 100);
 		while (trayMotor.get_position() < 6100) {
 			pros::delay(20);
 		}
-		intakeMotor1.move_velocity(15);
-		intakeMotor2.move_velocity(15);
+		intakeMotors.moveVelocity(15);
 		trayMotor.move_absolute(0, 100);
 		drive(-800, -800);
 		break;
@@ -561,23 +554,19 @@ void autonomous() {
 		liftMotor.move_absolute(-200, 100);
 		pros::delay(600);
 		// move forward and intake and get the 4 laid in a line
-		intakeMotor1.move_velocity(200);
-		intakeMotor2.move_velocity(200);
+		intakeMotors.moveVelocity(200);
 		drive(2500, 2500, 80);
-		intakeMotor1.move_velocity(0);
-		intakeMotor2.move_velocity(0);
+		intakeMotors.moveVelocity(0);
 		liftMotor.move_voltage(0);
 		// back
 		drive(-1300, -1300, 80);
 		// turn for stack
 		drive(-600, 600, 80);
 		// drive to stack
-		intakeMotor1.move_relative(-700, 150);
-		intakeMotor2.move_relative(-700, 150);
+		intakeMotors.moveRelative(-700, 150);
 		drive(1350, 1350, 80);
 		// stack
-		intakeMotor1.move_velocity(-20);
-		intakeMotor2.move_velocity(-20);
+		intakeMotors.moveVelocity(-20);
 		liftMotor.move_absolute(-200, 100);
 		trayMotor.move_absolute(6200, 100);
 		while (trayMotor.get_position() < 6150) {
@@ -615,70 +604,57 @@ void opcontrol() {
 	chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 
 	// motor setup
-	intakeMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
-	intakeMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
-	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 	trayMotor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
 
 	// main loop
 	while (true) {
-		// basic lift control, with an intake reverse at the end of lift
-		if (bumperRD.isPressed() and liftShift.isPressed()) liftMotor.move_velocity(-40);
-		else if (bumperRD.isPressed() and not liftShift.isPressed()) liftMotor.move_velocity(-100);
-		else if (bumperRU.isPressed() and liftShift.isPressed()) liftMotor.move_velocity(40);
-		else if (bumperRU.isPressed() and not liftShift.isPressed()) liftMotor.move_velocity(100);
-		else liftMotor.move_voltage(-2000);
+		// basic lift control
+		if (liftUp.isPressed()) liftMotor.move_velocity(100);
+		else if (liftDown.isPressed()) liftMotor.move_velocity(-100);
+		else if (liftMotor.get_position() < LIFT_STACKING_HEIGHT) liftMotor.move_voltage(-3000);
+		else liftMotor.move(0);
 
-		// basic intake control (maybe leave intake spinning during opcontrol at lower speed?)
-		if (bumperLU.isPressed()) {
-			intakeMotor1.move_velocity(200);
-			intakeMotor2.move_velocity(200);
-		}
-		else if (bumperLD.isPressed()) {
-			intakeMotor1.move_velocity(-200);
-			intakeMotor2.move_velocity(-200);
-		}
-		else if (not shift.isPressed() and not (bumperLU.isPressed() or bumperLD.isPressed())) {
-			intakeMotor1.move(0);
-			intakeMotor2.move(0);
-		}
+		// advanced intake control, with goal-oriented assists
+		if (intakeIn.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT and not intakeShift.isPressed()) intakeMotors.moveVelocity(100); // if we are dumping into tower, redue intake velocity as not to shoot the cube halfway accross the field
+		else if (intakeIn.isPressed()) intakeMotors.moveVelocity(200);
+		else if (intakeOut.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT and not intakeShift.isPressed()) intakeMotors.moveVelocity(-100);
+		else if (intakeOut.isPressed()) intakeMotors.moveVelocity(-200);
+		else if (not shift.isPressed()) intakeMotors.moveVoltage(0);
 
 		// tray control using shift key
 		if (shift.isPressed()) { //shift key
-			if (bumperLU.isPressed()) { // tray forward
+			if (intakeIn.isPressed()) { // tray forward
 				traySlew(true);
 				// if tray and intake are interacting, move the intake
-				intakeMotor1.move_velocity(-15);
-				intakeMotor2.move_velocity(-15);
+				intakeMotors.moveVelocity(-15);
 		
-			} else if (bumperLD.isPressed()) { // tray backward
+			} else if (intakeOut.isPressed()) { // tray backward
 				traySlew(false);
-				intakeMotor1.move_velocity(25);
-				intakeMotor2.move_velocity(25);
+				intakeMotors.moveVelocity(25);
 			}
-			else if (not (bumperLU.isPressed() or bumperLD.isPressed())) {
-				intakeMotor1.move_velocity(0);
-				intakeMotor2.move_velocity(0);
-			}
+			else if (not (intakeIn.isPressed() or intakeOut.isPressed())) intakeMotors.moveVoltage(0);
 		}
-		else {
-			trayMotor.move_voltage(0);
-		}
+		// adjust tray based on lift position
+		else if (liftMotor.get_position() > LIFT_STACKING_HEIGHT) trayMotor.move_absolute(700, 100);
+		else if (liftMotor.get_position() <= LIFT_STACKING_HEIGHT and trayMotor.get_position() < 2000) trayMotor.move_absolute(0, 100);
+		else trayMotor.move(0);
 
 		// tray stacking mods
-		if (trayMotor.get_position() > 2000) { // brake and slow when we stacking
+		if (trayMotor.get_position() > 2000) { // brake and slow and intake coast when we stacking
 			chassis->setMaxVelocity(150);
 			liftMotor.move_absolute(-150, 100);
-			intakeMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
-			intakeMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+			intakeMotors.setBrakeMode(AbstractMotor::brakeMode::coast);
 			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
 		}
 		else { // return to normal after we stacked
 			chassis->setMaxVelocity(200);
-			intakeMotor1.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-			intakeMotor2.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+			intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
 			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 		}
+
+		// lift brake mod
+		if (liftMotor.get_position() > LIFT_STACKING_HEIGHT	) liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+		else liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
 		
 		chassis->getModel()->tank(masterController.getAnalog(ControllerAnalog::leftY),
 								masterController.getAnalog(ControllerAnalog::rightY));
@@ -686,7 +662,7 @@ void opcontrol() {
 		// debug
 		// std::cout << pros::millis() << ": angle " << liftMotor.get_position() << std::endl;
 		// std::cout << pros::millis() << ": left " << chassis->getModel()->getSensorVals()[0] << std::endl;
-		// std::cout << pros::millis() << ": right " << chassis->getModel()->getSensorVals()[1] << std::endl;
+		std::cout << pros::millis() << ": lift " << liftMotor.get_position() << std::endl;
 		pros::delay(20);
 	}
 }

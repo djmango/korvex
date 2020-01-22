@@ -27,16 +27,15 @@ extern int autonSelection;
 // motor declerations
 extern pros::Motor liftMotor;
 extern pros::Motor trayMotor;
-extern pros::Motor intakeMotor1;
-extern pros::Motor intakeMotor2;
+extern okapi::MotorGroup intakeMotors;
 
 // other declerations
 extern okapi::Controller masterController;
 extern pros::Imu imu;
 
-extern okapi::ControllerButton bumperLU;
-extern okapi::ControllerButton bumperLD;
-extern okapi::ControllerButton bumperRU;
-extern okapi::ControllerButton bumperRD;
+extern okapi::ControllerButton intakeIn;
+extern okapi::ControllerButton intakeOut;
+extern okapi::ControllerButton intakeShift;
 extern okapi::ControllerButton shift;
-extern okapi::ControllerButton liftShift;
+extern okapi::ControllerButton liftUp;
+extern okapi::ControllerButton liftDown;

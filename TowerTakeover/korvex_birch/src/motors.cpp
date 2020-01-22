@@ -6,17 +6,17 @@ using namespace okapi;
 
 pros::Motor liftMotor(LIFT_MTR, pros::E_MOTOR_GEARSET_36, false);
 pros::Motor trayMotor(TRAY_MTR, pros::E_MOTOR_GEARSET_36, false);
-pros::Motor intakeMotor1(INTAKE_MTR1, pros::E_MOTOR_GEARSET_18, true);
-pros::Motor intakeMotor2(INTAKE_MTR2, pros::E_MOTOR_GEARSET_18, false);
+okapi::MotorGroup intakeMotors({-INTAKE_MTR1, INTAKE_MTR2});
+
 
 // controller
 Controller masterController;
-ControllerButton bumperRU(ControllerDigital::R1);
-ControllerButton bumperRD(ControllerDigital::R2);
-ControllerButton bumperLU(ControllerDigital::L1);
-ControllerButton bumperLD(ControllerDigital::L2);
+ControllerButton liftUp(ControllerDigital::R1);
+ControllerButton liftDown(ControllerDigital::R2);
+ControllerButton intakeIn(ControllerDigital::L1);
+ControllerButton intakeOut(ControllerDigital::L2);
+ControllerButton intakeShift(ControllerDigital::X);
 ControllerButton shift(ControllerDigital::Y);
-ControllerButton liftShift(ControllerDigital::X);
 
 // other
 pros::Imu imu(IMU_PORT);
