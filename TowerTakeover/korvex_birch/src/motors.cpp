@@ -15,7 +15,7 @@ ControllerButton liftUp(ControllerDigital::R1);
 ControllerButton liftDown(ControllerDigital::R2);
 ControllerButton intakeIn(ControllerDigital::L1);
 ControllerButton intakeOut(ControllerDigital::L2);
-ControllerButton intakeShift(ControllerDigital::X);
+ControllerButton intakeShift(ControllerDigital::right);
 ControllerButton shift(ControllerDigital::Y);
 
 // other

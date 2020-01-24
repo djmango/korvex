@@ -4,7 +4,6 @@
 using namespace okapi;
 
 // chassis
-
 auto chassis = ChassisControllerBuilder()
 		.withMotors({LEFT_MTR2, LEFT_MTR1}, {-RIGHT_MTR2, -RIGHT_MTR1})
 		.withGains(
@@ -22,6 +21,7 @@ auto profileController = AsyncMotionProfileControllerBuilder()
     .withOutput(chassis)
     .buildMotionProfileController();
 
+
 // base global defenitions
 int autonSelection = 42; // hitchhikers anyone?
 const int LIFT_STACKING_HEIGHT = 700; // the motor ticks above which we are stacking
@@ -29,176 +29,7 @@ const int LIFT_STACKING_HEIGHT = 700; // the motor ticks above which we are stac
 // create a button descriptor string array
 static const char *btnmMap[] = {"Left", "Right", "Rick", ""};
 
-static lv_res_t redBtnmAction(lv_obj_t *btnm, const char *txt)
-{
-	printf("red button: %s released\n", txt);
-
-	if (txt == "Unprotec")
-	{
-		autonSelection = -1; // or whatever red left is
-	}
-	if (txt == "Protec")
-	{
-		autonSelection = -2;
-	}
-	if (txt == "Rick")
-	{
-		autonSelection = -3;
-	}
-
-	return LV_RES_OK; // return OK because the button matrix is not deleted
-}
-
-static lv_res_t blueBtnmAction(lv_obj_t *btnm, const char *txt)
-{
-	printf("blue button: %s released\n", txt);
-
-	if (txt == "Unprotec")
-	{
-		autonSelection = 1;
-	}
-	if (txt == "Protec")
-	{
-		autonSelection = 2;
-	}
-	if (txt == "Rick")
-	{
-		autonSelection = 3;
-	}
-
-	return LV_RES_OK;
-}
-
-static lv_res_t skillsBtnAction(lv_obj_t *btn)
-{
-	autonSelection = 0;
-	return LV_RES_OK;
-}
-
-static lv_res_t ddlist_action(lv_obj_t * ddlist)
-{
-
-    char selectedMotor[32];
-	char motorTemp[2];
-    lv_ddlist_get_selected_str(ddlist, selectedMotor);
-
-	if (selectedMotor == "Intake") {
-		char motorTemp = intakeMotors.getTemperature();
-	}
-
-	lv_obj_t *msgBox = lv_mbox_create(ddlist, NULL);
-	lv_mbox_set_text(msgBox, selectedMotor);
-	lv_obj_align(msgBox, ddlist, LV_ALIGN_CENTER, 0, 0);
-	lv_mbox_set_anim_time(msgBox, 300);
-	lv_mbox_start_auto_close(msgBox, 2000);
-
-    return LV_RES_OK; /*Return OK if the drop down list is not deleted*/
-}
-
-/**
- * Runs initialization code. This occurs as soon as the program is started.
- *
- * All other competition modes are blocked by initialize; it is recommended
- * to keep execution time for this mode under a few seconds.
- */
-
-void initialize()
-{
-
-	// lvgl theme
-
-	// lv_theme_t *th = lv_theme_alien_init(280, NULL); //Set a HUE value and keep font default
-	lv_theme_t *th = lv_theme_night_init(210, NULL); //Set a HUE value and a Font for the Night Theme
-	lv_theme_set_current(th);
-
-	// create a tab view object
-	lv_obj_t *tabview = lv_tabview_create(lv_scr_act(), NULL);
-
-	// add 4 tabs (the tabs are page (lv_page) and can be scrolled
-	lv_obj_t *telemetryTab = lv_tabview_add_tab(tabview, "Telemetry");
-	lv_obj_t *redTab = lv_tabview_add_tab(tabview, "Red");
-	lv_obj_t *blueTab = lv_tabview_add_tab(tabview, "Blue");
-	lv_obj_t *skillsTab = lv_tabview_add_tab(tabview, "Skills");
-
-	// telemetry tab
-
-	// drop down list
-	lv_obj_t * ddl1 = lv_ddlist_create(lv_scr_act(), NULL);
-	lv_ddlist_set_options(ddl1, "Intake\n"
-								"Chassis\n"
-								"Lift\n"
-								"Tray\n"
-								"Rick");
-	lv_obj_align(ddl1, NULL, LV_ALIGN_CENTER, -170, 0);
-	lv_ddlist_set_sb_mode(ddl1, LV_SB_MODE_ON);
-	lv_obj_set_free_num(ddl1, 1);               /*Set a unique ID*/
-	lv_ddlist_set_action(ddl1, ddlist_action);
-
-	// red tab
-
-	// button matrix
-	lv_obj_t *redBtnm = lv_btnm_create(redTab, NULL);
-	lv_btnm_set_map(redBtnm, btnmMap);
-	lv_btnm_set_action(redBtnm, redBtnmAction);
-	lv_obj_set_size(redBtnm, 450, 50);
-	lv_obj_set_pos(redBtnm, 0, 100);
-	lv_obj_align(redBtnm, NULL, LV_ALIGN_CENTER, 0, 0);
-
-	// blue tab
-	lv_obj_t *blueBtnm = lv_btnm_create(blueTab, NULL);
-	lv_btnm_set_map(blueBtnm, btnmMap);
-	lv_btnm_set_action(blueBtnm, blueBtnmAction);
-	lv_obj_set_size(blueBtnm, 450, 50);
-	lv_obj_set_pos(blueBtnm, 0, 100);
-	lv_obj_align(blueBtnm, NULL, LV_ALIGN_CENTER, 0, 0);
-
-	// skills tab
-	lv_obj_t *skillsBtn = lv_btn_create(skillsTab, NULL);
-	lv_obj_t *label = lv_label_create(skillsBtn, NULL);
-	lv_label_set_text(label, "Skills");
-	lv_btn_set_action(skillsBtn, LV_BTN_ACTION_CLICK, skillsBtnAction);
-	lv_obj_set_size(skillsBtn, 450, 50);
-	lv_obj_set_pos(skillsBtn, 0, 100);
-	lv_obj_align(skillsBtn, NULL, LV_ALIGN_CENTER, 0, 0);
-
-	// debug
-	lv_obj_t *msgBox = lv_mbox_create(telemetryTab, NULL);
-	lv_mbox_set_text(msgBox, "rick from r");
-	lv_obj_align(msgBox, NULL, LV_ALIGN_CENTER, 0, 20);
-	lv_mbox_set_anim_time(msgBox, 300);
-	lv_mbox_start_auto_close(msgBox, 2000);
-
-	// wait for calibrate
-	imu.reset();
-	pros::delay(100);
-	std::cout << pros::millis() << ": calibrating imu..." << std::endl;
-	while (imu.is_calibrating())
-	{
-		pros::delay(10);
-	}
-	std::cout << pros::millis() << ": finished calibrating!" << std::endl;
-}
-
-/**
- * Runs while the robot is in the disabled state of Field Management System or
- * the VEX Competition Switch, following either autonomous or opcontrol. When
- * the robot is enabled, this task will exit.
- */
-void disabled() {
-	chassis->stop();
-}
-
-/**
- * Runs after initialize(), and before autonomous when connected to the Field
- * Management System or the VEX Competition Switch. This is intended for
- * competition-specific initialization routines, such as an autonomous selector
- * on the LCD.
- *
- * This task will exit when the robot is enabled and autonomous or opcontrol
- * starts.
- */
-void competition_initialize() {}
-
+// motion control system globals
 int voltageCap; // voltageCap limits the change in velocity and must be global
 int targetLeft;
 int targetRight;
@@ -212,7 +43,7 @@ void driveP(int voltageMax) {
  
   // the touchables ;)))))))) touch me uwu :):):)
   float kp = 0.15;
-  float acc = 3.5;
+  float acc = 5;
   float kpTurn = 0.7;
   float accTurn = 4;
 
@@ -281,11 +112,11 @@ void driveP(int voltageMax) {
 	}
 	
 	// debug
-	std::cout << "error  " << errorCurrent << std::endl;
-	std::cout << "errorLeft  " << errorLeft << std::endl;
-	std::cout << "errorRight  " << errorRight << std::endl;
-	std::cout << "voltageLeft  " << voltageLeft << std::endl;
-	std::cout << "voltageRight  " << voltageRight << std::endl;
+	// std::cout << "error  " << errorCurrent << std::endl;
+	// std::cout << "errorLeft  " << errorLeft << std::endl;
+	// std::cout << "errorRight  " << errorRight << std::endl;
+	// std::cout << "voltageLeft  " << voltageLeft << std::endl;
+	// std::cout << "voltageRight  " << voltageRight << std::endl;
 
 	// nothing goes after this
 	errorLast = errorCurrent;
@@ -399,32 +230,188 @@ void flipout() { // a blocking flipout function
 		pros::delay(20);
 	}
 	liftMotor.move_absolute(-200, 100);
-	pros::delay(600);
+	while (liftMotor.get_position() > 400) { // wait until we initiate flipout
+		pros::delay(20);
+	}
+	intakeMotors.moveVelocity(200);
 	trayMotor.move_absolute(0, 100);
 }
 
 void traySlew(bool forward) {
 	if (forward) {
-		// motion profile/slew: https://mycurvefit.com/share/0198b8c4-edce-4161-8198-b30318545d7c
-		// 6200 is max (in theory, possible to go higher)
-		double x = trayMotor.get_position();
-		double speed = std::round(101.375 - 0.003474228*x - 0.000001611398*std::pow(x, 2));
-		// trayMotor.move_velocity(speed);
-
-		if (x > 4000) trayMotor.move_velocity(40);
+		if (trayMotor.get_position() > 4000) trayMotor.move_velocity(40);
 		else trayMotor.move_velocity(100);
-
-		std::cout << x << ": speed " << speed << std::endl;
 	}
 	else {
-		if (trayMotor.get_position() < 1000) {
-			trayMotor.move_velocity(-60);
-		}
-		else {
-			trayMotor.move_velocity(-100);
-		}
+		if (trayMotor.get_position() < 1000) trayMotor.move_velocity(-60);
+		else trayMotor.move_velocity(-100);
 	}
 }
+
+void generatePaths() { // all paths stored here
+	// 8 cube s curve, made for red side (reverse for blue)
+	profileController->generatePath({
+				{0_ft, 0_ft, 0_deg},
+				{2.2_ft, 3.5_ft, 0_deg}},
+				"redRickSCurve" 
+			);
+	
+	profileController->generatePath({
+				{0_ft, 0_ft, 0_deg},
+				{4.2_ft, 0_ft, 0_deg}},
+				"balls" 
+			);
+}
+
+static lv_res_t autonBtnmAction(lv_obj_t *btnm, const char *txt)
+{
+	if (lv_obj_get_free_num(btnm) == 100) {
+		if (txt == "Unprotec") autonSelection = -1;
+		else if (txt == "Protec") autonSelection = -2;
+		else if (txt == "Rick") autonSelection = -3;	
+	}
+	else if (lv_obj_get_free_num(btnm) == 101) {
+		if (txt == "Unprotec") autonSelection = 1;
+		else if (txt == "Protec") autonSelection = 2;
+		else if (txt == "Rick") autonSelection = 3;
+	}
+
+	return LV_RES_OK; // return OK because the button matrix is not deleted
+}
+
+static lv_res_t skillsBtnAction(lv_obj_t *btn)
+{
+	autonSelection = 0;
+	return LV_RES_OK;
+}
+
+static lv_res_t ddlist_action(lv_obj_t * ddlist)
+{
+
+    char selectedMotor[32];
+	char motorTemp[2];
+    lv_ddlist_get_selected_str(ddlist, selectedMotor);
+
+	if (selectedMotor == "Intake") {
+		char motorTemp = intakeMotors.getTemperature();
+	}
+
+	lv_obj_t *msgBox = lv_mbox_create(ddlist, NULL);
+	lv_mbox_set_text(msgBox, selectedMotor);
+	lv_obj_align(msgBox, ddlist, LV_ALIGN_CENTER, 0, 0);
+	lv_mbox_set_anim_time(msgBox, 100);
+	lv_mbox_start_auto_close(msgBox, 5000);
+
+    return LV_RES_OK; /*Return OK if the drop down list is not deleted*/
+}
+
+/**
+ * Runs initialization code. This occurs as soon as the program is started.
+ *
+ * All other competition modes are blocked by initialize; it is recommended
+ * to keep execution time for this mode under a few seconds.
+ */
+
+void initialize()
+{
+	// save some time
+	imu.reset();
+
+	// lvgl theme
+
+	lv_theme_t *th = lv_theme_alien_init(360, NULL); //Set a HUE value and keep font default RED
+	lv_theme_set_current(th);
+
+	// create a tab view object
+	lv_obj_t *tabview = lv_tabview_create(lv_scr_act(), NULL);
+
+	// add 4 tabs (the tabs are page (lv_page) and can be scrolled
+	lv_obj_t *redTab = lv_tabview_add_tab(tabview, "Red");
+	lv_obj_t *blueTab = lv_tabview_add_tab(tabview, "Blue");
+	lv_obj_t *skillsTab = lv_tabview_add_tab(tabview, "Skills");
+	lv_obj_t *telemetryTab = lv_tabview_add_tab(tabview, "Telemetry");
+
+	// telemetry tab
+
+	// drop down list
+	lv_obj_t * ddl1 = lv_ddlist_create(telemetryTab, NULL);
+	lv_ddlist_set_options(ddl1, "Intake\n"
+								"Chassis\n"
+								"Lift\n"
+								"Tray\n"
+								"Rick");
+	lv_obj_align(ddl1, NULL, LV_ALIGN_CENTER, -170, 0);
+	lv_ddlist_set_sb_mode(ddl1, LV_SB_MODE_ON);
+	lv_ddlist_set_action(ddl1, ddlist_action);
+
+	// red tab
+	lv_obj_t *redBtnm = lv_btnm_create(redTab, NULL);
+	lv_btnm_set_map(redBtnm, btnmMap);
+	lv_btnm_set_action(redBtnm, autonBtnmAction);
+	lv_obj_set_size(redBtnm, 450, 50);
+	lv_btnm_set_toggle(redBtnm, true, 3);
+	lv_obj_set_pos(redBtnm, 0, 100);
+	lv_obj_align(redBtnm, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_free_num(redBtnm, 100);
+
+	// blue tab
+	lv_obj_t *blueBtnm = lv_btnm_create(blueTab, NULL);
+	lv_btnm_set_map(blueBtnm, btnmMap);
+	lv_btnm_set_action(blueBtnm, autonBtnmAction);
+	lv_obj_set_size(blueBtnm, 450, 50);
+	lv_btnm_set_toggle(blueBtnm, true, 3);
+	lv_obj_set_pos(blueBtnm, 0, 100);
+	lv_obj_align(blueBtnm, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_free_num(blueBtnm, 101);
+
+	// skills tab
+	lv_obj_t *skillsBtn = lv_btn_create(skillsTab, NULL);
+	lv_obj_t *label = lv_label_create(skillsBtn, NULL);
+	lv_label_set_text(label, "Skills");
+	lv_btn_set_action(skillsBtn, LV_BTN_ACTION_CLICK, skillsBtnAction);
+	lv_obj_set_size(skillsBtn, 450, 50);
+	lv_btnm_set_toggle(skillsBtn, true, 3);
+	lv_obj_set_pos(skillsBtn, 0, 100);
+	lv_obj_align(skillsBtn, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_free_num(skillsBtn, 102);
+
+	// debug
+	lv_obj_t *msgBox = lv_mbox_create(telemetryTab, NULL);
+	lv_mbox_set_text(msgBox, "rick from r");
+	lv_obj_align(msgBox, NULL, LV_ALIGN_CENTER, 0, 20);
+	lv_mbox_set_anim_time(msgBox, 300);
+	lv_mbox_start_auto_close(msgBox, 2000);
+
+	// wait for calibrate
+	pros::delay(100);
+	generatePaths();
+	std::cout << pros::millis() << ": calibrating imu..." << std::endl;
+	while (imu.is_calibrating())
+	{
+		pros::delay(10);
+	}
+	std::cout << pros::millis() << ": finished calibrating!" << std::endl;
+}
+
+/**
+ * Runs while the robot is in the disabled state of Field Management System or
+ * the VEX Competition Switch, following either autonomous or opcontrol. When
+ * the robot is enabled, this task will exit.
+ */
+void disabled() {
+	chassis->stop();
+}
+
+/**
+ * Runs after initialize(), and before autonomous when connected to the Field
+ * Management System or the VEX Competition Switch. This is intended for
+ * competition-specific initialization routines, such as an autonomous selector
+ * on the LCD.
+ *
+ * This task will exit when the robot is enabled and autonomous or opcontrol
+ * starts.
+ */
+void competition_initialize() {}
 
 /**
  * Runs the user autonomous code. This function will be started in its own task
@@ -448,27 +435,31 @@ void autonomous() {
 	intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
-	// debug
-	autonSelection = 0; // help.
+	if (autonSelection == 42) autonSelection = -3; // use debug if we havent selected any auton
 	std::cout << "auton  " << autonSelection << std::endl;
 
 	switch (autonSelection) {
 	case 0:
 		// skills doesnt exist.
-		drive(1000, 1000, 80);
+		profileController->setTarget("balls", false);
+		profileController->waitUntilSettled();
+		profileController->setTarget("balls", true);
+		profileController->waitUntilSettled();
+		drive(1000, 1000);
+		drive(-1000, -1000);
 
-		origAngle = imu.get_rotation();
-		profileController->generatePath({
-			{0_ft, 0_ft, 0_deg},  // Profile starting position, this will normally be (0, 0, 0)
-			{2_ft, 1_ft, 0_deg}},
-			"A" // Profile name
-		);
-		// to turn to a true angle after a s curve, use the initial imu reading as a base
-		profileController->setTarget("A");
-		profileController->waitUntilSettled();
-		profileController->setTarget("A", true, true);
-		profileController->waitUntilSettled();
-		turn((-90 - (origAngle + imu.get_rotation()))); // should turn 90 relative to position before s curve
+		// origAngle = imu.get_rotation();
+		// profileController->generatePath({
+		// 	{0_ft, 0_ft, 0_deg},  // Profile starting position, this will normally be (0, 0, 0)
+		// 	{2_ft, 1_ft, 0_deg}},
+		// 	"A" // Profile name
+		// );
+		// // to turn to a true angle after a s curve, use the initial imu reading as a base
+		// profileController->setTarget("A");
+		// profileController->waitUntilSettled();
+		// profileController->setTarget("A", true, true);
+		// profileController->waitUntilSettled();
+		// turn((-90 - (origAngle + imu.get_rotation()))); // should turn 90 relative to position before s curve
 		// chassisState = chassis->getState().str();
 		break;
 
@@ -508,19 +499,19 @@ void autonomous() {
 		// flip. out.
 		origAngle = imu.get_rotation();
 		flipout();
+		turn(-(origAngle + imu.get_rotation()));
 		// move forward and intake and get the 4 laid in a line
 		intakeMotors.moveVelocity(200);
-		drive(2300, 2300, 80);
+		// drive(2400, 2400, 80);
+		profileController->setTarget("balls", false);
+		profileController->waitUntilSettled();
 		intakeMotors.moveVelocity(0);
 		liftMotor.move_voltage(0);
 		// s curve to back and line up with next 4
 		chassis->setMaxVelocity(150);
-		profileController->generatePath({
-			{0_ft, 0_ft, 0_deg},
-			{2.5_ft, 3.1_ft, 0_deg}},
-			"redRick2"
-		);
-		profileController->setTarget("redRick2", true);
+		turn(-(origAngle + imu.get_rotation()));
+		
+		profileController->setTarget("redRickSCurve", true);
 		profileController->waitUntilSettled();
 		// turn for next 4
 		turn(-(origAngle + imu.get_rotation()));
@@ -528,9 +519,9 @@ void autonomous() {
 		intakeMotors.moveVelocity(200);
 		drive(2000, 2000, 80);
 		intakeMotors.moveRelative(100, 100);
-		turn(-(origAngle + imu.get_rotation()));
+		turn(-(origAngle + imu.get_rotation())); // set heading to as close to 0 degrees as possible
 		// point turn to face unprotec zone and drive to it
-		turn(120);
+		turn(125);
 		drive(2700, 2700);
 		// stack
 		intakeMotors.moveVelocity(-15);
@@ -541,7 +532,7 @@ void autonomous() {
 		intakeMotors.moveVelocity(15);
 		trayMotor.move_absolute(0, 100);
 		drive(-800, -800);
-		break;
+		intakeMotors.moveVelocity(0);
 		break;
 	
 	case 1:
@@ -611,14 +602,15 @@ void opcontrol() {
 		// basic lift control
 		if (liftUp.isPressed()) liftMotor.move_velocity(100);
 		else if (liftDown.isPressed()) liftMotor.move_velocity(-100);
-		else if (liftMotor.get_position() < LIFT_STACKING_HEIGHT) liftMotor.move_voltage(-3000);
+		else if (liftMotor.get_position() < LIFT_STACKING_HEIGHT and liftMotor.get_position() > LIFT_STACKING_HEIGHT - 300) liftMotor.move_voltage(-2000); // basically to force the lift down but not burn the motor, shut off the motor when we stabalize at 0
+		else if (liftMotor.get_position() < LIFT_STACKING_HEIGHT and liftMotor.get_efficiency() != 0) liftMotor.move_voltage(-3000);
 		else liftMotor.move(0);
 
 		// advanced intake control, with goal-oriented assists
-		if (intakeIn.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT and not intakeShift.isPressed()) intakeMotors.moveVelocity(100); // if we are dumping into tower, redue intake velocity as not to shoot the cube halfway accross the field
+		if (intakeIn.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(100); // if we are dumping into tower, redue intake velocity as not to shoot the cube halfway accross the field
 		else if (intakeIn.isPressed()) intakeMotors.moveVelocity(200);
-		else if (intakeOut.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT and not intakeShift.isPressed()) intakeMotors.moveVelocity(-100);
-		else if (intakeOut.isPressed()) intakeMotors.moveVelocity(-200);
+		else if (intakeOut.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(-100);
+		else if (intakeOut.isPressed() or intakeShift.isPressed()) intakeMotors.moveVelocity(-200);
 		else if (not shift.isPressed()) intakeMotors.moveVoltage(0);
 
 		// tray control using shift key
@@ -626,11 +618,11 @@ void opcontrol() {
 			if (intakeIn.isPressed()) { // tray forward
 				traySlew(true);
 				// if tray and intake are interacting, move the intake
-				intakeMotors.moveVelocity(-15);
+				intakeMotors.moveVelocity(-13);
 		
 			} else if (intakeOut.isPressed()) { // tray backward
 				traySlew(false);
-				intakeMotors.moveVelocity(25);
+				intakeMotors.moveVelocity(13);
 			}
 			else if (not (intakeIn.isPressed() or intakeOut.isPressed())) intakeMotors.moveVoltage(0);
 		}
@@ -655,14 +647,13 @@ void opcontrol() {
 		// lift brake mod
 		if (liftMotor.get_position() > LIFT_STACKING_HEIGHT	) liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 		else liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
-		
+
 		chassis->getModel()->tank(masterController.getAnalog(ControllerAnalog::leftY),
 								masterController.getAnalog(ControllerAnalog::rightY));
 
 		// debug
-		// std::cout << pros::millis() << ": angle " << liftMotor.get_position() << std::endl;
+		std::cout << pros::millis() << ": lift " << liftMotor.get_efficiency() << std::endl;
 		// std::cout << pros::millis() << ": left " << chassis->getModel()->getSensorVals()[0] << std::endl;
-		std::cout << pros::millis() << ": lift " << liftMotor.get_position() << std::endl;
 		pros::delay(20);
 	}
 }

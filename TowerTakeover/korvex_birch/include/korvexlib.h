@@ -20,6 +20,7 @@ const int INTAKE_MTR2 = 20;
 
 // sensors
 const int IMU_PORT = 6;
+extern pros::Imu imu;
 
 // globals
 extern int autonSelection;
@@ -29,9 +30,8 @@ extern pros::Motor liftMotor;
 extern pros::Motor trayMotor;
 extern okapi::MotorGroup intakeMotors;
 
-// other declerations
+// controller declerations
 extern okapi::Controller masterController;
-extern pros::Imu imu;
 
 extern okapi::ControllerButton intakeIn;
 extern okapi::ControllerButton intakeOut;
