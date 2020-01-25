@@ -238,6 +238,24 @@ void flipout() { // a blocking flipout function
 	trayMotor.move_absolute(0, 100);
 }
 
+void stack() { // a blocking stack function
+	intakeMotors.moveRelative(-400, 80); // quik stak
+	trayMotor.move_absolute(6200, 100);
+	drive(500, 500);
+	while (trayMotor.get_position() < 3000) {
+		pros::delay(20);
+	}
+	intakeMotors.moveVelocity(-13);
+	drive(150, 150);
+	while (trayMotor.get_position() < 6000) {
+		pros::delay(20);
+	}
+	intakeMotors.moveVelocity(13);
+	trayMotor.move_absolute(0, 100);
+	drive(-800, -800);
+	intakeMotors.moveVelocity(0);
+}
+
 void traySlew(bool forward) {
 	if (forward) {
 		if (trayMotor.get_position() > 4000) trayMotor.move_velocity(40);
@@ -250,14 +268,14 @@ void traySlew(bool forward) {
 }
 
 void generatePaths() { // all paths stored here
-	// 8 cube s curve, made for red side (mirror for blue)
+	// 8 cube s curve, mirror for red
 	profileController->generatePath({
 				{0_ft, 0_ft, 0_deg},
 				{2.2_ft, 3.4_ft, 0_deg}},
 				"rickSCurve1" 
 			);
 	
-	// 8 cube 2nd s curve, mirror for blue
+	// 8 cube 2nd s curve, mirror for red
 	profileController->generatePath({
 				{0_ft, 0_ft, 0_deg},
 				{3_ft, 1_ft, 0_deg}},
@@ -459,7 +477,7 @@ void autonomous() {
 	intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
-	if (autonSelection == 42) autonSelection = 3; // use debug if we havent selected any auton
+	if (autonSelection == 42) autonSelection = -2; // use debug if we havent selected any auton
 	std::cout << "auton  " << autonSelection << std::endl;
 
 	switch (autonSelection) {
@@ -500,17 +518,37 @@ void autonomous() {
 
 	case -2:
 		// red protec
+		flipout();
+		pros::delay(300);
+		turn(-(origAngle + imu.get_rotation())); // set heading to as close to 0 degrees as possible
+		// move forward and intake and get the 4 laid in a line
+		intakeMotors.moveVelocity(200);
+		chassis->setMaxVelocity(120);
+		profileController->setTarget("rickStraight1", false);
+		profileController->waitUntilSettled();
+		intakeMotors.moveVelocity(0);
+		liftMotor.move_voltage(0);
+		// turn to line up with final cube
+		turn(-125 -(origAngle + imu.get_rotation()));
+		// grab final cube
+		drive(1500, 1500, 80);
+		intakeMotors.moveRelative(500, 200);
+		turn(-20);
+		trayMotor.move_absolute(1800, 100);
+		drive(700, 700, 80);
+		turn(120 - (origAngle + imu.get_rotation()), 70);
+		// stack
+		stack();
+		// red protec
 		break;
 	
 	case -3:
 		// red unprotec 8 cube (rick)
-		// flip. out.
 		flipout();
-		pros::delay(500);
+		pros::delay(300);
 		turn(-(origAngle + imu.get_rotation())); // set heading to as close to 0 degrees as possible
 		// move forward and intake and get the 4 laid in a line
 		intakeMotors.moveVelocity(200);
-		// drive(2400, 2400, 80);
 		chassis->setMaxVelocity(120);
 		profileController->setTarget("rickStraight1", false);
 		profileController->waitUntilSettled();
@@ -518,33 +556,24 @@ void autonomous() {
 		liftMotor.move_voltage(0);
 		// s curve to back and line up with next 4
 		chassis->setMaxVelocity(150);
-		profileController->setTarget("rickSCurve1", true);
+		profileController->setTarget("rickSCurve1", true, true);
 		profileController->waitUntilSettled();
 		turn(-(origAngle + imu.get_rotation()));
 		// intake next 4
 		intakeMotors.moveVelocity(200);
-		profileController->setTarget("rickStraight2", true);
+		chassis->setMaxVelocity(120);
+		profileController->setTarget("rickStraight2", false);
 		profileController->waitUntilSettled();
 		intakeMotors.moveRelative(400, 200);
-		// point turn to face unprotec zone and drive to it
-		turn(125 - (origAngle + imu.get_rotation()));
+		// s curve to unprotec zone
+		chassis->setMaxVelocity(150);
+		profileController->setTarget("rickSCurve2", true, true);
+		profileController->waitUntilSettled();
 		trayMotor.move_absolute(1800, 100);
-		intakeMotors.moveRelative(-500, 100); // quik stak
-		drive(2650, 2650);
+		turn(-122 - (origAngle + imu.get_rotation()), 70);
 		// stack
-		intakeMotors.moveVelocity(-15);
-		trayMotor.move_absolute(6200, 100);
-		while (trayMotor.get_position() < 4000) {
-			pros::delay(20);
-		}
-		drive(200, 200);
-		while (trayMotor.get_position() < 6000) {
-			pros::delay(20);
-		}
-		intakeMotors.moveVelocity(15);
-		trayMotor.move_absolute(0, 100);
-		drive(-800, -800);
-		intakeMotors.moveVelocity(0);
+		stack();
+		
 		break;
 	
 	case 1:
@@ -611,22 +640,8 @@ void autonomous() {
 		profileController->waitUntilSettled();
 		trayMotor.move_absolute(1800, 100);
 		turn(-122 - (origAngle + imu.get_rotation()), 70);
-		intakeMotors.moveRelative(-400, 80); // quik stak
 		// stack
-		trayMotor.move_absolute(6200, 100);
-		drive(500, 500);
-		while (trayMotor.get_position() < 3000) {
-			pros::delay(20);
-		}
-		intakeMotors.moveVelocity(-13);
-		drive(150, 150);
-		while (trayMotor.get_position() < 6000) {
-			pros::delay(20);
-		}
-		intakeMotors.moveVelocity(13);
-		trayMotor.move_absolute(0, 100);
-		drive(-800, -800);
-		intakeMotors.moveVelocity(0);
+		stack();
 		break;
 	
 	default:
