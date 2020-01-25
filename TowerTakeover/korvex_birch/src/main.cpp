@@ -226,11 +226,12 @@ void turn(int target, int voltageMax=115){
 void flipout() { // a blocking flipout function
 	trayMotor.move_absolute(1000, 100);
 	liftMotor.move_velocity(100);
+	intakeMotors.moveVelocity(-200);
 	while (liftMotor.get_position() < 2000) { // wait until we initiate flipout
 		pros::delay(20);
 	}
 	liftMotor.move_absolute(-200, 100);
-	while (liftMotor.get_position() > 400) { // wait until we initiate flipout
+	while (liftMotor.get_position() > 600) { // wait until we initiate flipout
 		pros::delay(20);
 	}
 	intakeMotors.moveVelocity(200);
@@ -252,14 +253,14 @@ void generatePaths() { // all paths stored here
 	// 8 cube s curve, made for red side (reverse for blue)
 	profileController->generatePath({
 				{0_ft, 0_ft, 0_deg},
-				{2.2_ft, 3.5_ft, 0_deg}},
+				{2.4_ft, 2.1_ft, 0_deg}},
 				"redRickSCurve" 
 			);
 	
 	profileController->generatePath({
 				{0_ft, 0_ft, 0_deg},
-				{4.2_ft, 0_ft, 0_deg}},
-				"balls" 
+				{4.6_ft, 0_ft, 0_deg}},
+				"redRickStraight1" 
 			);
 }
 
@@ -316,13 +317,14 @@ void initialize()
 {
 	// save some time
 	imu.reset();
+	std::cout << pros::millis() << ": calibrating imu..." << std::endl;
 
 	// lvgl theme
-
 	lv_theme_t *th = lv_theme_alien_init(360, NULL); //Set a HUE value and keep font default RED
 	lv_theme_set_current(th);
 
 	// create a tab view object
+	std::cout << pros::millis() << ": creating gui..." << std::endl;
 	lv_obj_t *tabview = lv_tabview_create(lv_scr_act(), NULL);
 
 	// add 4 tabs (the tabs are page (lv_page) and can be scrolled
@@ -382,15 +384,23 @@ void initialize()
 	lv_mbox_set_anim_time(msgBox, 300);
 	lv_mbox_start_auto_close(msgBox, 2000);
 
+	std::cout << pros::millis() << ": finished creating gui!" << std::endl;
+
 	// wait for calibrate
-	pros::delay(100);
+	std::cout << pros::millis() << ": generating paths..." << std::endl;
 	generatePaths();
-	std::cout << pros::millis() << ": calibrating imu..." << std::endl;
+	std::cout << pros::millis() << ": finished generating paths..." << std::endl;
 	while (imu.is_calibrating())
 	{
 		pros::delay(10);
 	}
 	std::cout << pros::millis() << ": finished calibrating!" << std::endl;
+
+	std::cout << "\n" << pros::millis() << ": motor temps:" << std::endl;
+	std::cout << pros::millis() << ": lift: " << liftMotor.get_temperature() << std::endl;
+	std::cout << pros::millis() << ": tray: " << trayMotor.get_temperature() << std::endl;
+	std::cout << pros::millis() << ": intake: " << intakeMotors.getTemperature() << std::endl;
+	
 }
 
 /**
@@ -441,25 +451,7 @@ void autonomous() {
 	switch (autonSelection) {
 	case 0:
 		// skills doesnt exist.
-		profileController->setTarget("balls", false);
-		profileController->waitUntilSettled();
-		profileController->setTarget("balls", true);
-		profileController->waitUntilSettled();
-		drive(1000, 1000);
-		drive(-1000, -1000);
-
-		// origAngle = imu.get_rotation();
-		// profileController->generatePath({
-		// 	{0_ft, 0_ft, 0_deg},  // Profile starting position, this will normally be (0, 0, 0)
-		// 	{2_ft, 1_ft, 0_deg}},
-		// 	"A" // Profile name
-		// );
-		// // to turn to a true angle after a s curve, use the initial imu reading as a base
-		// profileController->setTarget("A");
-		// profileController->waitUntilSettled();
-		// profileController->setTarget("A", true, true);
-		// profileController->waitUntilSettled();
-		// turn((-90 - (origAngle + imu.get_rotation()))); // should turn 90 relative to position before s curve
+		flipout();
 		// chassisState = chassis->getState().str();
 		break;
 
@@ -499,34 +491,37 @@ void autonomous() {
 		// flip. out.
 		origAngle = imu.get_rotation();
 		flipout();
-		turn(-(origAngle + imu.get_rotation()));
+		turn(-(origAngle + imu.get_rotation())); // set heading to as close to 0 degrees as possible
 		// move forward and intake and get the 4 laid in a line
 		intakeMotors.moveVelocity(200);
 		// drive(2400, 2400, 80);
-		profileController->setTarget("balls", false);
+		chassis->setMaxVelocity(120);
+		profileController->setTarget("redRickStraight1", false);
 		profileController->waitUntilSettled();
 		intakeMotors.moveVelocity(0);
 		liftMotor.move_voltage(0);
 		// s curve to back and line up with next 4
 		chassis->setMaxVelocity(150);
-		turn(-(origAngle + imu.get_rotation()));
-		
 		profileController->setTarget("redRickSCurve", true);
 		profileController->waitUntilSettled();
-		// turn for next 4
 		turn(-(origAngle + imu.get_rotation()));
 		// intake next 4
 		intakeMotors.moveVelocity(200);
 		drive(2000, 2000, 80);
-		intakeMotors.moveRelative(100, 100);
-		turn(-(origAngle + imu.get_rotation())); // set heading to as close to 0 degrees as possible
+		intakeMotors.moveRelative(400, 200);
 		// point turn to face unprotec zone and drive to it
-		turn(125);
-		drive(2700, 2700);
+		turn(125 - (origAngle + imu.get_rotation()));
+		trayMotor.move_absolute(1800, 100);
+		intakeMotors.moveRelative(-500, 100); // quik stak
+		drive(2650, 2650);
 		// stack
 		intakeMotors.moveVelocity(-15);
 		trayMotor.move_absolute(6200, 100);
-		while (trayMotor.get_position() < 6100) {
+		while (trayMotor.get_position() < 4000) {
+			pros::delay(20);
+		}
+		drive(200, 200);
+		while (trayMotor.get_position() < 6000) {
 			pros::delay(20);
 		}
 		intakeMotors.moveVelocity(15);
@@ -603,12 +598,12 @@ void opcontrol() {
 		if (liftUp.isPressed()) liftMotor.move_velocity(100);
 		else if (liftDown.isPressed()) liftMotor.move_velocity(-100);
 		else if (liftMotor.get_position() < LIFT_STACKING_HEIGHT and liftMotor.get_position() > LIFT_STACKING_HEIGHT - 300) liftMotor.move_voltage(-2000); // basically to force the lift down but not burn the motor, shut off the motor when we stabalize at 0
-		else if (liftMotor.get_position() < LIFT_STACKING_HEIGHT and liftMotor.get_efficiency() != 0) liftMotor.move_voltage(-3000);
+		else if (liftMotor.get_position() < LIFT_STACKING_HEIGHT and liftMotor.get_efficiency() > 50) liftMotor.move_voltage(-2000);
 		else liftMotor.move(0);
 
 		// advanced intake control, with goal-oriented assists
-		if (intakeIn.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(100); // if we are dumping into tower, redue intake velocity as not to shoot the cube halfway accross the field
-		else if (intakeIn.isPressed()) intakeMotors.moveVelocity(200);
+		if (intakeIn.isPressed() and not intakeOut.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(100); // if we are dumping into tower, redue intake velocity as not to shoot the cube halfway accross the field
+		else if (intakeIn.isPressed() and not intakeOut.isPressed()) intakeMotors.moveVelocity(200);
 		else if (intakeOut.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(-100);
 		else if (intakeOut.isPressed() or intakeShift.isPressed()) intakeMotors.moveVelocity(-200);
 		else if (not shift.isPressed()) intakeMotors.moveVoltage(0);
@@ -628,7 +623,7 @@ void opcontrol() {
 		}
 		// adjust tray based on lift position
 		else if (liftMotor.get_position() > LIFT_STACKING_HEIGHT) trayMotor.move_absolute(700, 100);
-		else if (liftMotor.get_position() <= LIFT_STACKING_HEIGHT and trayMotor.get_position() < 2000) trayMotor.move_absolute(0, 100);
+		else if (liftMotor.get_position() <= LIFT_STACKING_HEIGHT and trayMotor.get_position() < 1400) trayMotor.move_absolute(0, 100);
 		else trayMotor.move(0);
 
 		// tray stacking mods
@@ -652,7 +647,7 @@ void opcontrol() {
 								masterController.getAnalog(ControllerAnalog::rightY));
 
 		// debug
-		std::cout << pros::millis() << ": lift " << liftMotor.get_efficiency() << std::endl;
+		// std::cout << pros::millis() << ": lift " << liftMotor.get_efficiency() << std::endl;
 		// std::cout << pros::millis() << ": left " << chassis->getModel()->getSensorVals()[0] << std::endl;
 		pros::delay(20);
 	}
