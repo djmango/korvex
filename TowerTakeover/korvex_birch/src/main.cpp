@@ -238,7 +238,7 @@ void flipout() { // a blocking flipout function
 	trayMotor.move_absolute(0, 100);
 }
 
-void stack() { // a blocking stack function
+void stackRick() { // a blocking stack function
 	intakeMotors.moveRelative(-400, 80); // quik stak
 	trayMotor.move_absolute(6200, 100);
 	drive(500, 500);
@@ -469,6 +469,7 @@ void competition_initialize() {}
 
 void autonomous() {
 	chassis->setState({0_in, 0_in, 0_deg});
+	chassis->setMaxVelocity(200);
 	float origAngle;
 	origAngle = imu.get_rotation();
 	auto chassisState = chassis->getState().str();
@@ -477,7 +478,7 @@ void autonomous() {
 	intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
-	if (autonSelection == 42) autonSelection = -2; // use debug if we havent selected any auton
+	if (autonSelection == 42) autonSelection = 2; // use debug if we havent selected any auton
 	std::cout << "auton  " << autonSelection << std::endl;
 
 	switch (autonSelection) {
@@ -519,27 +520,38 @@ void autonomous() {
 	case -2:
 		// red protec
 		flipout();
+		intakeMotors.moveVelocity(200);
 		pros::delay(300);
 		turn(-(origAngle + imu.get_rotation())); // set heading to as close to 0 degrees as possible
 		// move forward and intake and get the 4 laid in a line
-		intakeMotors.moveVelocity(200);
-		chassis->setMaxVelocity(120);
-		profileController->setTarget("rickStraight1", false);
-		profileController->waitUntilSettled();
+		drive(2200, 2200, 80);
 		intakeMotors.moveVelocity(0);
 		liftMotor.move_voltage(0);
 		// turn to line up with final cube
-		turn(-125 -(origAngle + imu.get_rotation()));
+		turn(-115 -(origAngle + imu.get_rotation()), 80);
 		// grab final cube
-		drive(1500, 1500, 80);
-		intakeMotors.moveRelative(500, 200);
-		turn(-20);
+		intakeMotors.moveVelocity(200);
+		drive(1400, 1400, 80);
+		intakeMotors.moveVelocity(0);
+		turn(-22);
 		trayMotor.move_absolute(1800, 100);
-		drive(700, 700, 80);
-		turn(120 - (origAngle + imu.get_rotation()), 70);
+		drive(1200, 1200, 80);
 		// stack
-		stack();
-		// red protec
+		intakeMotors.moveRelative(-400, 80); // quik stak
+		trayMotor.move_absolute(6200, 100);
+		drive(500, 500, 80);
+		while (trayMotor.get_position() < 3000) {
+			pros::delay(20);
+		}
+		intakeMotors.moveVelocity(-13);
+		drive(150, 150, 80);
+		while (trayMotor.get_position() < 6000) {
+			pros::delay(20);
+		}
+		intakeMotors.moveVelocity(13);
+		trayMotor.move_absolute(0, 100);
+		drive(-800, -800, 60);
+		intakeMotors.moveVelocity(0);
 		break;
 	
 	case -3:
@@ -572,7 +584,7 @@ void autonomous() {
 		trayMotor.move_absolute(1800, 100);
 		turn(-122 - (origAngle + imu.get_rotation()), 70);
 		// stack
-		stack();
+		stackRick();
 		
 		break;
 	
@@ -609,6 +621,39 @@ void autonomous() {
 		break;
 	case 2:
 		// blue protec
+		flipout();
+		intakeMotors.moveVelocity(200);
+		pros::delay(300);
+		turn(-(origAngle + imu.get_rotation())); // set heading to as close to 0 degrees as possible
+		// move forward and intake and get the 4 laid in a line
+		drive(2200, 2200, 80);
+		intakeMotors.moveVelocity(0);
+		liftMotor.move_voltage(0);
+		// turn to line up with final cube
+		turn(115 -(origAngle + imu.get_rotation()), 80);
+		// grab final cube
+		intakeMotors.moveVelocity(200);
+		drive(1400, 1400, 80);
+		intakeMotors.moveVelocity(0);
+		turn(22);
+		trayMotor.move_absolute(1800, 100);
+		drive(1200, 1200, 80);
+		// stack
+		intakeMotors.moveRelative(-400, 80); // quik stak
+		trayMotor.move_absolute(6200, 100);
+		drive(500, 500, 80);
+		while (trayMotor.get_position() < 3000) {
+			pros::delay(20);
+		}
+		intakeMotors.moveVelocity(-13);
+		drive(150, 150, 80);
+		while (trayMotor.get_position() < 6000) {
+			pros::delay(20);
+		}
+		intakeMotors.moveVelocity(13);
+		trayMotor.move_absolute(0, 100);
+		drive(-800, -800, 60);
+		intakeMotors.moveVelocity(0);
 		break;
 	case 3:
 		// blue unprotec 8 cube (rick)
@@ -641,7 +686,7 @@ void autonomous() {
 		trayMotor.move_absolute(1800, 100);
 		turn(-122 - (origAngle + imu.get_rotation()), 70);
 		// stack
-		stack();
+		stackRick();
 		break;
 	
 	default:
