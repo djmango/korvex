@@ -21,6 +21,7 @@ const int INTAKE_MTR2 = 20;
 // sensors
 const int IMU_PORT = 6;
 extern pros::Imu imu;
+extern pros::ADIEncoder strafeEncoder;
 
 // globals
 extern int autonSelection;

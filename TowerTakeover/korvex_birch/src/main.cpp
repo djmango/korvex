@@ -27,7 +27,7 @@ int autonSelection = 42; // hitchhikers anyone?
 const int LIFT_STACKING_HEIGHT = 700; // the motor ticks above which we are stacking
 
 // create a button descriptor string array
-static const char *btnmMap[] = {"Left", "Right", "Rick", ""};
+static const char *btnmMap[] = {"Unprotec", "Protec", "Rick", ""};
 
 // motion control system globals
 int voltageCap; // voltageCap limits the change in velocity and must be global
@@ -421,11 +421,12 @@ void initialize()
 	std::cout << pros::millis() << ": generating paths..." << std::endl;
 	generatePaths();
 	std::cout << pros::millis() << ": finished generating paths..." << std::endl;
-	while (imu.is_calibrating())
+	while (imu.is_calibrating() and pros::millis() < 5000)
 	{
 		pros::delay(10);
 	}
-	std::cout << pros::millis() << ": finished calibrating!" << std::endl;
+	if (pros::millis() < 5000) std::cout << pros::millis() << ": finished calibrating!" << std::endl;
+	else std::cout << pros::millis() << ": calibration failed, moving on" << std::endl;
 
 	std::cout << "\n" << pros::millis() << ": motor temps:" << std::endl;
 	std::cout << pros::millis() << ": lift: " << liftMotor.get_temperature() << std::endl;
@@ -478,15 +479,15 @@ void autonomous() {
 	intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
-	if (autonSelection == 42) autonSelection = 2; // use debug if we havent selected any auton
+	if (autonSelection == 42) autonSelection = -3; // use debug if we havent selected any auton
 	std::cout << "auton  " << autonSelection << std::endl;
 
 	switch (autonSelection) {
 	case 0:
 		// skills doesnt exist.
-		flipout();
-		chassis->setMaxVelocity(150);
-		chassis->driveToPoint({1_ft, 1_ft});
+		// flipout();
+		drive(-2000, -2000);
+		drive(2000, 2000);
 		// chassisState = chassis->getState().str();
 		break;
 
@@ -524,7 +525,7 @@ void autonomous() {
 		pros::delay(300);
 		turn(-(origAngle + imu.get_rotation())); // set heading to as close to 0 degrees as possible
 		// move forward and intake and get the 4 laid in a line
-		drive(2200, 2200, 80);
+		drive(2200, 2200, 60);
 		intakeMotors.moveVelocity(0);
 		liftMotor.move_voltage(0);
 		// turn to line up with final cube
@@ -533,25 +534,25 @@ void autonomous() {
 		intakeMotors.moveVelocity(200);
 		drive(1400, 1400, 80);
 		intakeMotors.moveVelocity(0);
-		turn(-22);
-		trayMotor.move_absolute(1800, 100);
-		drive(1200, 1200, 80);
-		// stack
-		intakeMotors.moveRelative(-400, 80); // quik stak
-		trayMotor.move_absolute(6200, 100);
-		drive(500, 500, 80);
-		while (trayMotor.get_position() < 3000) {
-			pros::delay(20);
-		}
-		intakeMotors.moveVelocity(-13);
-		drive(150, 150, 80);
-		while (trayMotor.get_position() < 6000) {
-			pros::delay(20);
-		}
-		intakeMotors.moveVelocity(13);
-		trayMotor.move_absolute(0, 100);
-		drive(-800, -800, 60);
-		intakeMotors.moveVelocity(0);
+		// turn(-22);
+		// trayMotor.move_absolute(1800, 100);
+		// drive(1200, 1200, 80);
+		// // stack
+		// intakeMotors.moveRelative(-400, 80); // quik stak
+		// trayMotor.move_absolute(6200, 100);
+		// drive(500, 500, 80);
+		// while (trayMotor.get_position() < 3000) {
+		// 	pros::delay(20);
+		// }
+		// intakeMotors.moveVelocity(-13);
+		// drive(150, 150, 80);
+		// while (trayMotor.get_position() < 6000) {
+		// 	pros::delay(20);
+		// }
+		// intakeMotors.moveVelocity(13);
+		// trayMotor.move_absolute(0, 100);
+		// drive(-800, -800, 60);
+		// intakeMotors.moveVelocity(0);
 		break;
 	
 	case -3:
@@ -582,7 +583,7 @@ void autonomous() {
 		profileController->setTarget("rickSCurve2", true, true);
 		profileController->waitUntilSettled();
 		trayMotor.move_absolute(1800, 100);
-		turn(-122 - (origAngle + imu.get_rotation()), 70);
+		turn(122 - (origAngle + imu.get_rotation()), 70);
 		// stack
 		stackRick();
 		
@@ -626,7 +627,7 @@ void autonomous() {
 		pros::delay(300);
 		turn(-(origAngle + imu.get_rotation())); // set heading to as close to 0 degrees as possible
 		// move forward and intake and get the 4 laid in a line
-		drive(2200, 2200, 80);
+		drive(2200, 2200, 60);
 		intakeMotors.moveVelocity(0);
 		liftMotor.move_voltage(0);
 		// turn to line up with final cube
@@ -635,25 +636,25 @@ void autonomous() {
 		intakeMotors.moveVelocity(200);
 		drive(1400, 1400, 80);
 		intakeMotors.moveVelocity(0);
-		turn(22);
-		trayMotor.move_absolute(1800, 100);
-		drive(1200, 1200, 80);
-		// stack
-		intakeMotors.moveRelative(-400, 80); // quik stak
-		trayMotor.move_absolute(6200, 100);
-		drive(500, 500, 80);
-		while (trayMotor.get_position() < 3000) {
-			pros::delay(20);
-		}
-		intakeMotors.moveVelocity(-13);
-		drive(150, 150, 80);
-		while (trayMotor.get_position() < 6000) {
-			pros::delay(20);
-		}
-		intakeMotors.moveVelocity(13);
-		trayMotor.move_absolute(0, 100);
-		drive(-800, -800, 60);
-		intakeMotors.moveVelocity(0);
+		// turn(22);
+		// trayMotor.move_absolute(1800, 100);
+		// drive(1200, 1200, 80);
+		// // stack
+		// intakeMotors.moveRelative(-400, 80); // quik stak
+		// trayMotor.move_absolute(6200, 100);
+		// drive(500, 500, 80);
+		// while (trayMotor.get_position() < 3000) {
+		// 	pros::delay(20);
+		// }
+		// intakeMotors.moveVelocity(-13);
+		// drive(150, 150, 80);
+		// while (trayMotor.get_position() < 6000) {
+		// 	pros::delay(20);
+		// }
+		// intakeMotors.moveVelocity(13);
+		// trayMotor.move_absolute(0, 100);
+		// drive(-800, -800, 60);
+		// intakeMotors.moveVelocity(0);
 		break;
 	case 3:
 		// blue unprotec 8 cube (rick)
@@ -711,6 +712,7 @@ void autonomous() {
 void opcontrol() {
 	chassis->stop();
 	chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
+	chassis->setMaxVelocity(200);
 
 	// motor setup
 	trayMotor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
@@ -725,24 +727,26 @@ void opcontrol() {
 		else liftMotor.move(0);
 
 		// advanced intake control, with goal-oriented assists
-		if (intakeIn.isPressed() and not intakeOut.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(100); // if we are dumping into tower, redue intake velocity as not to shoot the cube halfway accross the field
-		else if (intakeIn.isPressed() and not intakeOut.isPressed()) intakeMotors.moveVelocity(200);
-		else if (intakeOut.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(-100);
-		else if (intakeOut.isPressed() or intakeShift.isPressed()) intakeMotors.moveVelocity(-200);
-		else if (not shift.isPressed()) intakeMotors.moveVoltage(0);
+		if (trayMotor.get_position() < 1000) {
+			if (intakeIn.isPressed() and not intakeOut.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(100); // if we are dumping into tower, redue intake velocity as not to shoot the cube halfway accross the field
+			else if (intakeIn.isPressed() and not intakeOut.isPressed()) intakeMotors.moveVelocity(200);
+			else if (intakeOut.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(-100);
+			else if (intakeOut.isPressed() or intakeShift.isPressed()) intakeMotors.moveVelocity(-200);
+			else if (not shift.isPressed()) intakeMotors.moveVoltage(0);
+		}
 
 		// tray control using shift key
 		if (shift.isPressed()) { //shift key
 			if (intakeIn.isPressed()) { // tray forward
 				traySlew(true);
 				// if tray and intake are interacting, move the intake
-				intakeMotors.moveVelocity(-13);
+				intakeMotors.moveVoltage(-1300);
 		
 			} else if (intakeOut.isPressed()) { // tray backward
 				traySlew(false);
-				intakeMotors.moveVelocity(13);
+				intakeMotors.moveVoltage(1300);
 			}
-			else if (not (intakeIn.isPressed() or intakeOut.isPressed())) intakeMotors.moveVoltage(0);
+			else intakeMotors.moveVoltage(0);
 		}
 		// adjust tray based on lift position
 		else if (liftMotor.get_position() > LIFT_STACKING_HEIGHT) trayMotor.move_absolute(700, 100);
@@ -751,13 +755,11 @@ void opcontrol() {
 
 		// tray stacking mods
 		if (trayMotor.get_position() > 2000) { // brake and slow and intake coast when we stacking
-			chassis->setMaxVelocity(150);
 			liftMotor.move_absolute(-150, 100);
 			intakeMotors.setBrakeMode(AbstractMotor::brakeMode::coast);
 			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
 		}
-		else { // return to normal after we stacked
-			chassis->setMaxVelocity(200);
+		else if (trayMotor.get_position() < 1000) { // return to normal after we stacked
 			intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
 			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 		}
@@ -770,7 +772,7 @@ void opcontrol() {
 								masterController.getAnalog(ControllerAnalog::rightY));
 
 		// debug
-		// std::cout << pros::millis() << ": lift " << liftMotor.get_efficiency() << std::endl;
+		std::cout << pros::millis() << ": encoder " << strafeEncoder.get_value() << std::endl;
 		// std::cout << pros::millis() << ": left " << chassis->getModel()->getSensorVals()[0] << std::endl;
 		pros::delay(20);
 	}

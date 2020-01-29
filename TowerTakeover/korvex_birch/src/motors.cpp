@@ -20,6 +20,7 @@ ControllerButton shift(ControllerDigital::Y);
 
 // other
 pros::Imu imu(IMU_PORT);
+pros::ADIEncoder strafeEncoder (1, 2, false);
 
 /*
 a fun hack to force the compiler to spit out an error that shows you the type of something (fun for working with auto)
