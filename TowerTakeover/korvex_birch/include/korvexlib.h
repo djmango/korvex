@@ -15,7 +15,7 @@ const int TRAY_MTR = 7;
 const int LIFT_MTR = 13;
 
 // flywheel and intake motors
-const int INTAKE_MTR1 = 11;
+const int INTAKE_MTR1 = 12;
 const int INTAKE_MTR2 = 20;
 
 // sensors

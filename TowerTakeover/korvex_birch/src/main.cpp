@@ -3,6 +3,10 @@
 #include "okapi/api.hpp"
 using namespace okapi;
 
+pros::ADIEncoder lefte(2, 1, false);
+pros::ADIEncoder mide(3, 4, false);
+pros::ADIEncoder righte(6, 5, false);
+
 // chassis
 auto chassis = ChassisControllerBuilder()
 		.withMotors({LEFT_MTR2, LEFT_MTR1}, {-RIGHT_MTR2, -RIGHT_MTR1})
@@ -11,10 +15,53 @@ auto chassis = ChassisControllerBuilder()
 			{0.000, 0.0, 0.000}, // Turn controller gains
 			{0.002, 0.01, 0.000} // Angle controller gains (helps drive straight)
 		)
-		// green gearset, 4 1/8 inch wheel diameter, 8 1/8 inch wheelbase
+		// green gearset, 4 inch wheel diameter, 8.125 inch wheelbase
 		.withDimensions(AbstractMotor::gearset::green, {{4_in, 8.125_in}, imev5GreenTPR})
-		.withOdometry() // use the same scales as the chassis (above)
+		.withSensors(
+			ADIEncoder{'A', 'B'}, // left encoder in ADI ports A & B, reversed
+			ADIEncoder{'E', 'F'},  // right encoder in ADI ports E & F
+			ADIEncoder{'C', 'D'}  // middle encoder in ADI ports C & D
+		)
+		// specify the tracking wheels diameter (2.75 in), track (4 in), and TPR (360)
+		// specify the middle encoder distance (2.25 in) and diameter (2.75 in)
+		.withOdometry({{2.75_in, 4.4_in, 2.25_in, 2.75_in}, quadEncoderTPR})
 		.buildOdometry(); // build an odometry chassis
+
+
+// no 3rd
+
+// auto chassis = ChassisControllerBuilder()
+// 		.withMotors({LEFT_MTR2, LEFT_MTR1}, {-RIGHT_MTR2, -RIGHT_MTR1})
+// 		.withGains(
+// 			{0.002, 0.01, 0.000}, // Distance controller gains
+// 			{0.000, 0.0, 0.000}, // Turn controller gains
+// 			{0.002, 0.01, 0.000} // Angle controller gains (helps drive straight)
+// 		)
+// 		// green gearset, 4 inch wheel diameter, 8.125 inch wheelbase
+// 		.withDimensions(AbstractMotor::gearset::green, {{4_in, 8.125_in}, imev5GreenTPR})
+// 		.withSensors(
+// 			ADIEncoder{'A', 'B', true}, // left encoder in ADI ports A & B, reversed
+// 			ADIEncoder{'E', 'F'}  // right encoder in ADI ports E & F
+// 		)
+// 		// specify the tracking wheels diameter (2.75 in), track (4 in), and TPR (360)
+// 		// specify the middle encoder distance (2.25 in) and diameter (2.75 in)
+// 		.withOdometry({{2.75_in, 4.4_in}, quadEncoderTPR})
+// 		.buildOdometry(); // build an odometry chassis
+
+// auto chassis = ChassisControllerBuilder()
+// 		.withMotors({LEFT_MTR2, LEFT_MTR1}, {-RIGHT_MTR2, -RIGHT_MTR1})
+// 		.withGains(
+// 			{0.002, 0.01, 0.000}, // Distance controller gains
+// 			{0.000, 0.0, 0.000}, // Turn controller gains
+// 			{0.002, 0.01, 0.000} // Angle controller gains (helps drive straight)
+// 		)
+// 		// green gearset, 4 inch wheel diameter, 8.125 inch wheelbase
+// 		.withDimensions(AbstractMotor::gearset::green, {{4_in, 8.125_in}, imev5GreenTPR})
+// 		// specify the tracking wheels diameter (2.75 in), track (4 in), and TPR (360)
+// 		// specify the middle encoder distance (2.25 in) and diameter (2.75 in)
+// 		.withOdometry()
+// 		.buildOdometry(); // build an odometry chassis
+
 
 auto profileController = AsyncMotionProfileControllerBuilder()
     .withLimits({1.0, 1.5, 5.0}) //double maxVel double maxAccel double maxJerk 
@@ -258,7 +305,7 @@ void stackRick() { // a blocking stack function
 
 void traySlew(bool forward) {
 	if (forward) {
-		if (trayMotor.get_position() > 4000) trayMotor.move_velocity(40);
+		if (trayMotor.get_position() > 5000) trayMotor.move_velocity(40);
 		else trayMotor.move_velocity(100);
 	}
 	else {
@@ -308,11 +355,13 @@ static lv_res_t autonBtnmAction(lv_obj_t *btnm, const char *txt)
 		else if (txt == "Rick") autonSelection = 3;
 	}
 
+	masterController.rumble("..");
 	return LV_RES_OK; // return OK because the button matrix is not deleted
 }
 
 static lv_res_t skillsBtnAction(lv_obj_t *btn)
 {
+	masterController.rumble("..");
 	autonSelection = 0;
 	return LV_RES_OK;
 }
@@ -466,8 +515,6 @@ void competition_initialize() {}
  * will be stopped. Re-enabling the robot will restart the task, not re-start it
  * from where it left off.
  */
-
-
 void autonomous() {
 	chassis->setState({0_in, 0_in, 0_deg});
 	chassis->setMaxVelocity(200);
@@ -636,24 +683,24 @@ void autonomous() {
 		intakeMotors.moveVelocity(200);
 		drive(1400, 1400, 80);
 		intakeMotors.moveVelocity(0);
-		// turn(22);
-		// trayMotor.move_absolute(1800, 100);
-		// drive(1200, 1200, 80);
-		// // stack
-		// intakeMotors.moveRelative(-400, 80); // quik stak
-		// trayMotor.move_absolute(6200, 100);
-		// drive(500, 500, 80);
-		// while (trayMotor.get_position() < 3000) {
-		// 	pros::delay(20);
-		// }
-		// intakeMotors.moveVelocity(-13);
-		// drive(150, 150, 80);
-		// while (trayMotor.get_position() < 6000) {
-		// 	pros::delay(20);
-		// }
-		// intakeMotors.moveVelocity(13);
-		// trayMotor.move_absolute(0, 100);
-		// drive(-800, -800, 60);
+		turn(22);
+		trayMotor.move_absolute(1800, 100);
+		drive(1200, 1200, 80);
+		// stack
+		intakeMotors.moveRelative(-400, 80); // quik stak
+		trayMotor.move_absolute(6200, 100);
+		drive(500, 500, 80);
+		while (trayMotor.get_position() < 3000) {
+			pros::delay(20);
+		}
+		intakeMotors.moveVelocity(-13);
+		drive(150, 150, 80);
+		while (trayMotor.get_position() < 6000) {
+			pros::delay(20);
+		}
+		intakeMotors.moveVelocity(13);
+		trayMotor.move_absolute(0, 100);
+		drive(-800, -800, 60);
 		// intakeMotors.moveVelocity(0);
 		break;
 	case 3:
@@ -713,6 +760,9 @@ void opcontrol() {
 	chassis->stop();
 	chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 	chassis->setMaxVelocity(200);
+	float joystickAvg = 0;
+	int stackingState = 0;
+	int cyclesSinceStacking = 0;
 
 	// motor setup
 	trayMotor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
@@ -727,53 +777,69 @@ void opcontrol() {
 		else liftMotor.move(0);
 
 		// advanced intake control, with goal-oriented assists
-		if (trayMotor.get_position() < 1000) {
+		if (stackingState == 0 and not shift.isPressed()) {
 			if (intakeIn.isPressed() and not intakeOut.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(100); // if we are dumping into tower, redue intake velocity as not to shoot the cube halfway accross the field
 			else if (intakeIn.isPressed() and not intakeOut.isPressed()) intakeMotors.moveVelocity(200);
 			else if (intakeOut.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(-100);
 			else if (intakeOut.isPressed() or intakeShift.isPressed()) intakeMotors.moveVelocity(-200);
-			else if (not shift.isPressed()) intakeMotors.moveVoltage(0);
+			else intakeMotors.moveVoltage(0);
 		}
 
 		// tray control using shift key
 		if (shift.isPressed()) { //shift key
-			if (intakeIn.isPressed()) { // tray forward
-				traySlew(true);
-				// if tray and intake are interacting, move the intake
-				intakeMotors.moveVoltage(-1300);
-		
-			} else if (intakeOut.isPressed()) { // tray backward
-				traySlew(false);
-				intakeMotors.moveVoltage(1300);
-			}
-			else intakeMotors.moveVoltage(0);
+			if (intakeIn.isPressed()) traySlew(true);
+			else if (intakeOut.isPressed()) traySlew(false);
 		}
+
 		// adjust tray based on lift position
 		else if (liftMotor.get_position() > LIFT_STACKING_HEIGHT) trayMotor.move_absolute(700, 100);
 		else if (liftMotor.get_position() <= LIFT_STACKING_HEIGHT and trayMotor.get_position() < 1400) trayMotor.move_absolute(0, 100);
 		else trayMotor.move(0);
 
-		// tray stacking mods
-		if (trayMotor.get_position() > 2000) { // brake and slow and intake coast when we stacking
-			liftMotor.move_absolute(-150, 100);
-			intakeMotors.setBrakeMode(AbstractMotor::brakeMode::coast);
-			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
+		// 2 is stacking, 1 is returning from stack, 0 is not stacking
+		if (trayMotor.get_position() > 2000 and trayMotor.get_actual_velocity() > -30) stackingState = 2;
+		else if (trayMotor.get_position() > 2000 and trayMotor.get_actual_velocity() < -30) stackingState = 1;
+		else if (cyclesSinceStacking < 150 and stackingState == 1) cyclesSinceStacking += 1; // allow for 3 seconds before we declare we are clear of stacking
+		else { // we are done stacking
+			cyclesSinceStacking = 0;
+			stackingState = 0;
 		}
-		else if (trayMotor.get_position() < 1000) { // return to normal after we stacked
+
+		// tray stacking mods
+		if (stackingState == 2) { // brake and slow and allow user intake control while stacking
+			liftMotor.move_absolute(-150, 100);
+			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
+			if (not shift.isPressed() and not shift.changedToReleased()) {
+				if (intakeIn.isPressed()) intakeMotors.moveVelocity(100);
+				else if (intakeOut.isPressed()) intakeMotors.moveVelocity(-100);
+				else intakeMotors.moveVoltage(0);
+			}
+		}
+		else if (stackingState == 1) { // stuff to do when returning from stacking
+			intakeMotors.moveVelocity(joystickAvg*150);
+		}
+		else if (stackingState == 0) { // return to normal after we stacked
 			intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
 			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 		}
 
 		// lift brake mod
-		if (liftMotor.get_position() > LIFT_STACKING_HEIGHT	) liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+		if (liftMotor.get_position() > LIFT_STACKING_HEIGHT) liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 		else liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
 
 		chassis->getModel()->tank(masterController.getAnalog(ControllerAnalog::leftY),
 								masterController.getAnalog(ControllerAnalog::rightY));
 
+
+		// update vals
+		joystickAvg = (masterController.getAnalog(ControllerAnalog::leftY) + (masterController.getAnalog(ControllerAnalog::rightY)) / 2);
+
 		// debug
-		std::cout << pros::millis() << ": encoder " << strafeEncoder.get_value() << std::endl;
-		// std::cout << pros::millis() << ": left " << chassis->getModel()->getSensorVals()[0] << std::endl;
+		std::cout << pros::millis() << ": left " << lefte.get_value() << std::endl;
+		std::cout << pros::millis() << ": mid " << mide.get_value() << std::endl;
+		std::cout << pros::millis() << ": right " << righte.get_value() << std::endl;
+		// std::cout << pros::millis() << ": imu " << imu.get_rotation() << std::endl;
+		// std::cout << pros::millis() << ": pos " << chassis->getState().str() << std::endl;
 		pros::delay(20);
 	}
 }
