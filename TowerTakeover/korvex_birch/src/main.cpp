@@ -1,11 +1,8 @@
+#include <fstream>
 #include "main.h"
 #include "korvexlib.h"
 #include "okapi/api.hpp"
 using namespace okapi;
-
-pros::ADIEncoder lefte(2, 1, false);
-pros::ADIEncoder mide(3, 4, false);
-pros::ADIEncoder righte(6, 5, false);
 
 // chassis
 auto chassis = ChassisControllerBuilder()
@@ -19,52 +16,16 @@ auto chassis = ChassisControllerBuilder()
 		.withDimensions(AbstractMotor::gearset::green, {{4_in, 8.125_in}, imev5GreenTPR})
 		.withSensors(
 			ADIEncoder{'A', 'B'}, // left encoder in ADI ports A & B, reversed
-			ADIEncoder{'E', 'F'},  // right encoder in ADI ports E & F
+			ADIEncoder{'E', 'F', true},  // right encoder in ADI ports E & F
 			ADIEncoder{'C', 'D'}  // middle encoder in ADI ports C & D
 		)
 		// specify the tracking wheels diameter (2.75 in), track (4 in), and TPR (360)
 		// specify the middle encoder distance (2.25 in) and diameter (2.75 in)
-		.withOdometry({{2.75_in, 4.4_in, 2.25_in, 2.75_in}, quadEncoderTPR})
+		.withOdometry({{2.75_in, 4.6_in, 2.4_in, 2.75_in}, quadEncoderTPR})
 		.buildOdometry(); // build an odometry chassis
 
-
-// no 3rd
-
-// auto chassis = ChassisControllerBuilder()
-// 		.withMotors({LEFT_MTR2, LEFT_MTR1}, {-RIGHT_MTR2, -RIGHT_MTR1})
-// 		.withGains(
-// 			{0.002, 0.01, 0.000}, // Distance controller gains
-// 			{0.000, 0.0, 0.000}, // Turn controller gains
-// 			{0.002, 0.01, 0.000} // Angle controller gains (helps drive straight)
-// 		)
-// 		// green gearset, 4 inch wheel diameter, 8.125 inch wheelbase
-// 		.withDimensions(AbstractMotor::gearset::green, {{4_in, 8.125_in}, imev5GreenTPR})
-// 		.withSensors(
-// 			ADIEncoder{'A', 'B', true}, // left encoder in ADI ports A & B, reversed
-// 			ADIEncoder{'E', 'F'}  // right encoder in ADI ports E & F
-// 		)
-// 		// specify the tracking wheels diameter (2.75 in), track (4 in), and TPR (360)
-// 		// specify the middle encoder distance (2.25 in) and diameter (2.75 in)
-// 		.withOdometry({{2.75_in, 4.4_in}, quadEncoderTPR})
-// 		.buildOdometry(); // build an odometry chassis
-
-// auto chassis = ChassisControllerBuilder()
-// 		.withMotors({LEFT_MTR2, LEFT_MTR1}, {-RIGHT_MTR2, -RIGHT_MTR1})
-// 		.withGains(
-// 			{0.002, 0.01, 0.000}, // Distance controller gains
-// 			{0.000, 0.0, 0.000}, // Turn controller gains
-// 			{0.002, 0.01, 0.000} // Angle controller gains (helps drive straight)
-// 		)
-// 		// green gearset, 4 inch wheel diameter, 8.125 inch wheelbase
-// 		.withDimensions(AbstractMotor::gearset::green, {{4_in, 8.125_in}, imev5GreenTPR})
-// 		// specify the tracking wheels diameter (2.75 in), track (4 in), and TPR (360)
-// 		// specify the middle encoder distance (2.25 in) and diameter (2.75 in)
-// 		.withOdometry()
-// 		.buildOdometry(); // build an odometry chassis
-
-
 auto profileController = AsyncMotionProfileControllerBuilder()
-    .withLimits({1.0, 1.5, 5.0}) //double maxVel double maxAccel double maxJerk 
+    .withLimits({1.0, 2, 7.0}) //double maxVel double maxAccel double maxJerk 
     .withOutput(chassis)
     .buildMotionProfileController();
 
@@ -75,6 +36,10 @@ const int LIFT_STACKING_HEIGHT = 700; // the motor ticks above which we are stac
 
 // create a button descriptor string array
 static const char *btnmMap[] = {"Unprotec", "Protec", "Rick", ""};
+
+// sd log stuff
+std::ofstream out("/usd/rick.txt");
+auto *coutbuf = std::cout.rdbuf();
 
 // motion control system globals
 int voltageCap; // voltageCap limits the change in velocity and must be global
@@ -243,7 +208,7 @@ void turnP(int voltageMax) {
 	}
 
 	// exit paramaters
-	if (same0ErrCycles >= 5 or sameErrCycles >= 30) { // allowing for smol error or exit if we stay the same err for .3 second
+	if (same0ErrCycles >= 5 or sameErrCycles >= 60) { // allowing for smol error or exit if we stay the same err for .6 second
 		chassis->stop();
 		std::cout << "task complete with error " << errorCurrent << " in " << (pros::millis() - startTime) << "ms" << std::endl;
 		return;
@@ -318,7 +283,7 @@ void generatePaths() { // all paths stored here
 	// 8 cube s curve, mirror for red
 	profileController->generatePath({
 				{0_ft, 0_ft, 0_deg},
-				{2.2_ft, 3.4_ft, 0_deg}},
+				{2_ft, 2_ft, 0_deg}},
 				"rickSCurve1" 
 			);
 	
@@ -331,7 +296,7 @@ void generatePaths() { // all paths stored here
 
 	profileController->generatePath({
 				{0_ft, 0_ft, 0_deg},
-				{4.6_ft, 0_ft, 0_deg}},
+				{2_ft, 0_ft, 0_deg}},
 				"rickStraight1" 
 			);
 	
@@ -342,8 +307,21 @@ void generatePaths() { // all paths stored here
 			);
 }
 
-static lv_res_t autonBtnmAction(lv_obj_t *btnm, const char *txt)
-{
+void sdLog(bool yes) {
+	if (yes) {
+		// set cout buffer to sd card
+		std::cout.rdbuf(out.rdbuf());
+		std::cout << "engage rick.txt" << std::endl;
+	}
+	else {
+		// reset cout buffer
+		std::cout.rdbuf(coutbuf);
+		std::cout << "nah its terminal fo today" << std::endl;
+	}
+
+}
+
+static lv_res_t autonBtnmAction(lv_obj_t *btnm, const char *txt) {
 	if (lv_obj_get_free_num(btnm) == 100) {
 		if (txt == "Unprotec") autonSelection = -1;
 		else if (txt == "Protec") autonSelection = -2;
@@ -359,15 +337,13 @@ static lv_res_t autonBtnmAction(lv_obj_t *btnm, const char *txt)
 	return LV_RES_OK; // return OK because the button matrix is not deleted
 }
 
-static lv_res_t skillsBtnAction(lv_obj_t *btn)
-{
+static lv_res_t skillsBtnAction(lv_obj_t *btn) {
 	masterController.rumble("..");
 	autonSelection = 0;
 	return LV_RES_OK;
 }
 
-static lv_res_t ddlist_action(lv_obj_t * ddlist)
-{
+static lv_res_t ddlist_action(lv_obj_t * ddlist) {
 
     char selectedMotor[32];
 	char motorTemp[2];
@@ -395,6 +371,13 @@ static lv_res_t ddlist_action(lv_obj_t * ddlist)
 
 void initialize()
 {
+	// yes sd card
+	// std::cout.rdbuf(out.rdbuf());
+	// std::cout << "engage rick.txt" << std::endl;
+	// reset cout buffer
+	// std::cout.rdbuf(coutbuf);
+	// std::cout << "nah its terminal fo today" << std::endl;
+	
 	// save some time
 	imu.reset();
 	std::cout << pros::millis() << ": calibrating imu..." << std::endl;
@@ -526,16 +509,33 @@ void autonomous() {
 	intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
-	if (autonSelection == 42) autonSelection = -3; // use debug if we havent selected any auton
+	if (autonSelection == 42) autonSelection = 0; // use debug if we havent selected any auton
 	std::cout << "auton  " << autonSelection << std::endl;
+	// okapi::QAngle e;
 
 	switch (autonSelection) {
 	case 0:
 		// skills doesnt exist.
+		// chassis->turnToPoint({0_ft, 5_ft});
+		// chassis->turnToPoint({5_ft, 0_ft});
+		// chassis->turnAngle({90_deg});
+		pros::delay(10000);
+
+		profileController->setTarget("rickSCurve1", false, true);
+		while (not profileController->isSettled()) {
+			chassis->setState({chassis->getState().x, chassis->getState().x, (((imu.get_rotation()*3.14)/180) * okapi::radian)});
+			pros::delay(20);
+		}
+		profileController->waitUntilSettled();
+		pros::delay(1000);
+		chassis->setState({chassis->getState().x, chassis->getState().x, (((imu.get_rotation()*3.14)/180) * okapi::radian)});
+		// turn(-(origAngle + imu.get_rotation()));
+		profileController->setTarget("rickSCurve1", true, false);
+		// profileController->waitUntilSettled();
 		// flipout();
-		drive(-2000, -2000);
-		drive(2000, 2000);
+		// drive(2000, 2000);
 		// chassisState = chassis->getState().str();
+		chassis->getState().x;
 		break;
 
 	case -1:
@@ -757,6 +757,13 @@ void autonomous() {
  */
 
 void opcontrol() {
+	// yes sd card
+	// std::cout.rdbuf(out.rdbuf());
+	// std::cout << "engage rick.txt" << std::endl;
+	// reset cout buffer
+	// std::cout.rdbuf(coutbuf);
+	// std::cout << "nah its terminal fo today" << std::endl;
+
 	chassis->stop();
 	chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 	chassis->setMaxVelocity(200);
@@ -793,7 +800,7 @@ void opcontrol() {
 
 		// adjust tray based on lift position
 		else if (liftMotor.get_position() > LIFT_STACKING_HEIGHT) trayMotor.move_absolute(700, 100);
-		else if (liftMotor.get_position() <= LIFT_STACKING_HEIGHT and trayMotor.get_position() < 1400) trayMotor.move_absolute(0, 100);
+		else if (liftMotor.get_position() <= LIFT_STACKING_HEIGHT and trayMotor.get_position() < 400) trayMotor.move_absolute(0, 100);
 		else trayMotor.move(0);
 
 		// 2 is stacking, 1 is returning from stack, 0 is not stacking
@@ -812,8 +819,11 @@ void opcontrol() {
 			if (not shift.isPressed() and not shift.changedToReleased()) {
 				if (intakeIn.isPressed()) intakeMotors.moveVelocity(100);
 				else if (intakeOut.isPressed()) intakeMotors.moveVelocity(-100);
+				else if (joystickAvg < 0) intakeMotors.moveVelocity(joystickAvg*200);
 				else intakeMotors.moveVoltage(0);
 			}
+			else if (joystickAvg < 0) intakeMotors.moveVelocity(joystickAvg*200);
+			
 		}
 		else if (stackingState == 1) { // stuff to do when returning from stacking
 			intakeMotors.moveVelocity(joystickAvg*150);
@@ -833,13 +843,11 @@ void opcontrol() {
 
 		// update vals
 		joystickAvg = (masterController.getAnalog(ControllerAnalog::leftY) + (masterController.getAnalog(ControllerAnalog::rightY)) / 2);
+		chassis->setState({chassis->getState().x, chassis->getState().x, (((imu.get_rotation()*3.14)/180) * okapi::radian)});
 
 		// debug
-		std::cout << pros::millis() << ": left " << lefte.get_value() << std::endl;
-		std::cout << pros::millis() << ": mid " << mide.get_value() << std::endl;
-		std::cout << pros::millis() << ": right " << righte.get_value() << std::endl;
-		// std::cout << pros::millis() << ": imu " << imu.get_rotation() << std::endl;
-		// std::cout << pros::millis() << ": pos " << chassis->getState().str() << std::endl;
+		std::cout << pros::millis() << ": imu " << imu.get_rotation() << std::endl;
+		std::cout << pros::millis() << ": pos " << chassis->getState().str() << std::endl;
 		pros::delay(20);
 	}
 }
