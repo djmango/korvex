@@ -150,6 +150,22 @@
                 ],
                 "version": "3.2.1"
             },
+            "odomDebug": {
+                "location": "/home/djmango/.config/pros/templates/odomDebug@1.1.1",
+                "metadata": {
+                    "origin": "local"
+                },
+                "name": "odomDebug",
+                "py/object": "pros.conductor.templates.local_template.LocalTemplate",
+                "supported_kernels": "^3.1.7-commit.46.3806d04",
+                "system_files": [
+                    "include/odomDebug/odomDebug.hpp",
+                    "firmware/odomDebug.a"
+                ],
+                "target": "v5",
+                "user_files": [],
+                "version": "1.1.1"
+            },
             "okapilib": {
                 "location": "/home/djmango/.config/pros/templates/okapilib@4.0.2",
                 "metadata": {

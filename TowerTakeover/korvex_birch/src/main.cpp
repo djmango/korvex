@@ -1,8 +1,7 @@
 #include <fstream>
 #include "main.h"
 #include "korvexlib.h"
-#include "okapi/api.hpp"
-using namespace okapi;
+#include "odomDebug/odomDebug.hpp"
 
 // chassis
 auto chassis = ChassisControllerBuilder()
@@ -21,14 +20,30 @@ auto chassis = ChassisControllerBuilder()
 		)
 		// specify the tracking wheels diameter (2.75 in), track (4 in), and TPR (360)
 		// specify the middle encoder distance (2.25 in) and diameter (2.75 in)
-		.withOdometry({{2.75_in, 4.6_in, 2.4_in, 2.75_in}, quadEncoderTPR})
+		.withOdometry({{2.75_in, 4.6_in, 6_in, 2.75_in}, quadEncoderTPR})
 		.buildOdometry(); // build an odometry chassis
 
 auto profileController = AsyncMotionProfileControllerBuilder()
-    .withLimits({1.0, 2, 7.0}) //double maxVel double maxAccel double maxJerk 
+    .withLimits({1.0, 1.8, 5.0}) //double maxVel double maxAccel double maxJerk 
     .withOutput(chassis)
     .buildMotionProfileController();
 
+// motors
+pros::Motor liftMotor(LIFT_MTR, pros::E_MOTOR_GEARSET_36, false);
+pros::Motor trayMotor(TRAY_MTR, pros::E_MOTOR_GEARSET_36, false);
+okapi::MotorGroup intakeMotors({-INTAKE_MTR1, INTAKE_MTR2});
+
+// controller
+Controller masterController;
+ControllerButton liftUp(ControllerDigital::R1);
+ControllerButton liftDown(ControllerDigital::R2);
+ControllerButton intakeIn(ControllerDigital::L1);
+ControllerButton intakeOut(ControllerDigital::L2);
+ControllerButton intakeShift(ControllerDigital::right);
+ControllerButton shift(ControllerDigital::Y);
+
+// sensors
+pros::Imu imu(IMU_PORT);
 
 // base global defenitions
 int autonSelection = 42; // hitchhikers anyone?
@@ -321,6 +336,19 @@ void sdLog(bool yes) {
 
 }
 
+void setState(OdomDebug::state_t state) { // set your odometry position to these cartesian coordenates
+	// to access the values, call `state.x`, `state.y`, and `state.theta`
+	// to convert the QUnits to doubles, call
+	// `state.x.convert(inch)` or `state.theta.convert(radian)`
+
+	chassis->setState({state.x, state.y, state.theta});
+}
+
+void resetSensors() { // reset sensors and reset odometry
+	chassis->setState({0_in, 0_in, 0_deg});
+}
+
+
 static lv_res_t autonBtnmAction(lv_obj_t *btnm, const char *txt) {
 	if (lv_obj_get_free_num(btnm) == 100) {
 		if (txt == "Unprotec") autonSelection = -1;
@@ -371,6 +399,10 @@ static lv_res_t ddlist_action(lv_obj_t * ddlist) {
 
 void initialize()
 {
+	// save some time
+	imu.reset();
+	std::cout << pros::millis() << ": calibrating imu..." << std::endl;
+
 	// yes sd card
 	// std::cout.rdbuf(out.rdbuf());
 	// std::cout << "engage rick.txt" << std::endl;
@@ -378,9 +410,6 @@ void initialize()
 	// std::cout.rdbuf(coutbuf);
 	// std::cout << "nah its terminal fo today" << std::endl;
 	
-	// save some time
-	imu.reset();
-	std::cout << pros::millis() << ": calibrating imu..." << std::endl;
 
 	// lvgl theme
 	lv_theme_t *th = lv_theme_alien_init(360, NULL); //Set a HUE value and keep font default RED
@@ -397,17 +426,10 @@ void initialize()
 	lv_obj_t *telemetryTab = lv_tabview_add_tab(tabview, "Telemetry");
 
 	// telemetry tab
-
-	// drop down list
-	lv_obj_t * ddl1 = lv_ddlist_create(telemetryTab, NULL);
-	lv_ddlist_set_options(ddl1, "Intake\n"
-								"Chassis\n"
-								"Lift\n"
-								"Tray\n"
-								"Rick");
-	lv_obj_align(ddl1, NULL, LV_ALIGN_CENTER, -170, 0);
-	lv_ddlist_set_sb_mode(ddl1, LV_SB_MODE_ON);
-	lv_ddlist_set_action(ddl1, ddlist_action);
+	// odom debug gui
+	OdomDebug display(telemetryTab, LV_COLOR_ORANGE);
+	display.setStateCallback(setState);
+	display.setResetCallback(resetSensors);
 
 	// red tab
 	lv_obj_t *redBtnm = lv_btnm_create(redTab, NULL);
@@ -501,8 +523,7 @@ void competition_initialize() {}
 void autonomous() {
 	chassis->setState({0_in, 0_in, 0_deg});
 	chassis->setMaxVelocity(200);
-	float origAngle;
-	origAngle = imu.get_rotation();
+	float origAngle = imu.get_rotation();
 	auto chassisState = chassis->getState().str();
 	
 	// motor setup
@@ -511,7 +532,6 @@ void autonomous() {
 
 	if (autonSelection == 42) autonSelection = 0; // use debug if we havent selected any auton
 	std::cout << "auton  " << autonSelection << std::endl;
-	// okapi::QAngle e;
 
 	switch (autonSelection) {
 	case 0:
@@ -519,87 +539,24 @@ void autonomous() {
 		// chassis->turnToPoint({0_ft, 5_ft});
 		// chassis->turnToPoint({5_ft, 0_ft});
 		// chassis->turnAngle({90_deg});
-		pros::delay(10000);
+
+		// code yer own silly.
 
 		profileController->setTarget("rickSCurve1", false, true);
-		while (not profileController->isSettled()) {
-			chassis->setState({chassis->getState().x, chassis->getState().x, (((imu.get_rotation()*3.14)/180) * okapi::radian)});
-			pros::delay(20);
-		}
 		profileController->waitUntilSettled();
 		pros::delay(1000);
-		chassis->setState({chassis->getState().x, chassis->getState().x, (((imu.get_rotation()*3.14)/180) * okapi::radian)});
-		// turn(-(origAngle + imu.get_rotation()));
+		turn(-(origAngle + imu.get_rotation()));
 		profileController->setTarget("rickSCurve1", true, false);
 		// profileController->waitUntilSettled();
 		// flipout();
-		// drive(2000, 2000);
-		// chassisState = chassis->getState().str();
-		chassis->getState().x;
 		break;
 
 	case -1:
 		// red unprotec
-		// flip. out.
-		flipout();
-		// move forward and intake and get the 4 laid in a line
-		intakeMotors.moveVelocity(200);
-		drive(2500, 2500, 80);
-		intakeMotors.moveVelocity(0);
-		liftMotor.move_voltage(0);
-		// back
-		drive(-1300, -1300, 80);
-		// turn for stack
-		drive(600, -600, 80);
-		// drive to stack
-		intakeMotors.moveRelative(-700, 150);
-		drive(1350, 1350, 80);
-		// stack
-		intakeMotors.moveVelocity(-20);
-		liftMotor.move_absolute(-200, 100);
-		trayMotor.move_absolute(6200, 100);
-		while (trayMotor.get_position() < 6150) {
-			pros::delay(20);
-		}
-		trayMotor.move_absolute(0, 100);
-		drive(-800, -800, 50);
 		break;
 
 	case -2:
 		// red protec
-		flipout();
-		intakeMotors.moveVelocity(200);
-		pros::delay(300);
-		turn(-(origAngle + imu.get_rotation())); // set heading to as close to 0 degrees as possible
-		// move forward and intake and get the 4 laid in a line
-		drive(2200, 2200, 60);
-		intakeMotors.moveVelocity(0);
-		liftMotor.move_voltage(0);
-		// turn to line up with final cube
-		turn(-115 -(origAngle + imu.get_rotation()), 80);
-		// grab final cube
-		intakeMotors.moveVelocity(200);
-		drive(1400, 1400, 80);
-		intakeMotors.moveVelocity(0);
-		// turn(-22);
-		// trayMotor.move_absolute(1800, 100);
-		// drive(1200, 1200, 80);
-		// // stack
-		// intakeMotors.moveRelative(-400, 80); // quik stak
-		// trayMotor.move_absolute(6200, 100);
-		// drive(500, 500, 80);
-		// while (trayMotor.get_position() < 3000) {
-		// 	pros::delay(20);
-		// }
-		// intakeMotors.moveVelocity(-13);
-		// drive(150, 150, 80);
-		// while (trayMotor.get_position() < 6000) {
-		// 	pros::delay(20);
-		// }
-		// intakeMotors.moveVelocity(13);
-		// trayMotor.move_absolute(0, 100);
-		// drive(-800, -800, 60);
-		// intakeMotors.moveVelocity(0);
 		break;
 	
 	case -3:
