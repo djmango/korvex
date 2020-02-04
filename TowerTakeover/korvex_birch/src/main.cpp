@@ -7,20 +7,18 @@
 auto chassis = ChassisControllerBuilder()
 		.withMotors({LEFT_MTR2, LEFT_MTR1}, {-RIGHT_MTR2, -RIGHT_MTR1})
 		.withGains(
-			{0.002, 0.01, 0.000}, // Distance controller gains
-			{0.000, 0.0, 0.000}, // Turn controller gains
+			{0.001, 0.0004, 0.00001}, // Distance controller gains
+			{0.0001, 0.0001, 0.000}, // Turn controller gains
 			{0.002, 0.01, 0.000} // Angle controller gains (helps drive straight)
 		)
 		// green gearset, 4 inch wheel diameter, 8.125 inch wheelbase
 		.withDimensions(AbstractMotor::gearset::green, {{4_in, 8.125_in}, imev5GreenTPR})
 		.withSensors(
 			ADIEncoder{'A', 'B'}, // left encoder in ADI ports A & B, reversed
-			ADIEncoder{'E', 'F', true},  // right encoder in ADI ports E & F
-			ADIEncoder{'C', 'D'}  // middle encoder in ADI ports C & D
+			ADIEncoder{'E', 'F', true}  // right encoder in ADI ports E & F
 		)
 		// specify the tracking wheels diameter (2.75 in), track (4 in), and TPR (360)
-		// specify the middle encoder distance (2.25 in) and diameter (2.75 in)
-		.withOdometry({{2.75_in, 4.6_in, 6_in, 2.75_in}, quadEncoderTPR})
+		.withOdometry({{2.75_in, 4.6_in}, quadEncoderTPR})
 		.buildOdometry(); // build an odometry chassis
 
 auto profileController = AsyncMotionProfileControllerBuilder()
@@ -41,6 +39,7 @@ ControllerButton intakeIn(ControllerDigital::L1);
 ControllerButton intakeOut(ControllerDigital::L2);
 ControllerButton intakeShift(ControllerDigital::right);
 ControllerButton shift(ControllerDigital::Y);
+ControllerButton trayReturn(ControllerDigital::X);
 
 // sensors
 pros::Imu imu(IMU_PORT);
@@ -253,11 +252,14 @@ void turn(int target, int voltageMax=115){
 void flipout() { // a blocking flipout function
 	trayMotor.move_absolute(1000, 100);
 	liftMotor.move_velocity(100);
+	while (liftMotor.get_position() < 1000) { // dont mess up the preload
+		pros::delay(20);
+	}
 	intakeMotors.moveVelocity(-200);
 	while (liftMotor.get_position() < 2000) { // wait until we initiate flipout
 		pros::delay(20);
 	}
-	liftMotor.move_absolute(-200, 100);
+	liftMotor.move_absolute(-100, 100);
 	while (liftMotor.get_position() > 600) { // wait until we initiate flipout
 		pros::delay(20);
 	}
@@ -285,7 +287,7 @@ void stackRick() { // a blocking stack function
 
 void traySlew(bool forward) {
 	if (forward) {
-		if (trayMotor.get_position() > 5000) trayMotor.move_velocity(40);
+		if (trayMotor.get_position() > 4500) trayMotor.move_velocity(40);
 		else trayMotor.move_velocity(100);
 	}
 	else {
@@ -371,25 +373,6 @@ static lv_res_t skillsBtnAction(lv_obj_t *btn) {
 	return LV_RES_OK;
 }
 
-static lv_res_t ddlist_action(lv_obj_t * ddlist) {
-
-    char selectedMotor[32];
-	char motorTemp[2];
-    lv_ddlist_get_selected_str(ddlist, selectedMotor);
-
-	if (selectedMotor == "Intake") {
-		char motorTemp = intakeMotors.getTemperature();
-	}
-
-	lv_obj_t *msgBox = lv_mbox_create(ddlist, NULL);
-	lv_mbox_set_text(msgBox, selectedMotor);
-	lv_obj_align(msgBox, ddlist, LV_ALIGN_CENTER, 0, 0);
-	lv_mbox_set_anim_time(msgBox, 100);
-	lv_mbox_start_auto_close(msgBox, 5000);
-
-    return LV_RES_OK; /*Return OK if the drop down list is not deleted*/
-}
-
 /**
  * Runs initialization code. This occurs as soon as the program is started.
  *
@@ -397,8 +380,7 @@ static lv_res_t ddlist_action(lv_obj_t * ddlist) {
  * to keep execution time for this mode under a few seconds.
  */
 
-void initialize()
-{
+void initialize() {
 	// save some time
 	imu.reset();
 	std::cout << pros::millis() << ": calibrating imu..." << std::endl;
@@ -427,9 +409,10 @@ void initialize()
 
 	// telemetry tab
 	// odom debug gui
-	OdomDebug display(telemetryTab, LV_COLOR_ORANGE);
-	display.setStateCallback(setState);
-	display.setResetCallback(resetSensors);
+	// TODO: add this in telem tab
+	// OdomDebug display(lv_scr_act(), LV_COLOR_ORANGE);
+	// display.setStateCallback(setState);
+	// display.setResetCallback(resetSensors);
 
 	// red tab
 	lv_obj_t *redBtnm = lv_btnm_create(redTab, NULL);
@@ -523,32 +506,43 @@ void competition_initialize() {}
 void autonomous() {
 	chassis->setState({0_in, 0_in, 0_deg});
 	chassis->setMaxVelocity(200);
+	chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
 	float origAngle = imu.get_rotation();
-	auto chassisState = chassis->getState().str();
 	
 	// motor setup
 	intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
 	if (autonSelection == 42) autonSelection = 0; // use debug if we havent selected any auton
-	std::cout << "auton  " << autonSelection << std::endl;
+	std::cout << pros::millis() << ": auton  " << autonSelection << std::endl;
 
 	switch (autonSelection) {
 	case 0:
 		// skills doesnt exist.
-		// chassis->turnToPoint({0_ft, 5_ft});
-		// chassis->turnToPoint({5_ft, 0_ft});
-		// chassis->turnAngle({90_deg});
-
-		// code yer own silly.
-
-		profileController->setTarget("rickSCurve1", false, true);
-		profileController->waitUntilSettled();
-		pros::delay(1000);
-		turn(-(origAngle + imu.get_rotation()));
-		profileController->setTarget("rickSCurve1", true, false);
-		// profileController->waitUntilSettled();
-		// flipout();
+		// chassis->driveToPoint({20_cm, 0_ft});
+		std::cout << pros::millis() << ": state  " << chassis->getState().str() << std::endl;
+		
+		// 5c
+		flipout();
+		// grab 4 cubes
+		intakeMotors.moveVelocity(200);
+		drive(1800, 1800, 70);
+		intakeMotors.moveVoltage(0);
+		// turn for stack
+		turn(150 - imu.get_rotation());
+		// move to zone
+		intakeMotors.moveRelative(-700, 150);
+		drive(1700, 1700, 80);
+		// stack
+		intakeMotors.moveVelocity(-20);
+		liftMotor.move_absolute(-100, 100);
+		trayMotor.move_absolute(6200, 100);
+		while (trayMotor.get_position() < 6000) {
+			pros::delay(20);
+		}
+		trayMotor.move_absolute(0, 100);
+		intakeMotors.moveVelocity(-50);
+		drive(-1200, -1200, 80);
 		break;
 
 	case -1:
@@ -714,19 +708,12 @@ void autonomous() {
  */
 
 void opcontrol() {
-	// yes sd card
-	// std::cout.rdbuf(out.rdbuf());
-	// std::cout << "engage rick.txt" << std::endl;
-	// reset cout buffer
-	// std::cout.rdbuf(coutbuf);
-	// std::cout << "nah its terminal fo today" << std::endl;
-
 	chassis->stop();
 	chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 	chassis->setMaxVelocity(200);
 	float joystickAvg = 0;
 	int stackingState = 0;
-	int cyclesSinceStacking = 0;
+	bool trayReturning = false;
 
 	// motor setup
 	trayMotor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
@@ -745,49 +732,60 @@ void opcontrol() {
 			if (intakeIn.isPressed() and not intakeOut.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(100); // if we are dumping into tower, redue intake velocity as not to shoot the cube halfway accross the field
 			else if (intakeIn.isPressed() and not intakeOut.isPressed()) intakeMotors.moveVelocity(200);
 			else if (intakeOut.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(-100);
-			else if (intakeOut.isPressed() or intakeShift.isPressed()) intakeMotors.moveVelocity(-200);
+			else if (intakeOut.isPressed() or (intakeShift.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT)) intakeMotors.moveVelocity(-200);
+			else if (intakeShift.isPressed() and not (intakeOut.isPressed() or intakeIn.isPressed())) intakeMotors.moveVelocity(-50);
 			else intakeMotors.moveVoltage(0);
 		}
-
-		// tray control using shift key
-		if (shift.isPressed()) { //shift key
-			if (intakeIn.isPressed()) traySlew(true);
-			else if (intakeOut.isPressed()) traySlew(false);
+		
+		// advanced tray control, also with goal-oriented assists
+		// stackingState: 2 is stacking, 1 is returning from stack, 0 is not stacking
+		if (trayReturn.changedToPressed()) { // return to normal if requested manually, this is highest priority control
+			intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
+			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
+			trayMotor.move_absolute(0, 100);
+			stackingState = 0;
+			trayReturning = true;
 		}
 
-		// adjust tray based on lift position
-		else if (liftMotor.get_position() > LIFT_STACKING_HEIGHT) trayMotor.move_absolute(700, 100);
-		else if (liftMotor.get_position() <= LIFT_STACKING_HEIGHT and trayMotor.get_position() < 400) trayMotor.move_absolute(0, 100);
-		else trayMotor.move(0);
+		if (trayMotor.get_position() <= 100) trayReturning = false; // let functions know if weve returned
 
-		// 2 is stacking, 1 is returning from stack, 0 is not stacking
-		if (trayMotor.get_position() > 2000 and trayMotor.get_actual_velocity() > -30) stackingState = 2;
-		else if (trayMotor.get_position() > 2000 and trayMotor.get_actual_velocity() < -30) stackingState = 1;
-		else if (cyclesSinceStacking < 150 and stackingState == 1) cyclesSinceStacking += 1; // allow for 3 seconds before we declare we are clear of stacking
-		else { // we are done stacking
-			cyclesSinceStacking = 0;
-			stackingState = 0;
+		// set stackingState
+		if (trayMotor.get_position() > 1000 and trayMotor.get_actual_velocity() >= -20) stackingState = 2;
+		else if (trayMotor.get_position() > 1000 and trayMotor.get_actual_velocity() <= -20) stackingState = 1;
+		else if (trayMotor.get_position() < 1000) stackingState = 0;
+
+		if (not trayReturning) {
+			if (shift.isPressed()) { // tray control using shift key
+				if (intakeIn.isPressed()) traySlew(true);
+				else if (intakeOut.isPressed()) traySlew(false);
+			}
+			// adjust tray based on lift position
+			else if (liftMotor.get_position() > LIFT_STACKING_HEIGHT) trayMotor.move_absolute(600, 100);
+			else if (liftMotor.get_position() <= LIFT_STACKING_HEIGHT and trayMotor.get_position() <= 600) trayMotor.move_absolute(0, 100);
+			else trayMotor.move(0);
 		}
 
 		// tray stacking mods
-		if (stackingState == 2) { // brake and slow and allow user intake control while stacking
-			liftMotor.move_absolute(-150, 100);
-			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
-			if (not shift.isPressed() and not shift.changedToReleased()) {
-				if (intakeIn.isPressed()) intakeMotors.moveVelocity(100);
-				else if (intakeOut.isPressed()) intakeMotors.moveVelocity(-100);
-				else if (joystickAvg < 0) intakeMotors.moveVelocity(joystickAvg*200);
-				else intakeMotors.moveVoltage(0);
-			}
-			else if (joystickAvg < 0) intakeMotors.moveVelocity(joystickAvg*200);
-			
-		}
-		else if (stackingState == 1) { // stuff to do when returning from stacking
-			intakeMotors.moveVelocity(joystickAvg*150);
-		}
-		else if (stackingState == 0) { // return to normal after we stacked
+		if (stackingState == 0) { // return to normal after we stacked
 			intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
 			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
+		}
+		else if (stackingState == 1) { // stuff to do when returning from stacking
+			intakeMotors.moveVelocity(joystickAvg*250);
+			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
+		}
+		else if (stackingState == 2) { // brake and slow and allow user intake control while stacking
+			liftMotor.move_absolute(-150, 100);
+			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
+
+			// the other intake control will not be used while we are stacking, all control is transfered to this block
+			if (not shift.isPressed() and not shift.changedToReleased()) {
+				if (intakeIn.isPressed()) intakeMotors.moveVelocity(50);
+				else if (intakeOut.isPressed() or intakeShift.isPressed()) intakeMotors.moveVelocity(-50); // two ways to move stack down slowly
+				else if (joystickAvg < 0) intakeMotors.moveVelocity(joystickAvg*250);
+				else intakeMotors.moveVoltage(0);
+			}
+			else if (joystickAvg < 0) intakeMotors.moveVelocity(joystickAvg*250);
 		}
 
 		// lift brake mod
@@ -803,8 +801,9 @@ void opcontrol() {
 		chassis->setState({chassis->getState().x, chassis->getState().x, (((imu.get_rotation()*3.14)/180) * okapi::radian)});
 
 		// debug
-		std::cout << pros::millis() << ": imu " << imu.get_rotation() << std::endl;
-		std::cout << pros::millis() << ": pos " << chassis->getState().str() << std::endl;
+		std::cout << pros::millis() << ": ee " << stackingState << std::endl;
+		// std::cout << pros::millis() << ": imu " << imu.get_rotation() << std::endl;
+		// std::cout << pros::millis() << ": pos " << chassis->getState().str() << std::endl;
 		pros::delay(20);
 	}
 }
