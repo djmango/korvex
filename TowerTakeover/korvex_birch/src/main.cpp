@@ -40,9 +40,11 @@ ControllerButton intakeOut(ControllerDigital::L2);
 ControllerButton intakeShift(ControllerDigital::right);
 ControllerButton shift(ControllerDigital::Y);
 ControllerButton trayReturn(ControllerDigital::X);
+ControllerButton cubeReturn(ControllerDigital::B);
 
 // sensors
 pros::Imu imu(IMU_PORT);
+pros::ADIAnalogIn line(LINE_PORT);
 
 // base global defenitions
 int autonSelection = 42; // hitchhikers anyone?
@@ -384,6 +386,8 @@ void initialize() {
 	// save some time
 	imu.reset();
 	std::cout << pros::millis() << ": calibrating imu..." << std::endl;
+	line.calibrate();
+	std::cout << pros::millis() << ": calibrating line tracker..." << std::endl;
 
 	// yes sd card
 	// std::cout.rdbuf(out.rdbuf());
@@ -711,9 +715,10 @@ void opcontrol() {
 	chassis->stop();
 	chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 	chassis->setMaxVelocity(200);
-	float joystickAvg = 0;
-	int stackingState = 0;
-	bool trayReturning = false;
+	float joystickAvg = 0; // an average of the left and right joystick values
+	int stackingState = 0; // 2 is stacking, 1 is returning from stack, 0 is not stacking
+	bool cubesReturning = false; // true when we are moving the cubes down to the line sensor, for stacking
+	bool trayReturning = false; // true when the tray return to 0 is active
 
 	// motor setup
 	trayMotor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
@@ -728,17 +733,27 @@ void opcontrol() {
 		else liftMotor.move(0);
 
 		// advanced intake control, with goal-oriented assists
-		if (stackingState == 0 and not shift.isPressed()) {
+
+		// auto cube positioning for stacking
+		if (cubeReturn.isPressed()) cubesReturning = true; // outake until we detect cube
+
+		if (cubesReturning) {
+			if (line.get_value_calibrated_HR() < 46000) { // if we detect a cube
+				cubesReturning = 0;
+			}
+			else intakeMotors.moveVelocity(-50);
+		}
+
+		// user controlled intake
+		if (stackingState == 0 and not shift.isPressed()) { // if nothing else is controlling the intake and we arent moving the tray
 			if (intakeIn.isPressed() and not intakeOut.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(100); // if we are dumping into tower, redue intake velocity as not to shoot the cube halfway accross the field
 			else if (intakeIn.isPressed() and not intakeOut.isPressed()) intakeMotors.moveVelocity(200);
 			else if (intakeOut.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(-100);
 			else if (intakeOut.isPressed() or (intakeShift.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT)) intakeMotors.moveVelocity(-200);
-			else if (intakeShift.isPressed() and not (intakeOut.isPressed() or intakeIn.isPressed())) intakeMotors.moveVelocity(-50);
-			else intakeMotors.moveVoltage(0);
+			else if (not cubesReturning) intakeMotors.moveVoltage(0);
 		}
 		
 		// advanced tray control, also with goal-oriented assists
-		// stackingState: 2 is stacking, 1 is returning from stack, 0 is not stacking
 		if (trayReturn.changedToPressed()) { // return to normal if requested manually, this is highest priority control
 			intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
 			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
@@ -801,7 +816,8 @@ void opcontrol() {
 		chassis->setState({chassis->getState().x, chassis->getState().x, (((imu.get_rotation()*3.14)/180) * okapi::radian)});
 
 		// debug
-		std::cout << pros::millis() << ": ee " << stackingState << std::endl;
+		std::cout << pros::millis() << ": line " << line.get_value_calibrated_HR() << std::endl;
+		std::cout << pros::millis() << ": state " << cubesReturning << std::endl;
 		// std::cout << pros::millis() << ": imu " << imu.get_rotation() << std::endl;
 		// std::cout << pros::millis() << ": pos " << chassis->getState().str() << std::endl;
 		pros::delay(20);
