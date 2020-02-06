@@ -122,7 +122,7 @@ void driveP(int voltageMax) {
 
 	// timeout utility
 	if (errorLast == errorCurrent) {
-		if (errorCurrent < 2) {
+		if (errorCurrent <= 2) {
 			same0ErrCycles +=1;
 		}
 		sameErrCycles += 1;
@@ -133,7 +133,7 @@ void driveP(int voltageMax) {
 	}
 
 	// exit paramaters
-	if ((errorLast < 4 and errorCurrent < 4) or sameErrCycles >= 10) { // allowing for smol error or exit if we stay the same err for .2 second
+	if ((errorLast < 5 and errorCurrent < 5) or sameErrCycles >= 10) { // allowing for smol error or exit if we stay the same err for .2 second
 		chassis->stop();
 		std::cout << "task complete with error " << errorCurrent << " in " << (pros::millis() - startTime) << "ms" << std::endl;
 		return;
@@ -213,7 +213,7 @@ void turnP(int voltageMax) {
 
 	// timeout utility
 	if (errorLastInt == errorCurrentInt) {
-		if (errorLast < 2 and errorCurrent < 2) { // saying that error less than 2 counts as 0
+		if (errorLast <= 2 and errorCurrent <= 2) { // saying that error less than 2 counts as 0
 			same0ErrCycles +=1;
 		}
 		sameErrCycles += 1;
@@ -530,7 +530,7 @@ void autonomous() {
 	case -1:
 		// red unprotec 5 cube
 		flipout();
-		pros::delay(500);
+		pros::delay(300);
 		turn(-(origAngle + imu.get_rotation()));
 		// grab 4 cubes
 		intakeMotors.moveVelocity(200);
@@ -595,7 +595,7 @@ void autonomous() {
 	case 1:
 		// blue unprotec 5 cube
 		flipout();
-		pros::delay(500);
+		pros::delay(300);
 		turn(-(origAngle + imu.get_rotation()));
 		// grab 4 cubes
 		intakeMotors.moveVelocity(200);
@@ -621,38 +621,33 @@ void autonomous() {
 	case 2:
 		// blue protec
 		flipout();
-		pros::delay(500);
-		turn(-(origAngle + imu.get_rotation()));
 		// grab 3 cubes
-		intakeMotors.moveVelocity(200);
-		drive(2200, 2200, 70);
-		intakeMotors.moveVoltage(0);
-		// grab cube by tower
-		turn(30 - imu.get_rotation());
-		intakeMotors.moveVelocity(200);
-		drive(500, 500);
+		intakeMotors.moveRelative(5000, 200);
+		drive(1700, 1700, 80);
 		intakeMotors.moveVoltage(0);
 		// turn for final cube
-		turn(160 - imu.get_rotation());
+		turn(130 - imu.get_rotation());
 		// grab final cube
-		intakeMotors.moveVelocity(200);
-		drive(800, 800);
-		intakeMotors.moveVoltage(0);
+		intakeMotors.moveRelative(5400, 200);
+		drive(1300, 1300, 70);
 		// turn for stack
-		turn(150 - imu.get_rotation());
+		turn(125 - imu.get_rotation());
 		// move to zone
-		intakeMotors.moveRelative(-700, 50);
-		drive(1500, 1500, 80);
+		drive(700, 700);
+		intakeMotors.moveRelative(-900, 80);
 		// stack
-		intakeMotors.moveVelocity(-20);
 		liftMotor.move_absolute(-20, 100);
 		trayMotor.move_absolute(6200, 100);
+		while (trayMotor.get_position() < 3500) {
+			pros::delay(20);
+		}
+		intakeMotors.moveVelocity(-20);
 		while (trayMotor.get_position() < 6000) {
 			pros::delay(20);
 		}
 		trayMotor.move_absolute(0, 100);
 		intakeMotors.moveVelocity(-50);
-		drive(-600, -600, 80);
+		drive(-800, -800, 80);
 		intakeMotors.moveVelocity(0);
 		break;
 	case 3:
