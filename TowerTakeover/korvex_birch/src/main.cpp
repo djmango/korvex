@@ -261,12 +261,12 @@ void flipout() { // a blocking flipout function
 	while (liftMotor.get_position() < 2000) { // wait until we initiate flipout
 		pros::delay(20);
 	}
-	liftMotor.move_absolute(-100, 100);
+	liftMotor.move_absolute(0, 100);
 	while (liftMotor.get_position() > 600) { // wait until we initiate flipout
 		pros::delay(20);
 	}
 	intakeMotors.moveVelocity(200);
-	trayMotor.move_absolute(0, 100);
+	trayMotor.move_absolute(20, 100);
 }
 
 void stackRick() { // a blocking stack function
@@ -517,7 +517,7 @@ void autonomous() {
 	intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
-	if (autonSelection == 42) autonSelection = 0; // use debug if we havent selected any auton
+	if (autonSelection == 42) autonSelection = 2; // use debug if we havent selected any auton
 	std::cout << pros::millis() << ": auton  " << autonSelection << std::endl;
 
 	switch (autonSelection) {
@@ -525,32 +525,33 @@ void autonomous() {
 		// skills doesnt exist.
 		// chassis->driveToPoint({20_cm, 0_ft});
 		std::cout << pros::millis() << ": state  " << chassis->getState().str() << std::endl;
-		
-		// 5c
+		break;
+
+	case -1:
+		// red unprotec 5 cube
 		flipout();
+		pros::delay(500);
+		turn(-(origAngle + imu.get_rotation()));
 		// grab 4 cubes
 		intakeMotors.moveVelocity(200);
 		drive(1800, 1800, 70);
 		intakeMotors.moveVoltage(0);
 		// turn for stack
-		turn(150 - imu.get_rotation());
+		turn(152 - imu.get_rotation()); // use absolute positioning
 		// move to zone
-		intakeMotors.moveRelative(-700, 150);
-		drive(1700, 1700, 80);
+		intakeMotors.moveRelative(-700, 50);
+		drive(1500, 1500, 80);
 		// stack
 		intakeMotors.moveVelocity(-20);
-		liftMotor.move_absolute(-100, 100);
+		liftMotor.move_absolute(-20, 100);
 		trayMotor.move_absolute(6200, 100);
 		while (trayMotor.get_position() < 6000) {
 			pros::delay(20);
 		}
 		trayMotor.move_absolute(0, 100);
 		intakeMotors.moveVelocity(-50);
-		drive(-1200, -1200, 80);
-		break;
-
-	case -1:
-		// red unprotec
+		drive(-600, -600, 80);
+		intakeMotors.moveVelocity(0);
 		break;
 
 	case -2:
@@ -592,71 +593,67 @@ void autonomous() {
 		break;
 	
 	case 1:
-		// blue unprotec
-		// flip. out.
-		liftMotor.move_velocity(100);
-		while (liftMotor.get_position() < 2000) { // wait until we initiate flipout
-			pros::delay(20);
-		}
-		liftMotor.move_absolute(-200, 100);
-		pros::delay(600);
-		// move forward and intake and get the 4 laid in a line
+		// blue unprotec 5 cube
+		flipout();
+		pros::delay(500);
+		turn(-(origAngle + imu.get_rotation()));
+		// grab 4 cubes
 		intakeMotors.moveVelocity(200);
-		drive(2500, 2500, 80);
-		intakeMotors.moveVelocity(0);
-		liftMotor.move_voltage(0);
-		// back
-		drive(-1300, -1300, 80);
+		drive(1800, 1800, 70);
+		intakeMotors.moveVoltage(0);
 		// turn for stack
-		drive(-600, 600, 80);
-		// drive to stack
-		intakeMotors.moveRelative(-700, 150);
-		drive(1350, 1350, 80);
+		turn(-150 - imu.get_rotation()); // use absolute positioning
+		// move to zone
+		intakeMotors.moveRelative(-700, 50);
+		drive(1500, 1500, 80);
 		// stack
 		intakeMotors.moveVelocity(-20);
-		liftMotor.move_absolute(-200, 100);
+		liftMotor.move_absolute(-20, 100);
 		trayMotor.move_absolute(6200, 100);
-		while (trayMotor.get_position() < 6150) {
+		while (trayMotor.get_position() < 6000) {
 			pros::delay(20);
 		}
 		trayMotor.move_absolute(0, 100);
-		drive(-800, -800, 50);
+		intakeMotors.moveVelocity(-50);
+		drive(-600, -600, 80);
+		intakeMotors.moveVelocity(0);
 		break;
 	case 2:
 		// blue protec
 		flipout();
+		pros::delay(500);
+		turn(-(origAngle + imu.get_rotation()));
+		// grab 3 cubes
 		intakeMotors.moveVelocity(200);
-		pros::delay(300);
-		turn(-(origAngle + imu.get_rotation())); // set heading to as close to 0 degrees as possible
-		// move forward and intake and get the 4 laid in a line
-		drive(2200, 2200, 60);
-		intakeMotors.moveVelocity(0);
-		liftMotor.move_voltage(0);
-		// turn to line up with final cube
-		turn(115 -(origAngle + imu.get_rotation()), 80);
+		drive(2200, 2200, 70);
+		intakeMotors.moveVoltage(0);
+		// grab cube by tower
+		turn(30 - imu.get_rotation());
+		intakeMotors.moveVelocity(200);
+		drive(500, 500);
+		intakeMotors.moveVoltage(0);
+		// turn for final cube
+		turn(160 - imu.get_rotation());
 		// grab final cube
 		intakeMotors.moveVelocity(200);
-		drive(1400, 1400, 80);
-		intakeMotors.moveVelocity(0);
-		turn(22);
-		trayMotor.move_absolute(1800, 100);
-		drive(1200, 1200, 80);
+		drive(800, 800);
+		intakeMotors.moveVoltage(0);
+		// turn for stack
+		turn(150 - imu.get_rotation());
+		// move to zone
+		intakeMotors.moveRelative(-700, 50);
+		drive(1500, 1500, 80);
 		// stack
-		intakeMotors.moveRelative(-400, 80); // quik stak
+		intakeMotors.moveVelocity(-20);
+		liftMotor.move_absolute(-20, 100);
 		trayMotor.move_absolute(6200, 100);
-		drive(500, 500, 80);
-		while (trayMotor.get_position() < 3000) {
-			pros::delay(20);
-		}
-		intakeMotors.moveVelocity(-13);
-		drive(150, 150, 80);
 		while (trayMotor.get_position() < 6000) {
 			pros::delay(20);
 		}
-		intakeMotors.moveVelocity(13);
 		trayMotor.move_absolute(0, 100);
-		drive(-800, -800, 60);
-		// intakeMotors.moveVelocity(0);
+		intakeMotors.moveVelocity(-50);
+		drive(-600, -600, 80);
+		intakeMotors.moveVelocity(0);
 		break;
 	case 3:
 		// blue unprotec 8 cube (rick)
@@ -769,8 +766,9 @@ void opcontrol() {
 		else if (trayMotor.get_position() > 1000 and trayMotor.get_actual_velocity() <= -20) stackingState = 1;
 		else if (trayMotor.get_position() < 1000) stackingState = 0;
 
+		// tray control using shift key
 		if (not trayReturning) {
-			if (shift.isPressed()) { // tray control using shift key
+			if (shift.isPressed()) {
 				if (intakeIn.isPressed()) traySlew(true);
 				else if (intakeOut.isPressed()) traySlew(false);
 			}
@@ -816,8 +814,6 @@ void opcontrol() {
 		chassis->setState({chassis->getState().x, chassis->getState().x, (((imu.get_rotation()*3.14)/180) * okapi::radian)});
 
 		// debug
-		std::cout << pros::millis() << ": line " << line.get_value_calibrated_HR() << std::endl;
-		std::cout << pros::millis() << ": state " << cubesReturning << std::endl;
 		// std::cout << pros::millis() << ": imu " << imu.get_rotation() << std::endl;
 		// std::cout << pros::millis() << ": pos " << chassis->getState().str() << std::endl;
 		pros::delay(20);
