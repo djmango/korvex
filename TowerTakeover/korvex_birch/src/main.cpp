@@ -517,7 +517,7 @@ void autonomous() {
 	intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
-	if (autonSelection == 42) autonSelection = 2; // use debug if we havent selected any auton
+	if (autonSelection == 42) autonSelection = -1; // use debug if we havent selected any auton
 	std::cout << pros::millis() << ": auton  " << autonSelection << std::endl;
 
 	switch (autonSelection) {
@@ -555,7 +555,37 @@ void autonomous() {
 		break;
 
 	case -2:
-		// red protec
+		// red protec 4 cube
+		flipout();
+		turn(-(origAngle + imu.get_rotation()));
+		// grab 3 cubes
+		intakeMotors.moveRelative(5000, 200);
+		drive(1700, 1700, 70);
+		intakeMotors.moveVoltage(0);
+		// turn for final cube
+		turn(-132 - imu.get_rotation());
+		// grab final cube
+		intakeMotors.moveRelative(5000, 200);
+		drive(1300, 1300, 70);
+		// move to zone
+		turn(-136 - imu.get_rotation());
+		drive(580, 580);
+		// stack
+		intakeMotors.moveRelative(-1300, 90);
+		liftMotor.move_absolute(-20, 100);
+		trayMotor.move_absolute(6200, 100);
+		while (trayMotor.get_position() < 4000) {
+			pros::delay(20);
+		}
+		intakeMotors.moveVelocity(-30);
+		while (trayMotor.get_position() < 6000) {
+			pros::delay(20);
+		}
+		trayMotor.move_absolute(0, 100);
+		intakeMotors.moveVelocity(-50);
+		drive(200, 200);
+		drive(-800, -800, 80);
+		intakeMotors.moveVelocity(0);
 		break;
 	
 	case -3:
@@ -619,8 +649,9 @@ void autonomous() {
 		intakeMotors.moveVelocity(0);
 		break;
 	case 2:
-		// blue protec
+		// blue protec 4 cube
 		flipout();
+		turn(-(origAngle + imu.get_rotation()));
 		// grab 3 cubes
 		intakeMotors.moveRelative(5000, 200);
 		drive(1700, 1700, 80);
@@ -630,15 +661,13 @@ void autonomous() {
 		// grab final cube
 		intakeMotors.moveRelative(5400, 200);
 		drive(1300, 1300, 70);
-		// turn for stack
-		turn(125 - imu.get_rotation());
 		// move to zone
-		drive(700, 700);
-		intakeMotors.moveRelative(-900, 80);
+		drive(550, 550);
+		intakeMotors.moveRelative(-900, 90);
 		// stack
 		liftMotor.move_absolute(-20, 100);
 		trayMotor.move_absolute(6200, 100);
-		while (trayMotor.get_position() < 3500) {
+		while (trayMotor.get_position() < 3800) {
 			pros::delay(20);
 		}
 		intakeMotors.moveVelocity(-20);
