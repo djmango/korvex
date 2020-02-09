@@ -517,7 +517,7 @@ void autonomous() {
 	intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
-	if (autonSelection == 42) autonSelection = -1; // use debug if we havent selected any auton
+	if (autonSelection == 42) autonSelection = 3; // use debug if we havent selected any auton
 	std::cout << pros::millis() << ": auton  " << autonSelection << std::endl;
 
 	switch (autonSelection) {
@@ -533,11 +533,10 @@ void autonomous() {
 		pros::delay(300);
 		turn(-(origAngle + imu.get_rotation()));
 		// grab 4 cubes
-		intakeMotors.moveVelocity(200);
+		intakeMotors.moveRelative(5400, 200);
 		drive(1800, 1800, 70);
-		intakeMotors.moveVoltage(0);
 		// turn for stack
-		turn(152 - imu.get_rotation()); // use absolute positioning
+		turn(150 - imu.get_rotation()); // use absolute positioning
 		// move to zone
 		intakeMotors.moveRelative(-700, 50);
 		drive(1500, 1500, 80);
@@ -550,6 +549,7 @@ void autonomous() {
 		}
 		trayMotor.move_absolute(0, 100);
 		intakeMotors.moveVelocity(-50);
+		drive(250, 250);
 		drive(-600, -600, 80);
 		intakeMotors.moveVelocity(0);
 		break;
@@ -583,43 +583,39 @@ void autonomous() {
 		}
 		trayMotor.move_absolute(0, 100);
 		intakeMotors.moveVelocity(-50);
-		drive(200, 200);
+		drive(250, 250);
 		drive(-800, -800, 80);
 		intakeMotors.moveVelocity(0);
 		break;
 	
 	case -3:
-		// red unprotec 8 cube (rick)
+		// red protec 3 cube
 		flipout();
-		pros::delay(300);
-		turn(-(origAngle + imu.get_rotation())); // set heading to as close to 0 degrees as possible
-		// move forward and intake and get the 4 laid in a line
-		intakeMotors.moveVelocity(200);
-		chassis->setMaxVelocity(120);
-		profileController->setTarget("rickStraight1", false);
-		profileController->waitUntilSettled();
-		intakeMotors.moveVelocity(0);
-		liftMotor.move_voltage(0);
-		// s curve to back and line up with next 4
-		chassis->setMaxVelocity(150);
-		profileController->setTarget("rickSCurve1", true, true);
-		profileController->waitUntilSettled();
 		turn(-(origAngle + imu.get_rotation()));
-		// intake next 4
-		intakeMotors.moveVelocity(200);
-		chassis->setMaxVelocity(120);
-		profileController->setTarget("rickStraight2", false);
-		profileController->waitUntilSettled();
-		intakeMotors.moveRelative(400, 200);
-		// s curve to unprotec zone
-		chassis->setMaxVelocity(150);
-		profileController->setTarget("rickSCurve2", true, true);
-		profileController->waitUntilSettled();
-		trayMotor.move_absolute(1800, 100);
-		turn(122 - (origAngle + imu.get_rotation()), 70);
+		// grab 3 cubes
+		intakeMotors.moveRelative(5000, 200);
+		drive(900, 900, 70);
+		intakeMotors.moveVoltage(0);
+		// turn for final cube
+		turn(-90 - imu.get_rotation());
+		// grab final cube
+		intakeMotors.moveRelative(4000, 200);
+		drive(900, 900, 70);
+		// move to zone
+		turn(-132 - imu.get_rotation());
+		drive(520, 520);
 		// stack
-		stackRick();
-		
+		intakeMotors.moveRelative(-900, 200);
+		liftMotor.move_absolute(-20, 100);
+		trayMotor.move_absolute(6200, 100);
+		while (trayMotor.get_position() < 6000) {
+			pros::delay(20);
+		}
+		trayMotor.move_absolute(0, 100);
+		intakeMotors.moveVelocity(-50);
+		drive(250, 250);
+		drive(-600, -600, 80);
+		intakeMotors.moveVelocity(0);
 		break;
 	
 	case 1:
@@ -628,9 +624,8 @@ void autonomous() {
 		pros::delay(300);
 		turn(-(origAngle + imu.get_rotation()));
 		// grab 4 cubes
-		intakeMotors.moveVelocity(200);
+		intakeMotors.moveRelative(5400, 200);
 		drive(1800, 1800, 70);
-		intakeMotors.moveVoltage(0);
 		// turn for stack
 		turn(-150 - imu.get_rotation()); // use absolute positioning
 		// move to zone
@@ -645,6 +640,7 @@ void autonomous() {
 		}
 		trayMotor.move_absolute(0, 100);
 		intakeMotors.moveVelocity(-50);
+		drive(250, 250);
 		drive(-600, -600, 80);
 		intakeMotors.moveVelocity(0);
 		break;
@@ -680,37 +676,33 @@ void autonomous() {
 		intakeMotors.moveVelocity(0);
 		break;
 	case 3:
-		// blue unprotec 8 cube (rick)
-		// flip. out.
+		// blue protec 3 cube
 		flipout();
-		pros::delay(300);
-		turn(-(origAngle + imu.get_rotation())); // set heading to as close to 0 degrees as possible
-		// move forward and intake and get the 4 laid in a line
-		intakeMotors.moveVelocity(200);
-		chassis->setMaxVelocity(120);
-		profileController->setTarget("rickStraight1", false);
-		profileController->waitUntilSettled();
-		intakeMotors.moveVelocity(0);
-		liftMotor.move_voltage(0);
-		// s curve to back and line up with next 4
-		chassis->setMaxVelocity(150);
-		profileController->setTarget("rickSCurve1", true);
-		profileController->waitUntilSettled();
 		turn(-(origAngle + imu.get_rotation()));
-		// intake next 4
-		intakeMotors.moveVelocity(200);
-		chassis->setMaxVelocity(120);
-		profileController->setTarget("rickStraight2", false);
-		profileController->waitUntilSettled();
-		intakeMotors.moveRelative(400, 200);
-		// s curve to unprotec zone
-		chassis->setMaxVelocity(150);
-		profileController->setTarget("rickSCurve2", true);
-		profileController->waitUntilSettled();
-		trayMotor.move_absolute(1800, 100);
-		turn(-122 - (origAngle + imu.get_rotation()), 70);
+		// grab 3 cubes
+		intakeMotors.moveRelative(5000, 200);
+		drive(900, 900, 70);
+		intakeMotors.moveVoltage(0);
+		// turn for final cube
+		turn(90 - imu.get_rotation());
+		// grab final cube
+		intakeMotors.moveRelative(4000, 200);
+		drive(900, 900, 70);
+		// move to zone
+		turn(132 - imu.get_rotation());
+		drive(520, 520);
 		// stack
-		stackRick();
+		intakeMotors.moveRelative(-900, 200);
+		liftMotor.move_absolute(-20, 100);
+		trayMotor.move_absolute(6200, 100);
+		while (trayMotor.get_position() < 6000) {
+			pros::delay(20);
+		}
+		trayMotor.move_absolute(0, 100);
+		intakeMotors.moveVelocity(-50);
+		drive(250, 250);
+		drive(-600, -600, 80);
+		intakeMotors.moveVelocity(0);
 		break;
 	
 	default:
