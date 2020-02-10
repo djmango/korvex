@@ -517,14 +517,48 @@ void autonomous() {
 	intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
-	if (autonSelection == 42) autonSelection = 3; // use debug if we havent selected any auton
+	if (autonSelection == 42) autonSelection = -1; // use debug if we havent selected any auton
 	std::cout << pros::millis() << ": auton  " << autonSelection << std::endl;
 
 	switch (autonSelection) {
 	case 0:
-		// skills doesnt exist.
+		// skills doesnt exist. i wrote a (working???) 9 cube during lunch!
 		// chassis->driveToPoint({20_cm, 0_ft});
-		std::cout << pros::millis() << ": state  " << chassis->getState().str() << std::endl;
+		// std::cout << pros::millis() << ": state  " << chassis->getState().str() << std::endl;
+
+		flipout();
+		pros::delay(500);
+		turn(-(origAngle + imu.get_rotation()));
+		// grab 4 cubes
+		intakeMotors.moveRelative(7200, 200);
+		drive(1900, 1900, 50);
+		// go around tower
+		turn(45 - (origAngle + imu.get_rotation()));
+		intakeMotors.moveRelative(4000, 200);
+		drive(700, 700, 70);
+		turn(-45 - (origAngle + imu.get_rotation()));
+		drive(700, 700, 70);
+		turn(-(origAngle + imu.get_rotation()));
+		// grab next 4
+		intakeMotors.moveRelative(7500, 200);
+		drive(1900, 1900, 50);
+		// turn for stack
+		turn(60 - imu.get_rotation());
+		// move to zone
+		intakeMotors.moveRelative(-700, 50);
+		drive(1500, 1500, 80);
+		// stack
+		intakeMotors.moveVelocity(-20);
+		liftMotor.move_absolute(-20, 100);
+		trayMotor.move_absolute(6200, 100);
+		while (trayMotor.get_position() < 6000) {
+			pros::delay(20);
+		}
+		trayMotor.move_absolute(0, 100);
+		intakeMotors.moveVelocity(-50);
+		drive(250, 250);
+		drive(-600, -600, 80);
+		intakeMotors.moveVelocity(0);
 		break;
 
 	case -1:
@@ -533,7 +567,7 @@ void autonomous() {
 		pros::delay(300);
 		turn(-(origAngle + imu.get_rotation()));
 		// grab 4 cubes
-		intakeMotors.moveRelative(5400, 200);
+		intakeMotors.moveRelative(6800, 200);
 		drive(1800, 1800, 70);
 		// turn for stack
 		turn(150 - imu.get_rotation()); // use absolute positioning
@@ -624,7 +658,7 @@ void autonomous() {
 		pros::delay(300);
 		turn(-(origAngle + imu.get_rotation()));
 		// grab 4 cubes
-		intakeMotors.moveRelative(5400, 200);
+		intakeMotors.moveRelative(6800, 200);
 		drive(1800, 1800, 70);
 		// turn for stack
 		turn(-150 - imu.get_rotation()); // use absolute positioning
