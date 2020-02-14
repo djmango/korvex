@@ -28,7 +28,8 @@ auto profileController = AsyncMotionProfileControllerBuilder()
 
 // motors
 pros::Motor liftMotor(LIFT_MTR, pros::E_MOTOR_GEARSET_36, false);
-pros::Motor trayMotor(TRAY_MTR, pros::E_MOTOR_GEARSET_36, false);
+okapi::Motor trayMotor(TRAY_MTR, false, okapi::AbstractMotor::gearset::red, okapi::AbstractMotor::encoderUnits::counts);
+// okapi::AsyncPosControllerBuilder::build();
 okapi::MotorGroup intakeMotors({-INTAKE_MTR1, INTAKE_MTR2});
 
 // controller
@@ -47,8 +48,25 @@ pros::Imu imu(IMU_PORT);
 pros::ADIAnalogIn line(LINE_PORT);
 
 // base global defenitions
-int autonSelection = 42; // hitchhikers anyone?
 const int LIFT_STACKING_HEIGHT = 700; // the motor ticks above which we are stacking
+enum class autonStates {
+	off,
+	redProtec,
+	redUnprotec,
+	redRick,
+	blueProtec,
+	blueUnprotec,
+	blueRick,
+	skills
+};
+autonStates autonSelection = autonStates::off;
+enum class trayStates {
+	returned,
+	returning,
+	extending,
+	extended,
+	hold
+};
 
 // create a button descriptor string array
 static const char *btnmMap[] = {"Unprotec", "Protec", "Rick", ""};
@@ -252,7 +270,7 @@ void turn(int target, int voltageMax=115){
 }
 
 void flipout() { // a blocking flipout function
-	trayMotor.move_absolute(1000, 100);
+	trayMotor.moveAbsolute(1000, 100);
 	liftMotor.move_velocity(100);
 	while (liftMotor.get_position() < 1000) { // dont mess up the preload
 		pros::delay(20);
@@ -266,35 +284,35 @@ void flipout() { // a blocking flipout function
 		pros::delay(20);
 	}
 	intakeMotors.moveVelocity(200);
-	trayMotor.move_absolute(20, 100);
+	trayMotor.moveAbsolute(20, 100);
 }
 
 void stackRick() { // a blocking stack function
 	intakeMotors.moveRelative(-400, 80); // quik stak
-	trayMotor.move_absolute(6200, 100);
+	trayMotor.moveAbsolute(6200, 100);
 	drive(500, 500);
-	while (trayMotor.get_position() < 3000) {
+	while (trayMotor.getPosition() < 3000) {
 		pros::delay(20);
 	}
 	intakeMotors.moveVelocity(-13);
 	drive(150, 150);
-	while (trayMotor.get_position() < 6000) {
+	while (trayMotor.getPosition() < 6000) {
 		pros::delay(20);
 	}
 	intakeMotors.moveVelocity(13);
-	trayMotor.move_absolute(0, 100);
+	trayMotor.moveAbsolute(0, 100);
 	drive(-800, -800);
 	intakeMotors.moveVelocity(0);
 }
 
 void traySlew(bool forward) {
 	if (forward) {
-		if (trayMotor.get_position() > 4500) trayMotor.move_velocity(40);
-		else trayMotor.move_velocity(100);
+		if (trayMotor.getPosition() > 4500) trayMotor.moveVelocity(40);
+		else trayMotor.moveVelocity(100);
 	}
 	else {
-		if (trayMotor.get_position() < 1000) trayMotor.move_velocity(-60);
-		else trayMotor.move_velocity(-100);
+		if (trayMotor.getPosition() < 1000) trayMotor.moveVelocity(-60);
+		else trayMotor.moveVelocity(-100);
 	}
 }
 
@@ -354,15 +372,15 @@ void resetSensors() { // reset sensors and reset odometry
 
 
 static lv_res_t autonBtnmAction(lv_obj_t *btnm, const char *txt) {
-	if (lv_obj_get_free_num(btnm) == 100) {
-		if (txt == "Unprotec") autonSelection = -1;
-		else if (txt == "Protec") autonSelection = -2;
-		else if (txt == "Rick") autonSelection = -3;	
+	if (lv_obj_get_free_num(btnm) == 100) { // reds
+		if (txt == "Unprotec") autonSelection = autonStates::redUnprotec;
+		else if (txt == "Protec") autonSelection = autonStates::redProtec;
+		else if (txt == "Rick") autonSelection = autonStates::redRick;	
 	}
-	else if (lv_obj_get_free_num(btnm) == 101) {
-		if (txt == "Unprotec") autonSelection = 1;
-		else if (txt == "Protec") autonSelection = 2;
-		else if (txt == "Rick") autonSelection = 3;
+	else if (lv_obj_get_free_num(btnm) == 101) { // blues
+		if (txt == "Unprotec") autonSelection = autonStates::blueUnprotec;
+		else if (txt == "Protec") autonSelection = autonStates::blueProtec;
+		else if (txt == "Rick") autonSelection = autonStates::blueRick;
 	}
 
 	masterController.rumble("..");
@@ -371,7 +389,7 @@ static lv_res_t autonBtnmAction(lv_obj_t *btnm, const char *txt) {
 
 static lv_res_t skillsBtnAction(lv_obj_t *btn) {
 	masterController.rumble("..");
-	autonSelection = 0;
+	autonSelection = autonStates::skills;
 	return LV_RES_OK;
 }
 
@@ -471,7 +489,7 @@ void initialize() {
 
 	std::cout << "\n" << pros::millis() << ": motor temps:" << std::endl;
 	std::cout << pros::millis() << ": lift: " << liftMotor.get_temperature() << std::endl;
-	std::cout << pros::millis() << ": tray: " << trayMotor.get_temperature() << std::endl;
+	std::cout << pros::millis() << ": tray: " << trayMotor.getTemperature() << std::endl;
 	std::cout << pros::millis() << ": intake: " << intakeMotors.getTemperature() << std::endl;
 	
 }
@@ -516,12 +534,14 @@ void autonomous() {
 	// motor setup
 	intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
 	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+	
+	auto timer = TimeUtilFactory().create().getTimer();
+	timer->placeMark();
 
-	if (autonSelection == 42) autonSelection = -1; // use debug if we havent selected any auton
-	std::cout << pros::millis() << ": auton  " << autonSelection << std::endl;
+	if (autonSelection == autonStates::off) autonSelection = autonStates::skills; // use debug if we havent selected any auton
 
 	switch (autonSelection) {
-	case 0:
+	case autonStates::skills:
 		// skills doesnt exist. i wrote a (working???) 9 cube during lunch!
 		// chassis->driveToPoint({20_cm, 0_ft});
 		// std::cout << pros::millis() << ": state  " << chassis->getState().str() << std::endl;
@@ -550,18 +570,18 @@ void autonomous() {
 		// stack
 		intakeMotors.moveVelocity(-20);
 		liftMotor.move_absolute(-20, 100);
-		trayMotor.move_absolute(6200, 100);
-		while (trayMotor.get_position() < 6000) {
+		trayMotor.moveAbsolute(6200, 100);
+		while (trayMotor.getPosition() < 6000) {
 			pros::delay(20);
 		}
-		trayMotor.move_absolute(0, 100);
+		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
 		drive(250, 250);
 		drive(-600, -600, 80);
 		intakeMotors.moveVelocity(0);
 		break;
 
-	case -1:
+	case autonStates::redUnprotec:
 		// red unprotec 5 cube
 		flipout();
 		pros::delay(300);
@@ -577,18 +597,18 @@ void autonomous() {
 		// stack
 		intakeMotors.moveVelocity(-20);
 		liftMotor.move_absolute(-20, 100);
-		trayMotor.move_absolute(6200, 100);
-		while (trayMotor.get_position() < 6000) {
+		trayMotor.moveAbsolute(6200, 100);
+		while (trayMotor.getPosition() < 6000) {
 			pros::delay(20);
 		}
-		trayMotor.move_absolute(0, 100);
+		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
 		drive(250, 250);
 		drive(-600, -600, 80);
 		intakeMotors.moveVelocity(0);
 		break;
 
-	case -2:
+	case autonStates::redProtec:
 		// red protec 4 cube
 		flipout();
 		turn(-(origAngle + imu.get_rotation()));
@@ -607,22 +627,22 @@ void autonomous() {
 		// stack
 		intakeMotors.moveRelative(-1300, 90);
 		liftMotor.move_absolute(-20, 100);
-		trayMotor.move_absolute(6200, 100);
-		while (trayMotor.get_position() < 4000) {
+		trayMotor.moveAbsolute(6200, 100);
+		while (trayMotor.getPosition() < 4000) {
 			pros::delay(20);
 		}
 		intakeMotors.moveVelocity(-30);
-		while (trayMotor.get_position() < 6000) {
+		while (trayMotor.getPosition() < 6000) {
 			pros::delay(20);
 		}
-		trayMotor.move_absolute(0, 100);
+		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
 		drive(250, 250);
 		drive(-800, -800, 80);
 		intakeMotors.moveVelocity(0);
 		break;
 	
-	case -3:
+	case autonStates::redRick:
 		// red protec 3 cube
 		flipout();
 		turn(-(origAngle + imu.get_rotation()));
@@ -641,18 +661,18 @@ void autonomous() {
 		// stack
 		intakeMotors.moveRelative(-900, 200);
 		liftMotor.move_absolute(-20, 100);
-		trayMotor.move_absolute(6200, 100);
-		while (trayMotor.get_position() < 6000) {
+		trayMotor.moveAbsolute(6200, 100);
+		while (trayMotor.getPosition() < 6000) {
 			pros::delay(20);
 		}
-		trayMotor.move_absolute(0, 100);
+		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
 		drive(250, 250);
 		drive(-600, -600, 80);
 		intakeMotors.moveVelocity(0);
 		break;
 	
-	case 1:
+	case autonStates::blueUnprotec:
 		// blue unprotec 5 cube
 		flipout();
 		pros::delay(300);
@@ -668,17 +688,17 @@ void autonomous() {
 		// stack
 		intakeMotors.moveVelocity(-20);
 		liftMotor.move_absolute(-20, 100);
-		trayMotor.move_absolute(6200, 100);
-		while (trayMotor.get_position() < 6000) {
+		trayMotor.moveAbsolute(6200, 100);
+		while (trayMotor.getPosition() < 6000) {
 			pros::delay(20);
 		}
-		trayMotor.move_absolute(0, 100);
+		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
 		drive(250, 250);
 		drive(-600, -600, 80);
 		intakeMotors.moveVelocity(0);
 		break;
-	case 2:
+	case autonStates::blueProtec:
 		// blue protec 4 cube
 		flipout();
 		turn(-(origAngle + imu.get_rotation()));
@@ -696,20 +716,20 @@ void autonomous() {
 		intakeMotors.moveRelative(-900, 90);
 		// stack
 		liftMotor.move_absolute(-20, 100);
-		trayMotor.move_absolute(6200, 100);
-		while (trayMotor.get_position() < 3800) {
+		trayMotor.moveAbsolute(6200, 100);
+		while (trayMotor.getPosition() < 3800) {
 			pros::delay(20);
 		}
 		intakeMotors.moveVelocity(-20);
-		while (trayMotor.get_position() < 6000) {
+		while (trayMotor.getPosition() < 6000) {
 			pros::delay(20);
 		}
-		trayMotor.move_absolute(0, 100);
+		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
 		drive(-800, -800, 80);
 		intakeMotors.moveVelocity(0);
 		break;
-	case 3:
+	case autonStates::blueRick:
 		// blue protec 3 cube
 		flipout();
 		turn(-(origAngle + imu.get_rotation()));
@@ -728,11 +748,11 @@ void autonomous() {
 		// stack
 		intakeMotors.moveRelative(-900, 200);
 		liftMotor.move_absolute(-20, 100);
-		trayMotor.move_absolute(6200, 100);
-		while (trayMotor.get_position() < 6000) {
+		trayMotor.moveAbsolute(6200, 100);
+		while (trayMotor.getPosition() < 6000) {
 			pros::delay(20);
 		}
-		trayMotor.move_absolute(0, 100);
+		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
 		drive(250, 250);
 		drive(-600, -600, 80);
@@ -742,6 +762,7 @@ void autonomous() {
 	default:
 		break;
 	}
+	std::cout << pros::millis() << ": auton took " << timer->getDtFromMark().convert(second) << " seconds" << std::endl;
 }
 
 /**
@@ -763,12 +784,11 @@ void opcontrol() {
 	chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 	chassis->setMaxVelocity(200);
 	float joystickAvg = 0; // an average of the left and right joystick values
-	int stackingState = 0; // 2 is stacking, 1 is returning from stack, 0 is not stacking
+	trayStates trayState = trayStates::hold;
 	bool cubesReturning = false; // true when we are moving the cubes down to the line sensor, for stacking
-	bool trayReturning = false; // true when the tray return to 0 is active
 
 	// motor setup
-	trayMotor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+	trayMotor.setBrakeMode(okapi::AbstractMotor::brakeMode::hold);
 
 	// main loop
 	while (true) {
@@ -792,7 +812,7 @@ void opcontrol() {
 		}
 
 		// user controlled intake
-		if (stackingState == 0 and not shift.isPressed()) { // if nothing else is controlling the intake and we arent moving the tray
+		if (trayState == trayStates::returned and not shift.isPressed()) { // if nothing else is controlling the intake and we arent moving the tray
 			if (intakeIn.isPressed() and not intakeOut.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(100); // if we are dumping into tower, redue intake velocity as not to shoot the cube halfway accross the field
 			else if (intakeIn.isPressed() and not intakeOut.isPressed()) intakeMotors.moveVelocity(200);
 			else if (intakeOut.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(-100);
@@ -801,43 +821,50 @@ void opcontrol() {
 		}
 		
 		// advanced tray control, also with goal-oriented assists
-		if (trayReturn.changedToPressed()) { // return to normal if requested manually, this is highest priority control
-			intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
-			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
-			trayMotor.move_absolute(0, 100);
-			stackingState = 0;
-			trayReturning = true;
+		if (trayReturn.changedToPressed()) { // manual tray toggle requests, this is highest priority control
+			if (trayState == trayStates::returned) { // if we are already returned, move the tray out
+				intakeMotors.setBrakeMode(AbstractMotor::brakeMode::coast);
+				chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
+				liftMotor.move_absolute(-150, 100);
+				trayMotor.moveAbsolute(0, 100);
+				trayState = trayStates::extending;
+			}
+			else { // return to default tray position
+				intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
+				chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
+				trayMotor.moveAbsolute(0, 100);
+				trayState = trayStates::returning;
+			}
 		}
 
-		if (trayMotor.get_position() <= 100) trayReturning = false; // let functions know if weve returned
+		// set trayState
+		if (trayMotor.getPosition() <= 100 and abs(trayMotor.getActualVelocity()) <= 5) trayState = trayStates::returned; // let functions know if weve returned
+		else if (trayMotor.getPosition() >= 1000 and trayMotor.getActualVelocity() >= -20) trayState = trayStates::extending;
 
-		// set stackingState
-		if (trayMotor.get_position() > 1000 and trayMotor.get_actual_velocity() >= -20) stackingState = 2;
-		else if (trayMotor.get_position() > 1000 and trayMotor.get_actual_velocity() <= -20) stackingState = 1;
-		else if (trayMotor.get_position() < 1000) stackingState = 0;
+		// TODO: explain that the only way to return is now the return key, tray manual control is for adjustment and make toggle on return
 
 		// tray control using shift key
-		if (not trayReturning) {
+		if (!(trayState == trayStates::returning)) {
 			if (shift.isPressed()) {
 				if (intakeIn.isPressed()) traySlew(true);
 				else if (intakeOut.isPressed()) traySlew(false);
 			}
 			// adjust tray based on lift position
-			else if (liftMotor.get_position() > LIFT_STACKING_HEIGHT) trayMotor.move_absolute(600, 100);
-			else if (liftMotor.get_position() <= LIFT_STACKING_HEIGHT and trayMotor.get_position() <= 600) trayMotor.move_absolute(0, 100);
-			else trayMotor.move(0);
+			else if (liftMotor.get_position() > LIFT_STACKING_HEIGHT) trayMotor.moveAbsolute(600, 100);
+			else if (liftMotor.get_position() <= LIFT_STACKING_HEIGHT and trayMotor.getPosition() <= 600) trayMotor.moveAbsolute(0, 100);
+			else trayMotor.moveVoltage(0);
 		}
 
 		// tray stacking mods
-		if (stackingState == 0) { // return to normal after we stacked
+		if (trayState == trayStates::returned) { // return to normal after we stacked
 			intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
 			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 		}
-		else if (stackingState == 1) { // stuff to do when returning from stacking
-			intakeMotors.moveVelocity(joystickAvg*250);
+		else if (trayState == trayStates::returning) { // stuff to do when returning from stacking
+			intakeMotors.moveVelocity(joystickAvg*350);
 			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 		}
-		else if (stackingState == 2) { // brake and slow and allow user intake control while stacking
+		else if (trayState == trayStates::extending or trayState == trayStates::extended) { // brake and slow and allow user intake control while stacking
 			liftMotor.move_absolute(-150, 100);
 			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
 
