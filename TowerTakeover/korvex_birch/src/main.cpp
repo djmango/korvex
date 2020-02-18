@@ -1,8 +1,6 @@
 #include <fstream>
-#include <string>
 #include "main.h"
 #include "korvexlib.h"
-#include "odomDebug/odomDebug.hpp"
 
 // chassis
 auto chassis = ChassisControllerBuilder()
@@ -361,19 +359,6 @@ void sdLog(bool yes) {
 
 }
 
-void setState(OdomDebug::state_t state) { // set your odometry position to these cartesian coordenates
-	// to access the values, call `state.x`, `state.y`, and `state.theta`
-	// to convert the QUnits to doubles, call
-	// `state.x.convert(inch)` or `state.theta.convert(radian)`
-
-	chassis->setState({state.x, state.y, state.theta});
-}
-
-void resetSensors() { // reset sensors and reset odometry
-	chassis->setState({0_in, 0_in, 0_deg});
-}
-
-
 static lv_res_t autonBtnmAction(lv_obj_t *btnm, const char *txt) {
 	if (lv_obj_get_free_num(btnm) == 100) { // reds
 		if (txt == "Unprotec") autonSelection = autonStates::redUnprotec;
@@ -431,13 +416,6 @@ void initialize() {
 	lv_obj_t *blueTab = lv_tabview_add_tab(tabview, "Blue");
 	lv_obj_t *skillsTab = lv_tabview_add_tab(tabview, "Skills");
 	lv_obj_t *telemetryTab = lv_tabview_add_tab(tabview, "Telemetry");
-
-	// telemetry tab
-	// odom debug gui
-	// TODO: add this in telem tab
-	// OdomDebug display(lv_scr_act(), LV_COLOR_ORANGE);
-	// display.setStateCallback(setState);
-	// display.setResetCallback(resetSensors);
 
 	// red tab
 	lv_obj_t *redBtnm = lv_btnm_create(redTab, NULL);
@@ -788,7 +766,7 @@ void opcontrol() {
 	chassis->setMaxVelocity(200);
 	float joystickAvg = 0; // an average of the left and right joystick values
 	bool cubesReturning = false; // true when we are moving the cubes down to the line sensor, for stacking
-	bool trayDebug = false; // im lazy
+	bool trayDebug = true; // im lazy
 
 	// motor setup
 	trayMotor.setBrakeMode(okapi::AbstractMotor::brakeMode::hold);
@@ -814,7 +792,7 @@ void opcontrol() {
 			else intakeMotors.moveVelocity(-50);
 		}
 
-		// user controlled intake
+		// user controlled intake only enabled while returned
 		if (trayState == trayStates::returned and not shift.isPressed()) { // if nothing else is controlling the intake and we arent moving the tray
 			if (intakeIn.isPressed() and not intakeOut.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(100); // if we are dumping into tower, redue intake velocity as not to shoot the cube halfway accross the field
 			else if (intakeIn.isPressed() and not intakeOut.isPressed()) intakeMotors.moveVelocity(200);
@@ -829,7 +807,7 @@ void opcontrol() {
 				intakeMotors.setBrakeMode(AbstractMotor::brakeMode::coast);
 				chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
 				liftMotor.move_absolute(0, 100);
-				trayMotor.moveAbsolute(6500, 100);
+				trayMotor.moveAbsolute(6400, 100);
 				trayState = trayStates::extending;
 			}
 			else { // return to default tray position
@@ -840,9 +818,9 @@ void opcontrol() {
 			}
 		}
 
-		// set trayState
+		// update trayState
 		if (trayMotor.getPosition() <= 100 and abs(trayMotor.getActualVelocity()) <= 5 and trayState != trayStates::extending) trayState = trayStates::returned; // let functions know if weve returned
-		else if (trayMotor.getPosition() >= 1000 and trayMotor.getActualVelocity() >= -20) trayState = trayStates::extending;
+		else if (trayMotor.getPosition() >= 6350) trayState = trayStates::returning;
 
 		// tray control using shift key
 		if (trayState == trayStates::returned) {
@@ -866,8 +844,8 @@ void opcontrol() {
 			if (trayDebug) std::cout << pros::millis() << ": trayState returned" << std::endl;
 			break;
 		case trayStates::returning:
-			intakeMotors.moveVelocity(joystickAvg*350);
-			if (intakeMotors.getActualVelocity() <= 30) intakeMotors.moveVelocity(30); // minimum speed
+			if (joystickAvg > 0) intakeMotors.moveVoltage(0);
+			else intakeMotors.moveVelocity((joystickAvg*350));
 			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 			if (trayDebug) std::cout << pros::millis() << ": trayState returning" << std::endl;
 			break;
