@@ -27,11 +27,3 @@ const int ARM_PRESETS[5]  = {0, -1732, -1868, -2090, -2410};
 const int ARM_PRESETS_LEN = 5;
 
 const int IMU_PORT = 1;
-
-//chassis
-extern okapi::Motor intake_motor_left;
-extern okapi::Motor intake_motor_right;
-extern okapi::Motor lever_motor;
-extern okapi::Motor arm_motor;
-extern pros::Controller master;
-extern std::shared_ptr<okapi::OdomChassisController> chassis;

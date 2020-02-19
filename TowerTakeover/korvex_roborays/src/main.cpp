@@ -20,11 +20,11 @@ auto profileController = AsyncMotionProfileControllerBuilder()
     .buildMotionProfileController();
 
 // motors
-okapi::Motor intake_motor_left(INTAKE_MOTOR_LEFT);
-okapi::Motor intake_motor_right(INTAKE_MOTOR_RIGHT);
-okapi::Motor lever_motor(LEVER_MOTOR);
-okapi::Motor arm_motor(ARM_MOTOR);
+okapi::MotorGroup intakeMotors({-INTAKE_MOTOR_LEFT, INTAKE_MOTOR_RIGHT});
 pros::Controller master;
+
+okapi::Motor liftMotor(ARM_MOTOR, false, okapi::AbstractMotor::gearset::red, okapi::AbstractMotor::encoderUnits::counts);
+okapi::Motor trayMotor(LEVER_MOTOR, false, okapi::AbstractMotor::gearset::red, okapi::AbstractMotor::encoderUnits::counts);
 
 // controller
 pros::Controller master;
@@ -377,6 +377,11 @@ void competition_initialize() {}
  * will be stopped. Re-enabling the robot will restart the task, not re-start it
  * from where it left off.
  */
+
+void flipout() {
+	// this is on you fools.
+}
+
 void autonomous() {
 	chassis->setState({0_in, 0_in, 0_deg});
 	chassis->setMaxVelocity(200);
@@ -390,22 +395,221 @@ void autonomous() {
 
 	switch (autonSelection) {
 	case autonStates::skills:
-		// skills doesnt exist.
+		// skills doesnt exist. i wrote a (working???) 9 cube during lunch!
+		chassis->driveToPoint({10_cm, 0_cm});
+		// std::cout << pros::millis() << ": state  " << chassis->getState().str() << std::endl;
+
+		flipout();
+		pros::delay(500);
+		turn(-(origAngle + imu.get_rotation()));
+		// grab 4 cubes
+		intakeMotors.moveRelative(7200, 200);
+		drive(1900, 1900, 50);
+		// go around tower
+		turn(45 - (origAngle + imu.get_rotation()));
+		intakeMotors.moveRelative(4000, 200);
+		drive(700, 700, 70);
+		turn(-45 - (origAngle + imu.get_rotation()));
+		drive(700, 700, 70);
+		turn(-(origAngle + imu.get_rotation()));
+		// grab next 4
+		intakeMotors.moveRelative(7500, 200);
+		drive(1900, 1900, 50);
+		// turn for stack
+		turn(60 - imu.get_rotation());
+		// move to zone
+		intakeMotors.moveRelative(-700, 50);
+		drive(1500, 1500, 80);
+		// stack
+		intakeMotors.moveVelocity(-20);
+		liftMotor.moveAbsolute(-20, 100);
+		trayMotor.moveAbsolute(6200, 100);
+		while (trayMotor.getPosition() < 6000) {
+			pros::delay(20);
+		}
+		trayMotor.moveAbsolute(0, 100);
+		intakeMotors.moveVelocity(-50);
+		drive(250, 250);
+		drive(-600, -600, 80);
+		intakeMotors.moveVelocity(0);
+		break;
 
 	case autonStates::redUnprotec:
+		// red unprotec 5 cube
+		flipout();
+		pros::delay(300);
+		turn(-(origAngle + imu.get_rotation()));
+		// grab 4 cubes
+		intakeMotors.moveRelative(6800, 200);
+		drive(1800, 1800, 70);
+		// turn for stack
+		turn(150 - imu.get_rotation()); // use absolute positioning
+		// move to zone
+		intakeMotors.moveRelative(-700, 50);
+		drive(1500, 1500, 80);
+		// stack
+		intakeMotors.moveVelocity(-20);
+		liftMotor.moveAbsolute(-20, 100);
+		trayMotor.moveAbsolute(6200, 100);
+		while (trayMotor.getPosition() < 6000) {
+			pros::delay(20);
+		}
+		trayMotor.moveAbsolute(0, 100);
+		intakeMotors.moveVelocity(-50);
+		drive(250, 250);
+		drive(-600, -600, 80);
+		intakeMotors.moveVelocity(0);
 		break;
 
 	case autonStates::redProtec:
+		// red protec 4 cube
+		flipout();
+		turn(-(origAngle + imu.get_rotation()));
+		// grab 3 cubes
+		intakeMotors.moveRelative(5000, 200);
+		drive(1700, 1700, 70);
+		intakeMotors.moveVoltage(0);
+		// turn for final cube
+		turn(-132 - imu.get_rotation());
+		// grab final cube
+		intakeMotors.moveRelative(5000, 200);
+		drive(1300, 1300, 70);
+		// move to zone
+		turn(-136 - imu.get_rotation());
+		drive(580, 580);
+		// stack
+		intakeMotors.moveRelative(-1300, 90);
+		liftMotor.moveAbsolute(-20, 100);
+		trayMotor.moveAbsolute(6200, 100);
+		while (trayMotor.getPosition() < 4000) {
+			pros::delay(20);
+		}
+		intakeMotors.moveVelocity(-30);
+		while (trayMotor.getPosition() < 6000) {
+			pros::delay(20);
+		}
+		trayMotor.moveAbsolute(0, 100);
+		intakeMotors.moveVelocity(-50);
+		drive(250, 250);
+		drive(-800, -800, 80);
+		intakeMotors.moveVelocity(0);
 		break;
 	
 	case autonStates::redRick:
+		// red protec 3 cube
+		flipout();
+		turn(-(origAngle + imu.get_rotation()));
+		// grab 3 cubes
+		intakeMotors.moveRelative(5000, 200);
+		drive(900, 900, 70);
+		intakeMotors.moveVoltage(0);
+		// turn for final cube
+		turn(-90 - imu.get_rotation());
+		// grab final cube
+		intakeMotors.moveRelative(4000, 200);
+		drive(900, 900, 70);
+		// move to zone
+		turn(-132 - imu.get_rotation());
+		drive(520, 520);
+		// stack
+		intakeMotors.moveRelative(-900, 200);
+		liftMotor.moveAbsolute(-20, 100);
+		trayMotor.moveAbsolute(6200, 100);
+		while (trayMotor.getPosition() < 6000) {
+			pros::delay(20);
+		}
+		trayMotor.moveAbsolute(0, 100);
+		intakeMotors.moveVelocity(-50);
+		drive(250, 250);
+		drive(-600, -600, 80);
+		intakeMotors.moveVelocity(0);
 		break;
 	
 	case autonStates::blueUnprotec:
+		// blue unprotec 5 cube
+		flipout();
+		pros::delay(300);
+		turn(-(origAngle + imu.get_rotation()));
+		// grab 4 cubes
+		intakeMotors.moveRelative(6800, 200);
+		drive(1800, 1800, 70);
+		// turn for stack
+		turn(-150 - imu.get_rotation()); // use absolute positioning
+		// move to zone
+		intakeMotors.moveRelative(-700, 50);
+		drive(1500, 1500, 80);
+		// stack
+		intakeMotors.moveVelocity(-20);
+		liftMotor.moveAbsolute(-20, 100);
+		trayMotor.moveAbsolute(6200, 100);
+		while (trayMotor.getPosition() < 6000) {
+			pros::delay(20);
+		}
+		trayMotor.moveAbsolute(0, 100);
+		intakeMotors.moveVelocity(-50);
+		drive(250, 250);
+		drive(-600, -600, 80);
+		intakeMotors.moveVelocity(0);
 		break;
 	case autonStates::blueProtec:
+		// blue protec 4 cube
+		flipout();
+		turn(-(origAngle + imu.get_rotation()));
+		// grab 3 cubes
+		intakeMotors.moveRelative(5000, 200);
+		drive(1700, 1700, 80);
+		intakeMotors.moveVoltage(0);
+		// turn for final cube
+		turn(130 - imu.get_rotation());
+		// grab final cube
+		intakeMotors.moveRelative(5400, 200);
+		drive(1300, 1300, 70);
+		// move to zone
+		drive(550, 550);
+		intakeMotors.moveRelative(-900, 90);
+		// stack
+		liftMotor.moveAbsolute(-20, 100);
+		trayMotor.moveAbsolute(6200, 100);
+		while (trayMotor.getPosition() < 3800) {
+			pros::delay(20);
+		}
+		intakeMotors.moveVelocity(-20);
+		while (trayMotor.getPosition() < 6000) {
+			pros::delay(20);
+		}
+		trayMotor.moveAbsolute(0, 100);
+		intakeMotors.moveVelocity(-50);
+		drive(-800, -800, 80);
+		intakeMotors.moveVelocity(0);
 		break;
 	case autonStates::blueRick:
+		// blue protec 3 cube
+		flipout();
+		turn(-(origAngle + imu.get_rotation()));
+		// grab 3 cubes
+		intakeMotors.moveRelative(5000, 200);
+		drive(900, 900, 70);
+		intakeMotors.moveVoltage(0);
+		// turn for final cube
+		turn(90 - imu.get_rotation());
+		// grab final cube
+		intakeMotors.moveRelative(4000, 200);
+		drive(900, 900, 70);
+		// move to zone
+		turn(132 - imu.get_rotation());
+		drive(520, 520);
+		// stack
+		intakeMotors.moveRelative(-900, 200);
+		liftMotor.moveAbsolute(-20, 100);
+		trayMotor.moveAbsolute(6200, 100);
+		while (trayMotor.getPosition() < 6000) {
+			pros::delay(20);
+		}
+		trayMotor.moveAbsolute(0, 100);
+		intakeMotors.moveVelocity(-50);
+		drive(250, 250);
+		drive(-600, -600, 80);
+		intakeMotors.moveVelocity(0);
 		break;
 	
 	default:
@@ -439,13 +643,12 @@ void chassis_tank_drive(int left, int right) {
     chassis->getModel()->tank(right / 127.0, left / 127.0, chassis_movement_threshold);
 }
 //intake
-void intake_drive(float left_intake_speed, float right_intake_speed) {
-	intake_motor_left.moveVelocity(left_intake_speed);
-	intake_motor_right.moveVelocity(-right_intake_speed);
+void intake_drive(int intakeSpeed) {
+	intakeMotors.moveVelocity(intakeSpeed);
 }
 //lever
 void lever_drive(float lever_speed) {
-	lever_motor.moveVelocity(lever_speed);
+	trayMotor.moveVelocity(lever_speed);
 }
 
 int armTarget = 0;
@@ -462,7 +665,7 @@ void arm_drive(int presetPos) {
 	}
 	armTarget = ARM_PRESETS[armIterate];
 	// master.print(0, 0, "Don't read this sentence %d", armTarget);
-	arm_motor.moveAbsolute(armTarget, 200);
+	liftMotor.moveAbsolute(armTarget, 200);
 }
 
 //presets
@@ -490,10 +693,10 @@ void arm_control() {
 		//original pos
 		armIterate = 0;
 		armPos = 0;
-		arm_motor.setBrakeMode(AbstractMotor::brakeMode::coast);
-		arm_motor.moveVoltage(12000);
+		liftMotor.setBrakeMode(AbstractMotor::brakeMode::coast);
+		liftMotor.moveVoltage(12000);
 		pros::delay(500);
-		arm_motor.moveVoltage(0);
+		liftMotor.moveVoltage(0);
 	}
 }
 
@@ -502,27 +705,27 @@ void arm_control2() {
 
 	if(master.get_digital(pros::E_CONTROLLER_DIGITAL_B)) {
 
-		arm_motor.moveVoltage(-12000);
-		arm_motor.setBrakeMode(AbstractMotor::brakeMode::hold);
+		liftMotor.moveVoltage(-12000);
+		liftMotor.setBrakeMode(AbstractMotor::brakeMode::hold);
 		// pros::delay(50);
-		// arm_motor.move_voltage(0);
+		// liftMotor.move_voltage(0);
 	} else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
 
-		arm_motor.moveVoltage(5000);
-		arm_motor.setBrakeMode(AbstractMotor::brakeMode::hold);
+		liftMotor.moveVoltage(5000);
+		liftMotor.setBrakeMode(AbstractMotor::brakeMode::hold);
 		// pros::delay(50);
-		// arm_motor.move_voltage(0);
+		// liftMotor.move_voltage(0);
 
 	} else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_X)) {
 
-		arm_motor.setBrakeMode(AbstractMotor::brakeMode::coast);
-		arm_motor.moveVoltage(12000);
+		liftMotor.setBrakeMode(AbstractMotor::brakeMode::coast);
+		liftMotor.moveVoltage(12000);
 		pros::delay(300);
-		arm_motor.moveVoltage(0);
+		liftMotor.moveVoltage(0);
 
 	}  else if (armPos == 0) {
 		//so arm control 1&2 dont collide
-		arm_motor.moveVoltage(0);
+		liftMotor.moveVoltage(0);
 	}
 
 }
@@ -537,15 +740,15 @@ void chassis_control() {
 //intake
 void intake_control() {
 	if(master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
-		intake_drive(-200, -200);
+		intake_drive(-200);
 	} else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_L2) && armPos == 0) {
-		intake_drive(190,190);
+		intake_drive(190);
 	} else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_L2) && armPos > 0) {
 		//slower for scoring in towers
 		pros::delay(15);
-		intake_drive(96,96);
+		intake_drive(96);
 	} else {
-		intake_drive(0,0);
+		intake_drive(0);
 	}
 }
 int leverEndPos = -6550;
@@ -554,18 +757,18 @@ int tray_speed = 12.5;
 
 void lever_control() {
 	if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
-		intake_drive(24.0, 24.0);
-		if(lever_motor.getPosition() < -3550) {
+		intake_drive(24);
+		if(trayMotor.getPosition() < -3550) {
 			tray_speed = 10;
-		} else if(lever_motor.getPosition() >= -3550) {
+		} else if(trayMotor.getPosition() >= -3550) {
 			tray_speed = 200;
 		} 
-		lever_motor.moveAbsolute(leverEndPos, pros::E_CONTROLLER_DIGITAL_R1*tray_speed);
+		trayMotor.moveAbsolute(leverEndPos, pros::E_CONTROLLER_DIGITAL_R1*tray_speed);
 		//intake pushes out lever slightly
 	} else if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
-		lever_motor.moveAbsolute(leverStartPos, pros::E_CONTROLLER_DIGITAL_R1*200);
+		trayMotor.moveAbsolute(leverStartPos, pros::E_CONTROLLER_DIGITAL_R1*200);
 	} else {
-		lever_motor.moveVelocity(0);
+		trayMotor.moveVelocity(0);
 	}
 }
 
