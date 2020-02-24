@@ -77,98 +77,98 @@ std::ofstream out("/usd/rick.txt");
 auto *coutbuf = std::cout.rdbuf();
 
 // motion control system globals
-int voltageCap; // voltageCap limits the change in velocity and must be global
+int voltageCap;
 int targetLeft;
 int targetRight;
 int targetTurn;
-int targetTurnRelative;
 
 void driveP(int voltageMax) {
-  chassis->getModel()->resetSensors(); // reset base encoders
-  int errorLeft;
-  int errorRight;
- 
-  // the touchables ;)))))))) touch me uwu :):):)
-  float kp = 0.15;
-  float acc = 5;
-  float kpTurn = 0.7;
-  float accTurn = 4;
+	int errorLeft;
+	int errorRight;
 
-  // the untouchables
-  float voltageLeft = 0;
-  float voltageRight = 0;
-  int signLeft;
-  int signRight;
-  int errorCurrent = 0;
-  int errorLast = 0;
-  int sameErrCycles = 0;
-  int same0ErrCycles = 0;
-  int startTime = pros::millis();
+	// the touchables ;)))))))) touch me uwu :):):)
+	float kp = 0.15;
+	float acc = 5;
+	float kpTurn = 0.7;
+	float accTurn = 4;
 
-  while(autonomous){
-    errorLeft = targetLeft - chassis->getModel()->getSensorVals()[0]; // error is target minus actual value
-    errorRight = targetRight - chassis->getModel()->getSensorVals()[1];
-	errorCurrent = (abs(errorRight) + abs(errorLeft)) / 2;
+	// the untouchables
+	float voltageLeft = 0;
+	float voltageRight = 0;
+	int signLeft;
+	int signRight;
+	int errorCurrent = 0;
+	int errorLast = 0;
+	int sameErrCycles = 0;
+	int same0ErrCycles = 0;
+	int startTime = pros::millis();
+	targetLeft = targetLeft + chassis->getModel()->getSensorVals()[0];
+	targetRight = targetRight + chassis->getModel()->getSensorVals()[1];
 
-    signLeft = errorLeft / abs(errorLeft); // + or - 1
-    signRight = errorRight / abs(errorRight);
+	while(autonomous){
+		errorLeft = targetLeft - chassis->getModel()->getSensorVals()[0]; // error is target minus actual value
+		errorRight = targetRight - chassis->getModel()->getSensorVals()[1];
+		errorCurrent = (abs(errorRight) + abs(errorLeft)) / 2;
 
-    if(signLeft == signRight){
-      voltageLeft = errorLeft * kp; // intended voltage is error times constant
-      voltageRight = errorRight * kp;
-	  voltageCap = voltageCap + acc;  // slew rate
-    }
-    else{
-      voltageLeft = errorLeft * kpTurn; // same logic with different turn value
-      voltageRight = errorRight * kpTurn;
-	  voltageCap = voltageCap + accTurn;  // turn slew rate
-    }
-    
-    if(voltageCap > voltageMax){
-      voltageCap = voltageMax; // voltageCap cannot exceed 115
-    }
+		signLeft = errorLeft / abs(errorLeft); // + or - 1
+		signRight = errorRight / abs(errorRight);
 
-    if(abs(voltageLeft) > voltageCap){ // limit the voltage
-      voltageLeft = voltageCap * signLeft;
-    }
-
-    if(abs(voltageRight) > voltageCap){ // ditto
-      voltageRight = voltageCap * signRight;
-    }
-
-	// set the motors to the intended speed
-    chassis->getModel()->tank(voltageLeft/127, voltageRight/127);
-
-	// timeout utility
-	if (errorLast == errorCurrent) {
-		if (errorCurrent <= 2) {
-			same0ErrCycles +=1;
+		if(signLeft == signRight){
+		voltageLeft = errorLeft * kp; // intended voltage is error times constant
+		voltageRight = errorRight * kp;
+		voltageCap = voltageCap + acc;  // slew rate
 		}
-		sameErrCycles += 1;
-	}
-	else {
-		sameErrCycles = 0;
-		same0ErrCycles = 0;
-	}
+		else{
+		voltageLeft = errorLeft * kpTurn; // same logic with different turn value
+		voltageRight = errorRight * kpTurn;
+		voltageCap = voltageCap + accTurn;  // turn slew rate
+		}
+		
+		if(voltageCap > voltageMax){
+		voltageCap = voltageMax; // voltageCap cannot exceed 115
+		}
 
-	// exit paramaters
-	if ((errorLast < 5 and errorCurrent < 5) or sameErrCycles >= 10) { // allowing for smol error or exit if we stay the same err for .2 second
-		chassis->stop();
-		std::cout << "task complete with error " << errorCurrent << " in " << (pros::millis() - startTime) << "ms" << std::endl;
-		return;
-	}
-	
-	// debug
-	// std::cout << "error  " << errorCurrent << std::endl;
-	// std::cout << "errorLeft  " << errorLeft << std::endl;
-	// std::cout << "errorRight  " << errorRight << std::endl;
-	// std::cout << "voltageLeft  " << voltageLeft << std::endl;
-	// std::cout << "voltageRight  " << voltageRight << std::endl;
+		if(abs(voltageLeft) > voltageCap){ // limit the voltage
+		voltageLeft = voltageCap * signLeft;
+		}
 
-	// nothing goes after this
-	errorLast = errorCurrent;
-    pros::delay(20);
-  }
+		if(abs(voltageRight) > voltageCap){ // ditto
+		voltageRight = voltageCap * signRight;
+		}
+
+		// set the motors to the intended speed
+		chassis->getModel()->tank(voltageLeft/127, voltageRight/127);
+
+		// timeout utility
+		if (errorLast == errorCurrent) {
+			if (errorCurrent <= 2) {
+				same0ErrCycles +=1;
+			}
+			sameErrCycles += 1;
+		}
+		else {
+			sameErrCycles = 0;
+			same0ErrCycles = 0;
+		}
+
+		// exit paramaters
+		if ((errorLast < 5 and errorCurrent < 5) or sameErrCycles >= 10) { // allowing for smol error or exit if we stay the same err for .2 second
+			chassis->stop();
+			std::cout << "task complete with error " << errorCurrent << " in " << (pros::millis() - startTime) << "ms" << std::endl;
+			return;
+		}
+		
+		// debug
+		// std::cout << "error  " << errorCurrent << std::endl;
+		// std::cout << "errorLeft  " << errorLeft << std::endl;
+		// std::cout << "errorRight  " << errorRight << std::endl;
+		// std::cout << "voltageLeft  " << voltageLeft << std::endl;
+		// std::cout << "voltageRight  " << voltageRight << std::endl;
+
+		// nothing goes after this
+		errorLast = errorCurrent;
+		pros::delay(20);
+	}
 }
 
 void drive(int left, int right, int voltageMax=115){
@@ -180,92 +180,91 @@ void drive(int left, int right, int voltageMax=115){
 
 void turnP(int voltageMax) {
  
-  // the touchables ;)))))))) touch me uwu :):):)
-  float kp = 1.6;
-  float ki = 0.7;
-  float kd = 0.1;
-  float acc = 20;
+	// the touchables ;)))))))) touch me uwu :):):)
+	float kp = 1.6;
+	float ki = 0.7;
+	float kd = 0.1;
+	float acc = 20;
 
-  // the untouchables
-  float voltage = 0;
-  float errorCurrent;
-  float errorLast;
-  int errorCurrentInt;
-  int errorLastInt;
-  int sameErrCycles = 0;
-  int same0ErrCycles = 0;
-  int p;
-  float i;
-  int d;
-  int sign;
-  float error;
-  int startTime = pros::millis();
+	// the untouchables
+	float voltage = 0;
+	float errorCurrent;
+	float errorLast;
+	int errorCurrentInt;
+	int errorLastInt;
+	int sameErrCycles = 0;
+	int same0ErrCycles = 0;
+	int p;
+	float i;
+	int d;
+	int sign;
+	float error;
+	int startTime = pros::millis();
 
-  while(autonomous){
-    error = targetTurn - imu.get_rotation();
-	errorCurrent = abs(error);
-	errorCurrentInt = errorCurrent;
-	sign = targetTurnRelative / abs(targetTurnRelative); // -1 or 1
+	while(autonomous){
+		error = targetTurn - imu.get_rotation();
+		errorCurrent = abs(error);
+		errorCurrentInt = errorCurrent;
+		sign = targetTurn / abs(targetTurn); // -1 or 1
 
-	p = (error * kp);
-	if (abs(error) < 10) { // if we are in range for I to be desireable
-        i = ((i + error) * ki);
-	}
-	else
-        i = 0;
-	// if ((abs(error) - errorLast) < 0)
-	d = (error - errorLast) * kd;
-	
-	voltage = p + i + d;
-	voltageCap = voltageCap + acc;  // slew rate
-    
-	if(voltageCap > voltageMax){
-      voltageCap = voltageMax; // voltageCap cannot exceed 115
-    }
-
-    if(abs(voltage) > voltageCap){ // limit the voltage
-      voltage = voltageCap * sign;
-    }
-
-	// set the motors to the intended speed
-    chassis->getModel()->tank(voltage/127, -voltage/127);
-
-	// timeout utility
-	if (errorLastInt == errorCurrentInt) {
-		if (errorLast <= 2 and errorCurrent <= 2) { // saying that error less than 2 counts as 0
-			same0ErrCycles +=1;
+		p = (error * kp);
+		if (abs(error) < 10) { // if we are in range for I to be desireable
+			i = ((i + error) * ki);
 		}
-		sameErrCycles += 1;
-	}
-	else {
-		sameErrCycles = 0;
-		same0ErrCycles = 0;
-	}
+		else
+			i = 0;
+		// if ((abs(error) - errorLast) < 0)
+		d = (error - errorLast) * kd;
+		
+		voltage = p + i + d;
+		voltageCap = voltageCap + acc;  // slew rate
+		
+		if(voltageCap > voltageMax){
+		voltageCap = voltageMax; // voltageCap cannot exceed 115
+		}
 
-	// exit paramaters
-	if (same0ErrCycles >= 5 or sameErrCycles >= 60) { // allowing for smol error or exit if we stay the same err for .6 second
-		chassis->stop();
-		std::cout << "task complete with error " << errorCurrent << " in " << (pros::millis() - startTime) << "ms" << std::endl;
-		return;
+		if(abs(voltage) > voltageCap){ // limit the voltage
+		voltage = voltageCap * sign;
+		}
+
+		// set the motors to the intended speed
+		chassis->getModel()->tank(voltage/127, -voltage/127);
+
+		// timeout utility
+		if (errorLastInt == errorCurrentInt) {
+			if (errorLast <= 2 and errorCurrent <= 2) { // saying that error less than 2 counts as 0
+				same0ErrCycles +=1;
+			}
+			sameErrCycles += 1;
+		}
+		else {
+			sameErrCycles = 0;
+			same0ErrCycles = 0;
+		}
+
+		// exit paramaters
+		if (same0ErrCycles >= 5 or sameErrCycles >= 60) { // allowing for smol error or exit if we stay the same err for .6 second
+			chassis->stop();
+			std::cout << "task complete with error " << errorCurrent << " in " << (pros::millis() - startTime) << "ms" << std::endl;
+			return;
+		}
+		
+		// debug
+		// std::cout << "error " << errorCurrent << std::endl;
+		// std::cout << "voltage " << voltage << std::endl;
+
+		// for csv output, graphing the function
+		// std::cout << pros::millis() << "," << error << "," << voltage << std::endl;
+
+		// nothing goes after this
+		errorLast = errorCurrent;
+		errorLastInt = errorLast;
+		pros::delay(10);
 	}
-	
-	// debug
-	// std::cout << "error " << errorCurrent << std::endl;
-	// std::cout << "voltage " << voltage << std::endl;
-
-	// for csv output, graphing the function
-	// std::cout << pros::millis() << "," << error << "," << voltage << std::endl;
-
-	// nothing goes after this
-	errorLast = errorCurrent;
-	errorLastInt = errorLast;
-    pros::delay(10);
-  }
 }
 
 void turn(int target, int voltageMax=115){
-  targetTurn = target + imu.get_rotation();
-  targetTurnRelative = target;
+  targetTurn = target;
   voltageCap = 0; //reset velocity cap for slew rate
   turnP(voltageMax);
 }
@@ -288,24 +287,6 @@ void flipout() { // a blocking flipout function
 	trayMotor.moveAbsolute(20, 100);
 }
 
-void stackRick() { // a blocking stack function
-	intakeMotors.moveRelative(-400, 80); // quik stak
-	trayMotor.moveAbsolute(6200, 100);
-	drive(500, 500);
-	while (trayMotor.getPosition() < 3000) {
-		pros::delay(20);
-	}
-	intakeMotors.moveVelocity(-13);
-	drive(150, 150);
-	while (trayMotor.getPosition() < 6000) {
-		pros::delay(20);
-	}
-	intakeMotors.moveVelocity(13);
-	trayMotor.moveAbsolute(0, 100);
-	drive(-800, -800);
-	intakeMotors.moveVelocity(0);
-}
-
 void traySlew(bool forward) {
 	if (forward) {
 		if (trayMotor.getPosition() > 4500) trayMotor.moveVelocity(40);
@@ -315,48 +296,6 @@ void traySlew(bool forward) {
 		if (trayMotor.getPosition() < 1000) trayMotor.moveVelocity(-60);
 		else trayMotor.moveVelocity(-100);
 	}
-}
-
-void generatePaths() { // all paths stored here
-	// 8 cube s curve, mirror for red
-	profileController->generatePath({
-				{0_ft, 0_ft, 0_deg},
-				{2_ft, 2_ft, 0_deg}},
-				"rickSCurve1" 
-			);
-	
-	// 8 cube 2nd s curve, mirror for red
-	profileController->generatePath({
-				{0_ft, 0_ft, 0_deg},
-				{3_ft, 1_ft, 0_deg}},
-				"rickSCurve2" 
-			);
-
-	profileController->generatePath({
-				{0_ft, 0_ft, 0_deg},
-				{2_ft, 0_ft, 0_deg}},
-				"rickStraight1" 
-			);
-	
-	profileController->generatePath({
-				{0_ft, 0_ft, 0_deg},
-				{4.1_ft, 0_ft, 0_deg}},
-				"rickStraight2" 
-			);
-}
-
-void sdLog(bool yes) {
-	if (yes) {
-		// set cout buffer to sd card
-		std::cout.rdbuf(out.rdbuf());
-		std::cout << "engage rick.txt" << std::endl;
-	}
-	else {
-		// reset cout buffer
-		std::cout.rdbuf(coutbuf);
-		std::cout << "nah its terminal fo today" << std::endl;
-	}
-
 }
 
 static lv_res_t autonBtnmAction(lv_obj_t *btnm, const char *txt) {
@@ -394,14 +333,6 @@ void initialize() {
 	std::cout << pros::millis() << ": calibrating imu..." << std::endl;
 	line.calibrate();
 	std::cout << pros::millis() << ": calibrating line tracker..." << std::endl;
-
-	// yes sd card
-	// std::cout.rdbuf(out.rdbuf());
-	// std::cout << "engage rick.txt" << std::endl;
-	// reset cout buffer
-	// std::cout.rdbuf(coutbuf);
-	// std::cout << "nah its terminal fo today" << std::endl;
-	
 
 	// lvgl theme
 	lv_theme_t *th = lv_theme_alien_init(360, NULL); //Set a HUE value and keep font default RED
@@ -458,14 +389,8 @@ void initialize() {
 	std::cout << pros::millis() << ": finished creating gui!" << std::endl;
 
 	// wait for calibrate
-	std::cout << pros::millis() << ": generating paths..." << std::endl;
-	generatePaths();
-	std::cout << pros::millis() << ": finished generating paths..." << std::endl;
-	while (imu.is_calibrating() and pros::millis() < 5000)
-	{
-		pros::delay(10);
-	}
-	if (pros::millis() < 5000) std::cout << pros::millis() << ": finished calibrating!" << std::endl;
+	while (imu.is_calibrating() and pros::millis() < 3000) pros::delay(20);
+	if (pros::millis() < 3000) std::cout << pros::millis() << ": finished calibrating!" << std::endl;
 	else std::cout << pros::millis() << ": calibration failed, moving on" << std::endl;
 
 	std::cout << "\n" << pros::millis() << ": motor temps:" << std::endl;
@@ -530,22 +455,22 @@ void autonomous() {
 
 		flipout();
 		pros::delay(500);
-		turn(-(origAngle + imu.get_rotation()));
+		turn(-origAngle);
 		// grab 4 cubes
 		intakeMotors.moveRelative(7200, 200);
 		drive(1900, 1900, 50);
 		// go around tower
-		turn(45 - (origAngle + imu.get_rotation()));
+		turn(45 - origAngle);
 		intakeMotors.moveRelative(4000, 200);
 		drive(700, 700, 70);
-		turn(-45 - (origAngle + imu.get_rotation()));
+		turn(-45 - origAngle);
 		drive(700, 700, 70);
-		turn(-(origAngle + imu.get_rotation()));
+		turn(-origAngle);
 		// grab next 4
 		intakeMotors.moveRelative(7500, 200);
 		drive(1900, 1900, 50);
 		// turn for stack
-		turn(60 - imu.get_rotation());
+		turn(60);
 		// move to zone
 		intakeMotors.moveRelative(-700, 50);
 		drive(1500, 1500, 80);
@@ -567,12 +492,12 @@ void autonomous() {
 		// red unprotec 5 cube
 		flipout();
 		pros::delay(300);
-		turn(-(origAngle + imu.get_rotation()));
+		turn(-origAngle);
 		// grab 4 cubes
 		intakeMotors.moveRelative(6800, 200);
 		drive(1800, 1800, 70);
 		// turn for stack
-		turn(150 - imu.get_rotation()); // use absolute positioning
+		turn(150); // use absolute positioning
 		// move to zone
 		intakeMotors.moveRelative(-700, 50);
 		drive(1500, 1500, 80);
@@ -593,18 +518,18 @@ void autonomous() {
 	case autonStates::redProtec:
 		// red protec 4 cube
 		flipout();
-		turn(-(origAngle + imu.get_rotation()));
+		turn(-origAngle);
 		// grab 3 cubes
 		intakeMotors.moveRelative(5000, 200);
 		drive(1700, 1700, 70);
 		intakeMotors.moveVoltage(0);
 		// turn for final cube
-		turn(-132 - imu.get_rotation());
+		turn(-132);
 		// grab final cube
 		intakeMotors.moveRelative(5000, 200);
 		drive(1300, 1300, 70);
 		// move to zone
-		turn(-136 - imu.get_rotation());
+		turn(-136);
 		drive(580, 580);
 		// stack
 		intakeMotors.moveRelative(-1300, 90);
@@ -627,18 +552,18 @@ void autonomous() {
 	case autonStates::redRick:
 		// red protec 3 cube
 		flipout();
-		turn(-(origAngle + imu.get_rotation()));
+		turn(-origAngle);
 		// grab 3 cubes
 		intakeMotors.moveRelative(5000, 200);
 		drive(900, 900, 70);
 		intakeMotors.moveVoltage(0);
 		// turn for final cube
-		turn(-90 - imu.get_rotation());
+		turn(-90);
 		// grab final cube
 		intakeMotors.moveRelative(4000, 200);
 		drive(900, 900, 70);
 		// move to zone
-		turn(-132 - imu.get_rotation());
+		turn(-132);
 		drive(520, 520);
 		// stack
 		intakeMotors.moveRelative(-900, 200);
@@ -658,12 +583,12 @@ void autonomous() {
 		// blue unprotec 5 cube
 		flipout();
 		pros::delay(300);
-		turn(-(origAngle + imu.get_rotation()));
+		turn(-origAngle);
 		// grab 4 cubes
 		intakeMotors.moveRelative(6800, 200);
 		drive(1800, 1800, 70);
 		// turn for stack
-		turn(-150 - imu.get_rotation()); // use absolute positioning
+		turn(-150); // use absolute positioning
 		// move to zone
 		intakeMotors.moveRelative(-700, 50);
 		drive(1500, 1500, 80);
@@ -683,13 +608,13 @@ void autonomous() {
 	case autonStates::blueProtec:
 		// blue protec 4 cube
 		flipout();
-		turn(-(origAngle + imu.get_rotation()));
+		turn(-origAngle);
 		// grab 3 cubes
 		intakeMotors.moveRelative(5000, 200);
 		drive(1700, 1700, 80);
 		intakeMotors.moveVoltage(0);
 		// turn for final cube
-		turn(130 - imu.get_rotation());
+		turn(130);
 		// grab final cube
 		intakeMotors.moveRelative(5400, 200);
 		drive(1300, 1300, 70);
@@ -714,18 +639,18 @@ void autonomous() {
 	case autonStates::blueRick:
 		// blue protec 3 cube
 		flipout();
-		turn(-(origAngle + imu.get_rotation()));
+		turn(-origAngle);
 		// grab 3 cubes
 		intakeMotors.moveRelative(5000, 200);
 		drive(900, 900, 70);
 		intakeMotors.moveVoltage(0);
 		// turn for final cube
-		turn(90 - imu.get_rotation());
+		turn(90);
 		// grab final cube
 		intakeMotors.moveRelative(4000, 200);
 		drive(900, 900, 70);
 		// move to zone
-		turn(132 - imu.get_rotation());
+		turn(132);
 		drive(520, 520);
 		// stack
 		intakeMotors.moveRelative(-900, 200);

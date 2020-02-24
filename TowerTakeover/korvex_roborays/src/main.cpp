@@ -797,3 +797,5 @@ void opcontrol() {
 		pros::delay(20);
 	}
 }
+
+// i do not like this code tied to my name. why do you have functions that do nothing but call functions? why?
