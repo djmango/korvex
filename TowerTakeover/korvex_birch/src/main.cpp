@@ -30,8 +30,7 @@ auto profileController = AsyncMotionProfileControllerBuilder()
 // motors
 pros::Motor liftMotor(LIFT_MTR, pros::E_MOTOR_GEARSET_36, false);
 okapi::Motor trayMotor(TRAY_MTR, false, okapi::AbstractMotor::gearset::red, okapi::AbstractMotor::encoderUnits::counts);
-// okapi::AsyncPosControllerBuilder::build();
-okapi::MotorGroup intakeMotors({-INTAKE_MTR1, INTAKE_MTR2});
+okapi::MotorGroup intakeMotors({INTAKE_MTR1, -INTAKE_MTR2});
 
 // controller
 Controller masterController;
@@ -82,7 +81,7 @@ int targetLeft;
 int targetRight;
 int targetTurn;
 
-void driveP(int voltageMax) {
+void driveP(int voltageMax, bool debugLog=false) {
 	int errorLeft;
 	int errorRight;
 
@@ -137,11 +136,11 @@ void driveP(int voltageMax) {
 		}
 
 		// set the motors to the intended speed
-		chassis->getModel()->tank(voltageLeft/127, voltageRight/127);
+		chassis->getModel()->tank(voltageLeft/127, voltageRight/127); // dont feel like retuning soo we divide by 127
 
 		// timeout utility
 		if (errorLast == errorCurrent) {
-			if (errorCurrent <= 2) {
+			if (errorCurrent <= 2) { // less than 2 ticks is "0" error
 				same0ErrCycles +=1;
 			}
 			sameErrCycles += 1;
@@ -159,16 +158,22 @@ void driveP(int voltageMax) {
 		}
 		
 		// debug
-		// std::cout << "error  " << errorCurrent << std::endl;
-		// std::cout << "errorLeft  " << errorLeft << std::endl;
-		// std::cout << "errorRight  " << errorRight << std::endl;
-		// std::cout << "voltageLeft  " << voltageLeft << std::endl;
-		// std::cout << "voltageRight  " << voltageRight << std::endl;
+		if (debugLog) {
+			std::cout << "error  " << errorCurrent << std::endl;
+			std::cout << "errorLeft  " << errorLeft << std::endl;
+			std::cout << "errorRight  " << errorRight << std::endl;
+			std::cout << "voltageLeft  " << voltageLeft << std::endl;
+			std::cout << "voltageRight  " << voltageRight << std::endl;
+		}
 
 		// nothing goes after this
 		errorLast = errorCurrent;
 		pros::delay(20);
 	}
+}
+
+void driveQ(QLength target) {
+	
 }
 
 void drive(int left, int right, int voltageMax=115){
@@ -692,11 +697,11 @@ void opcontrol() {
 	chassis->setMaxVelocity(200);
 	float joystickAvg = 0; // an average of the left and right joystick values
 	bool cubesReturning = false; // true when we are moving the cubes down to the line sensor, for stacking
-	bool trayDebug = true; // im lazy
+	bool trayDebug = false; // im lazy
 
 	// motor setup
 	trayMotor.setBrakeMode(okapi::AbstractMotor::brakeMode::hold);
-
+	pros::ADIEncoder strafe(5,6);
 	// main loop
 	while (true) {
 		// basic lift control
@@ -801,11 +806,12 @@ void opcontrol() {
 
 		// update vals
 		joystickAvg = (masterController.getAnalog(ControllerAnalog::leftY) + (masterController.getAnalog(ControllerAnalog::rightY)) / 2);
-		chassis->setState({chassis->getState().x, chassis->getState().y, (((imu.get_rotation()*M_PI)/180) * okapi::radian)});
+		// chassis->setState({chassis->getState().x, chassis->getState().y, (((imu.get_rotation()*M_PI)/180) * okapi::radian)});
 
 		// debug
-		// std::cout << pros::millis() << ": strafe " << strafe.get_value() << std::endl;
-		// std::cout << pros::millis() << ": pos " << chassis->getState().str() << std::endl;
+		std::cout << pros::millis() << ": strafe " << strafe.get_value() << std::endl;
+		std::cout << pros::millis() << ": pos " << chassis->getState().x.convert(centimeter) << std::endl;
+		std::cout << pros::millis() << ": enc " << imu.get_rotation() << std::endl;
 		pros::delay(20);
 	}
 }
