@@ -6,9 +6,9 @@
 auto chassis = ChassisControllerBuilder()
 		.withMotors({LEFT_MTR2, LEFT_MTR1}, {-RIGHT_MTR2, -RIGHT_MTR1})
 		.withGains(
-			{0.001, 0.0004, 0.00001}, // Distance controller gains
-			{0.0001, 0.0001, 0.000}, // Turn controller gains
-			{0.002, 0.01, 0.000} // Angle controller gains (helps drive straight)
+			{0.001, 0.00, 0.00}, // Distance controller gains
+			{0.000, 0.000, 0.000}, // Turn controller gains
+			{0.00, 0.0, 0.000} // Angle controller gains (helps drive straight)
 		)
 		// green gearset, 4 inch wheel diameter, 8.125 inch wheelbase
 		.withDimensions(AbstractMotor::gearset::green, {{4_in, 8.125_in}, imev5GreenTPR})
@@ -172,8 +172,100 @@ void driveP(int voltageMax, bool debugLog=false) {
 	}
 }
 
-void driveQ(QLength target) {
-	
+void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=false) {
+
+	// tune
+	float kp = 0.008;
+	float ki = 0;
+	float kd = 0;
+	float acc = 5;
+
+	// the untouchables
+	float error; // distance to target
+	float xDif; // target.x - robot.x
+	float yDif; // target.y - robot.y
+	float p; // proportional
+	float i; // integral
+	float d; // derivative
+	float voltageLeft;
+	float voltageRight;
+	float voltage;
+	int signLeft;
+	int signRight;
+	int errorLast = 0;
+	float xOrig = chassis->getState().x.convert(centimeter);
+	float yOrig = chassis->getState().y.convert(centimeter);
+	float xDifOrig;
+	float yDifOrig;
+	float origDistance; // distance from original position to robot
+	int sameErrCycles = 0;
+	int same0ErrCycles = 0;
+	int startTime = pros::millis();
+ 
+	while(autonomous) {
+
+		// get difference in x and y, robot distance from target
+		xDif = chassis->getState().x.convert(centimeter) - targetX.convert(centimeter);
+		yDif = chassis->getState().y.convert(centimeter) - targetY.convert(centimeter);
+
+		// get difference in x and y, robot distance from robot start, to detect overshoot
+		xDifOrig = chassis->getState().x.convert(centimeter) - xOrig;
+		yDifOrig = chassis->getState().y.convert(centimeter) - yOrig;
+
+		// get distance to target, ie error
+		error = std::sqrt(std::pow(xDif, 2) + std::pow(yDif, 2));
+
+		// distance original pos to robot
+		origDistance = std::sqrt(std::pow(xDifOrig, 2) + std::pow(yDifOrig, 2));
+
+		p = (error * kp);
+		if (abs(error) < 10) i = ((i + error) * ki); // if we are in range for I to be desireable
+		else i = 0;
+		d = (error - errorLast) * kd;
+		
+		voltage = p + i + d;
+
+		if (origDistance > error) voltage = -voltage;
+
+		voltageLeft = voltage;
+		voltageRight = voltage;
+
+		// TODO: okay we have our distance now we need to make sure we are straight
+
+		// set the motors to the intended speed
+		// chassis->getModel()->tank(voltageLeft, voltageRight);
+
+		// timeout utility
+		if (errorLast == error) {
+			if (abs(error) <= 1) { // less than 1 cm is "0" error
+				same0ErrCycles +=1;
+			}
+			sameErrCycles += 1;
+		}
+		else {
+			sameErrCycles = 0;
+			same0ErrCycles = 0;
+		}
+
+		// exit paramaters
+		// if ((errorLast < 5 and error < 5) or sameErrCycles >= 10) { // allowing for smol error or exit if we stay the same err for .2 second
+		// 	chassis->stop();
+		// 	std::cout << "task complete with error " << error << "cm, in " << (pros::millis() - startTime) << "ms" << std::endl;
+		// 	return;
+		// }
+
+		// debug
+		if (debugLog) {
+			std::cout << "error  " << error << std::endl;
+			std::cout << "voltage  " << voltage << std::endl;
+			std::cout << "dist from orig  " << origDistance << std::endl;
+			std::cout << "pos  " << chassis->getState().str() << std::endl;
+		}
+
+		// nothing goes after this
+		errorLast = error;
+		pros::delay(20);
+	}
 }
 
 void drive(int left, int right, int voltageMax=115){
@@ -183,13 +275,12 @@ void drive(int left, int right, int voltageMax=115){
   driveP(voltageMax);
 }
 
-void turnP(int voltageMax) {
+void turnP(int voltageMax, bool csvOut=false) {
  
 	// the touchables ;)))))))) touch me uwu :):):)
 	float kp = 1.6;
-	float ki = 0.7;
-	float kd = 0.1;
-	float acc = 20;
+	float ki = 0.8;
+	float kd = 0.45;
 
 	// the untouchables
 	float voltage = 0;
@@ -206,7 +297,7 @@ void turnP(int voltageMax) {
 	float error;
 	int startTime = pros::millis();
 
-	while(autonomous){
+	while(autonomous) {
 		error = targetTurn - imu.get_rotation();
 		errorCurrent = abs(error);
 		errorCurrentInt = errorCurrent;
@@ -218,19 +309,11 @@ void turnP(int voltageMax) {
 		}
 		else
 			i = 0;
-		// if ((abs(error) - errorLast) < 0)
 		d = (error - errorLast) * kd;
 		
 		voltage = p + i + d;
-		voltageCap = voltageCap + acc;  // slew rate
-		
-		if(voltageCap > voltageMax){
-		voltageCap = voltageMax; // voltageCap cannot exceed 115
-		}
 
-		if(abs(voltage) > voltageCap){ // limit the voltage
-		voltage = voltageCap * sign;
-		}
+		if(abs(voltage) > voltageMax) voltage = voltageMax * sign;
 
 		// set the motors to the intended speed
 		chassis->getModel()->tank(voltage/127, -voltage/127);
@@ -259,7 +342,7 @@ void turnP(int voltageMax) {
 		// std::cout << "voltage " << voltage << std::endl;
 
 		// for csv output, graphing the function
-		// std::cout << pros::millis() << "," << error << "," << voltage << std::endl;
+		if (csvOut) std::cout << pros::millis() << "," << error << "," << voltage << std::endl;
 
 		// nothing goes after this
 		errorLast = errorCurrent;
@@ -268,10 +351,9 @@ void turnP(int voltageMax) {
 	}
 }
 
-void turn(int target, int voltageMax=115){
+void turn(int target, int voltageMax=127){
   targetTurn = target;
-  voltageCap = 0; //reset velocity cap for slew rate
-  turnP(voltageMax);
+  turnP(voltageMax, false);
 }
 
 void flipout() { // a blocking flipout function
@@ -438,9 +520,9 @@ void competition_initialize() {}
  */
 
 void autonomous() {
-	chassis->setState({0_in, 0_in, 0_deg});
+	// chassis->setState({0_cm, 0_cm, 0_deg});
 	chassis->setMaxVelocity(200);
-	chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
+	chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 	float origAngle = imu.get_rotation();
 	
 	// motor setup
@@ -454,43 +536,9 @@ void autonomous() {
 
 	switch (autonSelection) {
 	case autonStates::skills:
-		// skills doesnt exist. i wrote a (working???) 9 cube during lunch!
-		chassis->driveToPoint({10_cm, 0_cm});
-		// std::cout << pros::millis() << ": state  " << chassis->getState().str() << std::endl;
-
-		flipout();
-		pros::delay(500);
-		turn(-origAngle);
-		// grab 4 cubes
-		intakeMotors.moveRelative(7200, 200);
-		drive(1900, 1900, 50);
-		// go around tower
-		turn(45 - origAngle);
-		intakeMotors.moveRelative(4000, 200);
-		drive(700, 700, 70);
-		turn(-45 - origAngle);
-		drive(700, 700, 70);
-		turn(-origAngle);
-		// grab next 4
-		intakeMotors.moveRelative(7500, 200);
-		drive(1900, 1900, 50);
-		// turn for stack
-		turn(60);
-		// move to zone
-		intakeMotors.moveRelative(-700, 50);
-		drive(1500, 1500, 80);
-		// stack
-		intakeMotors.moveVelocity(-20);
-		liftMotor.move_absolute(-20, 100);
-		trayMotor.moveAbsolute(6200, 100);
-		while (trayMotor.getPosition() < 6000) {
-			pros::delay(20);
-		}
-		trayMotor.moveAbsolute(0, 100);
-		intakeMotors.moveVelocity(-50);
-		drive(250, 250);
-		drive(-600, -600, 80);
-		intakeMotors.moveVelocity(0);
+		// skills doesnt exist
+		while(true) std::cout << "pos  " << chassis->getState().str() << std::endl; pros::delay(50);
+		// driveQ(50_cm, 0_cm, 115, true);
 		break;
 
 	case autonStates::redUnprotec:
@@ -701,7 +749,9 @@ void opcontrol() {
 
 	// motor setup
 	trayMotor.setBrakeMode(okapi::AbstractMotor::brakeMode::hold);
-	pros::ADIEncoder strafe(5,6);
+	pros::ADIEncoder lef(1,2);
+	pros::ADIEncoder rig(5,6);
+
 	// main loop
 	while (true) {
 		// basic lift control
@@ -767,33 +817,32 @@ void opcontrol() {
 		}
 
 		// tray stacking mods
-		switch (trayState)
-		{
-		case trayStates::returned:
-			intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
-			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
-			if (trayDebug) std::cout << pros::millis() << ": trayState returned" << std::endl;
-			break;
-		case trayStates::returning:
-			if (joystickAvg > 0) intakeMotors.moveVoltage(0);
-			else intakeMotors.moveVelocity((joystickAvg*350));
-			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
-			if (trayDebug) std::cout << pros::millis() << ": trayState returning" << std::endl;
-			break;
-		case trayStates::extending:
-			liftMotor.move_absolute(-150, 100);
-			chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
+		switch (trayState) {
+			case trayStates::returned:
+				intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
+				chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
+				if (trayDebug) std::cout << pros::millis() << ": trayState returned" << std::endl;
+				break;
+			case trayStates::returning:
+				if (joystickAvg > 0) intakeMotors.moveVoltage(0);
+				else intakeMotors.moveVelocity((joystickAvg*350));
+				chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
+				if (trayDebug) std::cout << pros::millis() << ": trayState returning" << std::endl;
+				break;
+			case trayStates::extending:
+				liftMotor.move_absolute(-150, 100);
+				chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
 
-			// the other intake control will not be used while we are stacking, all control is transfered to this block
-			if (not shift.isPressed() and not shift.changedToReleased()) {
-				if (intakeIn.isPressed()) intakeMotors.moveVelocity(50);
-				else if (intakeOut.isPressed() or intakeShift.isPressed()) intakeMotors.moveVelocity(-50); // two ways to move stack down slowly
-				else intakeMotors.moveVoltage(0);
-			}
-			if (trayDebug) std::cout << pros::millis() << ": trayState extending" << std::endl;
-			break;
-		default:
-			break;
+				// the other intake control will not be used while we are stacking, all control is transfered to this block
+				if (not shift.isPressed() and not shift.changedToReleased()) {
+					if (intakeIn.isPressed()) intakeMotors.moveVelocity(50);
+					else if (intakeOut.isPressed() or intakeShift.isPressed()) intakeMotors.moveVelocity(-50); // two ways to move stack down slowly
+					else intakeMotors.moveVoltage(0);
+				}
+				if (trayDebug) std::cout << pros::millis() << ": trayState extending" << std::endl;
+				break;
+			default:
+				break;
 		}
 
 		// lift brake mod
@@ -809,9 +858,9 @@ void opcontrol() {
 		// chassis->setState({chassis->getState().x, chassis->getState().y, (((imu.get_rotation()*M_PI)/180) * okapi::radian)});
 
 		// debug
-		std::cout << pros::millis() << ": strafe " << strafe.get_value() << std::endl;
-		std::cout << pros::millis() << ": pos " << chassis->getState().x.convert(centimeter) << std::endl;
-		std::cout << pros::millis() << ": enc " << imu.get_rotation() << std::endl;
+		std::cout << pros::millis() << ": pos " << chassis->getState().str() << std::endl;
+		std::cout << pros::millis() << ": lef " << lef.get_value() << std::endl;
+		std::cout << pros::millis() << ": rig " << rig.get_value() << std::endl;
 		pros::delay(20);
 	}
 }
