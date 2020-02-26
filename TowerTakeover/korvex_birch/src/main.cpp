@@ -13,9 +13,9 @@ auto chassis = ChassisControllerBuilder()
 		// green gearset, 4 inch wheel diameter, 8.125 inch wheelbase
 		.withDimensions(AbstractMotor::gearset::green, {{4_in, 8.125_in}, imev5GreenTPR})
 		.withSensors(
-			ADIEncoder{'A', 'B'}, // left encoder in ADI ports A & B, reversed
-			ADIEncoder{'E', 'F', true},  // right encoder in ADI ports E & F
-			ADIEncoder{'C', 'D', true}  // middle encoder in ADI ports C & D
+			ADIEncoder{'A', 'B'}, // left encoder in ADI ports A & B
+			ADIEncoder{'E', 'F', true},  // right encoder in ADI ports E & F, reversed
+			ADIEncoder{'C', 'D', true}  // middle encoder in ADI ports C & D, reversed
 		)
 		// specify the tracking wheels diameter (2.75 in), track (4 in), and TPR (360)
 		// specify the middle encoder distance (2.25 in) and diameter (2.75 in)
@@ -46,6 +46,9 @@ ControllerButton cubeReturn(ControllerDigital::B);
 // sensors
 pros::Imu imu(IMU_PORT);
 pros::ADIAnalogIn line(LINE_PORT);
+pros::ADIEncoder trackingLeft(1, 2);
+pros::ADIEncoder trackingStrafe(3, 4);
+pros::ADIEncoder trackingRight(5, 6);
 
 // base global defenitions
 const int LIFT_STACKING_HEIGHT = 700; // the motor ticks above which we are stacking
@@ -195,9 +198,8 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=fals
 	int errorLast = 0;
 	float xOrig = chassis->getState().x.convert(centimeter);
 	float yOrig = chassis->getState().y.convert(centimeter);
-	float xDifOrig;
-	float yDifOrig;
-	float origDistance; // distance from original position to robot
+	float distanceTotal = std::sqrt(std::pow((targetX.convert(centimeter) - xOrig), 2) + std::pow((targetY.convert(centimeter) - yOrig), 2)); // total distance we need to travel
+	float distanceOrig; // distance from original position
 	int sameErrCycles = 0;
 	int same0ErrCycles = 0;
 	int startTime = pros::millis();
@@ -208,15 +210,11 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=fals
 		xDif = chassis->getState().x.convert(centimeter) - targetX.convert(centimeter);
 		yDif = chassis->getState().y.convert(centimeter) - targetY.convert(centimeter);
 
-		// get difference in x and y, robot distance from robot start, to detect overshoot
-		xDifOrig = chassis->getState().x.convert(centimeter) - xOrig;
-		yDifOrig = chassis->getState().y.convert(centimeter) - yOrig;
+		// get difference in x and y, robot distance from move start, to detect overshoot
+		distanceOrig = std::sqrt(std::pow((chassis->getState().x.convert(centimeter) - xOrig), 2) + std::pow((chassis->getState().y.convert(centimeter) - yOrig), 2));
 
 		// get distance to target, ie error
 		error = std::sqrt(std::pow(xDif, 2) + std::pow(yDif, 2));
-
-		// distance original pos to robot
-		origDistance = std::sqrt(std::pow(xDifOrig, 2) + std::pow(yDifOrig, 2));
 
 		p = (error * kp);
 		if (abs(error) < 10) i = ((i + error) * ki); // if we are in range for I to be desireable
@@ -225,7 +223,7 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=fals
 		
 		voltage = p + i + d;
 
-		if (origDistance > error) voltage = -voltage;
+		if (distanceOrig > distanceTotal) voltage = -voltage; // if we have passed our point
 
 		voltageLeft = voltage;
 		voltageRight = voltage;
@@ -233,7 +231,7 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=fals
 		// TODO: okay we have our distance now we need to make sure we are straight
 
 		// set the motors to the intended speed
-		// chassis->getModel()->tank(voltageLeft, voltageRight);
+		chassis->getModel()->tank(voltageLeft, voltageRight);
 
 		// timeout utility
 		if (errorLast == error) {
@@ -248,17 +246,17 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=fals
 		}
 
 		// exit paramaters
-		// if ((errorLast < 5 and error < 5) or sameErrCycles >= 10) { // allowing for smol error or exit if we stay the same err for .2 second
-		// 	chassis->stop();
-		// 	std::cout << "task complete with error " << error << "cm, in " << (pros::millis() - startTime) << "ms" << std::endl;
-		// 	return;
-		// }
+		if ((errorLast < 5 and error < 5) or sameErrCycles >= 10) { // allowing for smol error or exit if we stay the same err for .2 second
+			chassis->stop();
+			std::cout << "task complete with error " << error << "cm, in " << (pros::millis() - startTime) << "ms" << std::endl;
+			return;
+		}
 
 		// debug
 		if (debugLog) {
 			std::cout << "error  " << error << std::endl;
 			std::cout << "voltage  " << voltage << std::endl;
-			std::cout << "dist from orig  " << origDistance << std::endl;
+			std::cout << "dist from orig  " << distanceOrig << std::endl;
 			std::cout << "pos  " << chassis->getState().str() << std::endl;
 		}
 
@@ -537,8 +535,7 @@ void autonomous() {
 	switch (autonSelection) {
 	case autonStates::skills:
 		// skills doesnt exist
-		while(true) std::cout << "pos  " << chassis->getState().str() << std::endl; pros::delay(50);
-		// driveQ(50_cm, 0_cm, 115, true);
+		driveQ(50_cm, 0_cm, 60, true);
 		break;
 
 	case autonStates::redUnprotec:
@@ -749,8 +746,6 @@ void opcontrol() {
 
 	// motor setup
 	trayMotor.setBrakeMode(okapi::AbstractMotor::brakeMode::hold);
-	pros::ADIEncoder lef(1,2);
-	pros::ADIEncoder rig(5,6);
 
 	// main loop
 	while (true) {
@@ -855,12 +850,12 @@ void opcontrol() {
 
 		// update vals
 		joystickAvg = (masterController.getAnalog(ControllerAnalog::leftY) + (masterController.getAnalog(ControllerAnalog::rightY)) / 2);
-		// chassis->setState({chassis->getState().x, chassis->getState().y, (((imu.get_rotation()*M_PI)/180) * okapi::radian)});
+		chassis->setState({chassis->getState().x, chassis->getState().y, (((imu.get_rotation()*M_PI)/180) * okapi::radian)});
 
 		// debug
 		std::cout << pros::millis() << ": pos " << chassis->getState().str() << std::endl;
-		std::cout << pros::millis() << ": lef " << lef.get_value() << std::endl;
-		std::cout << pros::millis() << ": rig " << rig.get_value() << std::endl;
+		std::cout << pros::millis() << ": lef " << trackingLeft.get_value() << std::endl;
+		std::cout << pros::millis() << ": rig " << trackingRight.get_value() << std::endl;
 		pros::delay(20);
 	}
 }
