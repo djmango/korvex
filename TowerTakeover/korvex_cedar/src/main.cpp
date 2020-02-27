@@ -159,19 +159,29 @@ void driveP(int targetLeft, int targetRight, int voltageMax=115, bool debugLog=f
 
 void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=false) {
 
-	// tune
-	float kp = 0.008;
-	float ki = 0;
-	float kd = 0;
+	// tune for straights
+	float kp = 0.032;
+	float ki = 0.01;
+	float kd = 0.03;
 	float acc = 5;
+
+	// tune for turns
+	float kpTurn = 0.00;
+	float kiTurn = 0.01;
+	float kdTurn = 0;
 
 	// the untouchables
 	float error; // distance to target
+	float errorLast = 0; // error in the last loop
 	float errorTheta; // targetTheta - robotTheta
+	float errorLastTheta = 0; // errorTheta in the last loop
 	float targetTheta; // angle from robot to target
 	float p; // proportional straight
 	float i; // integral straight
 	float d; // derivative straight
+	float pTurn; // proportional turn
+	float iTurn; // integral turn
+	float dTurn; // derivative turn
 	float voltageLeft;
 	float voltageRight;
 	float voltage; // calculated straight voltage
@@ -181,7 +191,6 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=fals
 	float yOrig = chassis->getState().y.convert(centimeter);
 	float distanceTotal = std::sqrt(std::pow((targetX.convert(centimeter) - xOrig), 2) + std::pow((targetY.convert(centimeter) - yOrig), 2)); // total distance we need to travel
 	float distanceOrig; // distance from original position
-	int errorLast = 0; // error in the last loop
 	int sameErrCycles = 0; // number of cycles we have stayed the same error
 	int same0ErrCycles = 0; // number of cycles we have stayed at 0 error
 	int startTime = pros::millis();
@@ -189,8 +198,8 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=fals
 	while(autonomous) {
 
 		// get difference in x and y, robot distance from target
-		xDif = chassis->getState().x.convert(centimeter) - targetX.convert(centimeter);
-		yDif = chassis->getState().y.convert(centimeter) - targetY.convert(centimeter);
+		xDif = targetX.convert(centimeter) - chassis->getState().x.convert(centimeter);
+		yDif = targetY.convert(centimeter) - chassis->getState().y.convert(centimeter);
 
 		// get difference in x and y, robot distance from move start, to detect overshoot
 		distanceOrig = std::sqrt(std::pow((chassis->getState().x.convert(centimeter) - xOrig), 2) + std::pow((chassis->getState().y.convert(centimeter) - yOrig), 2));
@@ -199,7 +208,7 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=fals
 		error = std::sqrt(std::pow(xDif, 2) + std::pow(yDif, 2));
 
 		p = (error * kp);
-		if (abs(error) < 10) i = ((i + error) * ki); // if we are in range for I to be desireable
+		if (abs(error) <= 10) i = ((i + error) * ki); // if we are in range for I to be desireable
 		else i = 0;
 		d = (error - errorLast) * kd;
 		
@@ -211,14 +220,23 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=fals
 		voltageRight = voltage;
 
 		// figure out if we are turned away from our target
-		targetTheta = std::atan2(xDif, yDif)*180 / M_PI;
+		if (distanceOrig < distanceTotal) targetTheta = std::atan(yDif/xDif)*180 / M_PI;
 		errorTheta = targetTheta - imu.get_rotation();
+
+		// calculate voltage change for left/right
+		pTurn = (error * kpTurn);
+		if (abs(errorTheta) <= 5) iTurn = ((iTurn + errorTheta) * kiTurn); // if we are in range for I to be desireable
+		else iTurn = 0;
+		dTurn = (errorTheta - errorLastTheta) * kdTurn;
+
+		voltageLeft = voltageLeft + (pTurn + iTurn + dTurn);
+		voltageRight = voltageRight + -(pTurn + iTurn + dTurn);
 
 		// set the motors to the intended speed
 		chassis->getModel()->tank(voltageLeft, voltageRight);
 
 		// timeout utility
-		if (errorLast == error) {
+		if (std::round(errorLast) == std::round(error)) {
 			if (abs(error) <= 1) same0ErrCycles +=1; // less than 1 cm is "0" error
 			sameErrCycles += 1;
 		}
@@ -245,6 +263,7 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=fals
 
 		// nothing goes after this
 		errorLast = error;
+		errorLastTheta = errorTheta;
 		pros::delay(20);
 	}
 }
@@ -323,6 +342,71 @@ void turnP(int targetTurn, int voltageMax=127, bool csvOut=false) {
 		errorLast = errorCurrent;
 		errorLastInt = errorLast;
 		pros::delay(10);
+	}
+}
+
+void turnQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=false) {
+	// tune for turns
+	float kp = 1.6;
+	float ki = 0.8;	
+	float kd = 0.45;
+
+	// the untouchables
+	float errorTheta; // targetTheta - robotTheta
+	float errorLastTheta = 0; // errorTheta in the last loop
+	float p; // proportional
+	float i; // integral
+	float d; // derivative
+	float voltage; // calculated voltage
+	float xDif = targetX.convert(centimeter) - chassis->getState().x.convert(centimeter); // target.x - robot.x
+	float yDif = targetY.convert(centimeter) - chassis->getState().y.convert(centimeter); // target.y - robot.y
+	float targetTheta = std::atan2(yDif,xDif)*180 / M_PI; // angle from robot to target, our goal angle
+	int sameErrCycles = 0; // number of cycles we have stayed the same error
+	int same0ErrCycles = 0; // number of cycles we have stayed at 0 error
+	int startTime = pros::millis();
+ 
+	while(autonomous) {
+
+		// get difference in x and y, robot distance from target
+		errorTheta = targetTheta - imu.get_rotation();
+
+		p = (errorTheta * kp);
+		if (abs(errorTheta) < 10) i = ((i + errorTheta) * ki); // if we are in range for I to be desireable
+		else i = 0;
+		d = (errorTheta - errorLastTheta) * kd;
+		
+		voltage = p + i + d;
+
+		// set the motors to the intended speed
+		chassis->getModel()->tank(voltage/127, -voltage/127);
+
+		// timeout utility
+		if (std::round(errorLastTheta) == std::round(errorTheta)) {
+			if (abs(errorTheta) <= 1) same0ErrCycles +=1; // less than 1 cm is "0" error
+			sameErrCycles += 1;
+		}
+		else {
+			sameErrCycles = 0;
+			same0ErrCycles = 0;
+		}
+
+		// exit paramaters
+		if ((same0ErrCycles > 5) or sameErrCycles >= 20) { // exit if we stay the same 0err for .1 sec or same err for .4 second
+			chassis->stop();
+			std::cout << "task complete with error " << errorTheta << "deg, in " << (pros::millis() - startTime) << "ms" << std::endl;
+			return;
+		}
+
+		// debug
+		if (debugLog) {
+			std::cout << "errorTheta  " << errorTheta << std::endl;
+			std::cout << "targetTheta  " << targetTheta << std::endl;
+			std::cout << "yDif  " << xDif << std::endl;
+		}
+
+		// nothing goes after this
+		errorLastTheta = errorTheta;
+		pros::delay(20);
 	}
 }
 
@@ -468,10 +552,8 @@ void disabled() {
 
 /**
  * Runs after initialize(), and before autonomous when connected to the Field
- * Management System or the VEX Competition Switch. This is intended for
- * competition-specific initialization routines, such as an autonomous selector
- * on the LCD.
- *
+ * Management System or the VEX Competition Switch.
+ * 
  * This task will exit when the robot is enabled and autonomous or opcontrol
  * starts.
  */
@@ -490,7 +572,7 @@ void competition_initialize() {}
  */
 
 void autonomous() {
-	// chassis->setState({0_cm, 0_cm, 0_deg});
+	chassis->setState({0_cm, 0_cm, 0_deg});
 	chassis->setMaxVelocity(200);
 	chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 	float origAngle = imu.get_rotation();
@@ -507,7 +589,10 @@ void autonomous() {
 	switch (autonSelection) {
 	case autonStates::skills:
 		// skills doesnt exist
-		driveQ(50_cm, 0_cm, 60, true);
+		// turnQ(30_cm, -30_cm, 115, true);
+		driveQ(30_cm, 0_cm, 115, true);
+		turnQ(0_cm, 0_cm, 115);
+		driveQ(0_cm, 0_cm, 115);
 		break;
 
 	case autonStates::redUnprotec:
@@ -825,9 +910,9 @@ void opcontrol() {
 		chassis->setState({chassis->getState().x, chassis->getState().y, (((imu.get_rotation()*M_PI)/180) * okapi::radian)});
 
 		// debug
-		std::cout << pros::millis() << ": pos " << chassis->getState().str() << std::endl;
-		std::cout << pros::millis() << ": lef " << trackingLeft.get_value() << std::endl;
-		std::cout << pros::millis() << ": rig " << trackingRight.get_value() << std::endl;
+		// std::cout << pros::millis() << ": pos " << chassis->getState().str() << std::endl;
+		// std::cout << pros::millis() << ": lef " << trackingLeft.get_value() << std::endl;
+		// std::cout << pros::millis() << ": rig " << trackingRight.get_value() << std::endl;
 		pros::delay(20);
 	}
 }
