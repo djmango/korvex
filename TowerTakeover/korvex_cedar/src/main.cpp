@@ -74,15 +74,7 @@ trayStates trayState = trayStates::returned; // the current tray state
 // create a button descriptor string array
 static const char *btnmMap[] = {"Unprotec", "Protec", "Rick", ""};
 
-// motion control system globals
-int voltageCapG;
-int targetLeft;
-int targetRight;
-int targetTurn;
-
-void driveP(int voltageMax, bool debugLog=false) {
-	int errorLeft;
-	int errorRight;
+void driveP(int targetLeft, int targetRight, int voltageMax=115, bool debugLog=false) {
 
 	// the touchables ;)))))))) touch me uwu :):):)
 	float kp = 0.15;
@@ -93,6 +85,9 @@ void driveP(int voltageMax, bool debugLog=false) {
 	// the untouchables
 	float voltageLeft = 0;
 	float voltageRight = 0;
+	int errorLeft;
+	int errorRight;
+	int voltageCap = 0;
 	int signLeft;
 	int signRight;
 	int errorCurrent = 0;
@@ -112,36 +107,27 @@ void driveP(int voltageMax, bool debugLog=false) {
 		signRight = errorRight / abs(errorRight);
 
 		if(signLeft == signRight){
-		voltageLeft = errorLeft * kp; // intended voltage is error times constant
-		voltageRight = errorRight * kp;
-		voltageCapG = voltageCapG + acc;  // slew rate
+			voltageLeft = errorLeft * kp; // intended voltage is error times constant
+			voltageRight = errorRight * kp;
+			voltageCap = voltageCap + acc;  // slew rate
 		}
 		else{
-		voltageLeft = errorLeft * kpTurn; // same logic with different turn value
-		voltageRight = errorRight * kpTurn;
-		voltageCapG = voltageCapG + accTurn;  // turn slew rate
+			voltageLeft = errorLeft * kpTurn; // same logic with different turn value
+			voltageRight = errorRight * kpTurn;
+			voltageCap = voltageCap + accTurn;  // turn slew rate
 		}
 		
-		if(voltageCapG > voltageMax){
-		voltageCapG = voltageMax; // voltageCapG cannot exceed 115
-		}
+		if(voltageCap > voltageMax) voltageCap = voltageMax; // voltageCap cannot exceed 115
 
-		if(abs(voltageLeft) > voltageCapG){ // limit the voltage
-		voltageLeft = voltageCapG * signLeft;
-		}
-
-		if(abs(voltageRight) > voltageCapG){ // ditto
-		voltageRight = voltageCapG * signRight;
-		}
+		if(abs(voltageLeft) > voltageCap) voltageLeft = voltageCap * signLeft; // limit the voltage
+		if(abs(voltageRight) > voltageCap) voltageRight = voltageCap * signRight;// ditto
 
 		// set the motors to the intended speed
 		chassis->getModel()->tank(voltageLeft/127, voltageRight/127); // dont feel like retuning soo we divide by 127
 
 		// timeout utility
 		if (errorLast == errorCurrent) {
-			if (errorCurrent <= 2) { // less than 2 ticks is "0" error
-				same0ErrCycles +=1;
-			}
+			if (errorCurrent <= 2) same0ErrCycles +=1; // less than 2 ticks is "0" error
 			sameErrCycles += 1;
 		}
 		else {
@@ -263,14 +249,7 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=fals
 	}
 }
 
-void drive(int left, int right, int voltageMax=115){
-  targetLeft = left;
-  targetRight = right;
-  voltageCapG = 0; //reset velocity cap for slew rate
-  driveP(voltageMax);
-}
-
-void turnP(int voltageMax, bool csvOut=false) {
+void turnP(int targetTurn, int voltageMax=127, bool csvOut=false) {
  
 	// the touchables ;)))))))) touch me uwu :):):)
 	float kp = 1.6;
@@ -278,6 +257,7 @@ void turnP(int voltageMax, bool csvOut=false) {
 	float kd = 0.45;
 
 	// the untouchables
+	int voltageCap = 0;
 	float voltage = 0;
 	float errorCurrent;
 	float errorLast;
@@ -344,11 +324,6 @@ void turnP(int voltageMax, bool csvOut=false) {
 		errorLastInt = errorLast;
 		pros::delay(10);
 	}
-}
-
-void turn(int target, int voltageMax=127){
-  targetTurn = target;
-  turnP(voltageMax, false);
 }
 
 void flipout() { // a blocking flipout function
@@ -539,15 +514,15 @@ void autonomous() {
 		// red unprotec 5 cube
 		flipout();
 		pros::delay(300);
-		turn(-origAngle);
+		turnP(-origAngle);
 		// grab 4 cubes
 		intakeMotors.moveRelative(6800, 200);
-		drive(1800, 1800, 70);
+		driveP(1800, 1800, 70);
 		// turn for stack
-		turn(150); // use absolute positioning
+		turnP(150); // use absolute positioning
 		// move to zone
 		intakeMotors.moveRelative(-700, 50);
-		drive(1500, 1500, 80);
+		driveP(1500, 1500, 80);
 		// stack
 		intakeMotors.moveVelocity(-20);
 		liftMotor.move_absolute(-20, 100);
@@ -557,27 +532,27 @@ void autonomous() {
 		}
 		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
-		drive(250, 250);
-		drive(-600, -600, 80);
+		driveP(250, 250);
+		driveP(-600, -600, 80);
 		intakeMotors.moveVelocity(0);
 		break;
 
 	case autonStates::redProtec:
 		// red protec 4 cube
 		flipout();
-		turn(-origAngle);
+		turnP(-origAngle);
 		// grab 3 cubes
 		intakeMotors.moveRelative(5000, 200);
-		drive(1700, 1700, 70);
+		driveP(1700, 1700, 70);
 		intakeMotors.moveVoltage(0);
 		// turn for final cube
-		turn(-132);
+		turnP(-132);
 		// grab final cube
 		intakeMotors.moveRelative(5000, 200);
-		drive(1300, 1300, 70);
+		driveP(1300, 1300, 70);
 		// move to zone
-		turn(-136);
-		drive(580, 580);
+		turnP(-136);
+		driveP(580, 580);
 		// stack
 		intakeMotors.moveRelative(-1300, 90);
 		liftMotor.move_absolute(-20, 100);
@@ -591,27 +566,27 @@ void autonomous() {
 		}
 		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
-		drive(250, 250);
-		drive(-800, -800, 80);
+		driveP(250, 250);
+		driveP(-800, -800, 80);
 		intakeMotors.moveVelocity(0);
 		break;
 	
 	case autonStates::redRick:
 		// red protec 3 cube
 		flipout();
-		turn(-origAngle);
+		turnP(-origAngle);
 		// grab 3 cubes
 		intakeMotors.moveRelative(5000, 200);
-		drive(900, 900, 70);
+		driveP(900, 900, 70);
 		intakeMotors.moveVoltage(0);
 		// turn for final cube
-		turn(-90);
+		turnP(-90);
 		// grab final cube
 		intakeMotors.moveRelative(4000, 200);
-		drive(900, 900, 70);
+		driveP(900, 900, 70);
 		// move to zone
-		turn(-132);
-		drive(520, 520);
+		turnP(-132);
+		driveP(520, 520);
 		// stack
 		intakeMotors.moveRelative(-900, 200);
 		liftMotor.move_absolute(-20, 100);
@@ -621,8 +596,8 @@ void autonomous() {
 		}
 		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
-		drive(250, 250);
-		drive(-600, -600, 80);
+		driveP(250, 250);
+		driveP(-600, -600, 80);
 		intakeMotors.moveVelocity(0);
 		break;
 	
@@ -630,15 +605,15 @@ void autonomous() {
 		// blue unprotec 5 cube
 		flipout();
 		pros::delay(300);
-		turn(-origAngle);
+		turnP(-origAngle);
 		// grab 4 cubes
 		intakeMotors.moveRelative(6800, 200);
-		drive(1800, 1800, 70);
+		driveP(1800, 1800, 70);
 		// turn for stack
-		turn(-150); // use absolute positioning
+		turnP(-150); // use absolute positioning
 		// move to zone
 		intakeMotors.moveRelative(-700, 50);
-		drive(1500, 1500, 80);
+		driveP(1500, 1500, 80);
 		// stack
 		intakeMotors.moveVelocity(-20);
 		liftMotor.move_absolute(-20, 100);
@@ -648,25 +623,25 @@ void autonomous() {
 		}
 		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
-		drive(250, 250);
-		drive(-600, -600, 80);
+		driveP(250, 250);
+		driveP(-600, -600, 80);
 		intakeMotors.moveVelocity(0);
 		break;
 	case autonStates::blueProtec:
 		// blue protec 4 cube
 		flipout();
-		turn(-origAngle);
+		turnP(-origAngle);
 		// grab 3 cubes
 		intakeMotors.moveRelative(5000, 200);
-		drive(1700, 1700, 80);
+		driveP(1700, 1700, 80);
 		intakeMotors.moveVoltage(0);
 		// turn for final cube
-		turn(130);
+		turnP(130);
 		// grab final cube
 		intakeMotors.moveRelative(5400, 200);
-		drive(1300, 1300, 70);
+		driveP(1300, 1300, 70);
 		// move to zone
-		drive(550, 550);
+		driveP(550, 550);
 		intakeMotors.moveRelative(-900, 90);
 		// stack
 		liftMotor.move_absolute(-20, 100);
@@ -680,25 +655,25 @@ void autonomous() {
 		}
 		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
-		drive(-800, -800, 80);
+		driveP(-800, -800, 80);
 		intakeMotors.moveVelocity(0);
 		break;
 	case autonStates::blueRick:
 		// blue protec 3 cube
 		flipout();
-		turn(-origAngle);
+		turnP(-origAngle);
 		// grab 3 cubes
 		intakeMotors.moveRelative(5000, 200);
-		drive(900, 900, 70);
+		driveP(900, 900, 70);
 		intakeMotors.moveVoltage(0);
 		// turn for final cube
-		turn(90);
+		turnP(90);
 		// grab final cube
 		intakeMotors.moveRelative(4000, 200);
-		drive(900, 900, 70);
+		driveP(900, 900, 70);
 		// move to zone
-		turn(132);
-		drive(520, 520);
+		turnP(132);
+		driveP(520, 520);
 		// stack
 		intakeMotors.moveRelative(-900, 200);
 		liftMotor.move_absolute(-20, 100);
@@ -708,8 +683,8 @@ void autonomous() {
 		}
 		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
-		drive(250, 250);
-		drive(-600, -600, 80);
+		driveP(250, 250);
+		driveP(-600, -600, 80);
 		intakeMotors.moveVelocity(0);
 		break;
 	
