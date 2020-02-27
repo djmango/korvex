@@ -17,8 +17,8 @@ auto chassis = ChassisControllerBuilder()
 			ADIEncoder{'E', 'F', true},  // right encoder in ADI ports E & F, reversed
 			ADIEncoder{'C', 'D', true}  // middle encoder in ADI ports C & D, reversed
 		)
-		// specify the tracking wheels diameter (2.75 in), track (4 in), and TPR (360)
-		// specify the middle encoder distance (2.25 in) and diameter (2.75 in)
+		// specify the tracking wheels diameter (2.75 in), track (4.6 in), and TPR (360)
+		// specify the middle encoder distance (9.25 in) and diameter (2.75 in)
 		.withOdometry({{2.75_in, 4.6_in, 9.25_in, 2.75_in}, quadEncoderTPR})
 		.buildOdometry(); // build an odometry chassis
 
@@ -45,14 +45,14 @@ ControllerButton cubeReturn(ControllerDigital::B);
 
 // sensors
 pros::Imu imu(IMU_PORT);
-pros::ADIAnalogIn line(LINE_PORT);
+pros::ADIAnalogIn line(LINE_PORT); // line sensor on tray, for cube detection
 pros::ADIEncoder trackingLeft(1, 2);
 pros::ADIEncoder trackingStrafe(3, 4);
 pros::ADIEncoder trackingRight(5, 6);
 
 // base global defenitions
 const int LIFT_STACKING_HEIGHT = 700; // the motor ticks above which we are stacking
-enum class autonStates {
+enum class autonStates { // the possible auton selections
 	off,
 	redProtec,
 	redUnprotec,
@@ -62,21 +62,17 @@ enum class autonStates {
 	blueRick,
 	skills
 };
-autonStates autonSelection = autonStates::off;
+autonStates autonSelection = autonStates::off; // the current auton selection
 
-enum class trayStates {
+enum class trayStates { // the possible tray states
 	returned,
 	returning,
 	extending,
 };
-trayStates trayState = trayStates::returned;
+trayStates trayState = trayStates::returned; // the current tray state
 
 // create a button descriptor string array
 static const char *btnmMap[] = {"Unprotec", "Protec", "Rick", ""};
-
-// sd log stuff
-std::ofstream out("/usd/rick.txt");
-auto *coutbuf = std::cout.rdbuf();
 
 // motion control system globals
 int voltageCap;
@@ -171,97 +167,6 @@ void driveP(int voltageMax, bool debugLog=false) {
 
 		// nothing goes after this
 		errorLast = errorCurrent;
-		pros::delay(20);
-	}
-}
-
-void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=false) {
-
-	// tune
-	float kp = 0.008;
-	float ki = 0;
-	float kd = 0;
-	float acc = 5;
-
-	// the untouchables
-	float error; // distance to target
-	float xDif; // target.x - robot.x
-	float yDif; // target.y - robot.y
-	float p; // proportional
-	float i; // integral
-	float d; // derivative
-	float voltageLeft;
-	float voltageRight;
-	float voltage;
-	int signLeft;
-	int signRight;
-	int errorLast = 0;
-	float xOrig = chassis->getState().x.convert(centimeter);
-	float yOrig = chassis->getState().y.convert(centimeter);
-	float distanceTotal = std::sqrt(std::pow((targetX.convert(centimeter) - xOrig), 2) + std::pow((targetY.convert(centimeter) - yOrig), 2)); // total distance we need to travel
-	float distanceOrig; // distance from original position
-	int sameErrCycles = 0;
-	int same0ErrCycles = 0;
-	int startTime = pros::millis();
- 
-	while(autonomous) {
-
-		// get difference in x and y, robot distance from target
-		xDif = chassis->getState().x.convert(centimeter) - targetX.convert(centimeter);
-		yDif = chassis->getState().y.convert(centimeter) - targetY.convert(centimeter);
-
-		// get difference in x and y, robot distance from move start, to detect overshoot
-		distanceOrig = std::sqrt(std::pow((chassis->getState().x.convert(centimeter) - xOrig), 2) + std::pow((chassis->getState().y.convert(centimeter) - yOrig), 2));
-
-		// get distance to target, ie error
-		error = std::sqrt(std::pow(xDif, 2) + std::pow(yDif, 2));
-
-		p = (error * kp);
-		if (abs(error) < 10) i = ((i + error) * ki); // if we are in range for I to be desireable
-		else i = 0;
-		d = (error - errorLast) * kd;
-		
-		voltage = p + i + d;
-
-		if (distanceOrig > distanceTotal) voltage = -voltage; // if we have passed our point
-
-		voltageLeft = voltage;
-		voltageRight = voltage;
-
-		// TODO: okay we have our distance now we need to make sure we are straight
-
-		// set the motors to the intended speed
-		chassis->getModel()->tank(voltageLeft, voltageRight);
-
-		// timeout utility
-		if (errorLast == error) {
-			if (abs(error) <= 1) { // less than 1 cm is "0" error
-				same0ErrCycles +=1;
-			}
-			sameErrCycles += 1;
-		}
-		else {
-			sameErrCycles = 0;
-			same0ErrCycles = 0;
-		}
-
-		// exit paramaters
-		if ((errorLast < 5 and error < 5) or sameErrCycles >= 10) { // allowing for smol error or exit if we stay the same err for .2 second
-			chassis->stop();
-			std::cout << "task complete with error " << error << "cm, in " << (pros::millis() - startTime) << "ms" << std::endl;
-			return;
-		}
-
-		// debug
-		if (debugLog) {
-			std::cout << "error  " << error << std::endl;
-			std::cout << "voltage  " << voltage << std::endl;
-			std::cout << "dist from orig  " << distanceOrig << std::endl;
-			std::cout << "pos  " << chassis->getState().str() << std::endl;
-		}
-
-		// nothing goes after this
-		errorLast = error;
 		pros::delay(20);
 	}
 }
@@ -535,7 +440,6 @@ void autonomous() {
 	switch (autonSelection) {
 	case autonStates::skills:
 		// skills doesnt exist
-		driveQ(50_cm, 0_cm, 60, true);
 		break;
 
 	case autonStates::redUnprotec:
