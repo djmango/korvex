@@ -14,13 +14,14 @@ auto chassis = ChassisControllerBuilder()
 		.withDimensions(AbstractMotor::gearset::green, {{4_in, 8.125_in}, imev5GreenTPR})
 		.withSensors(
 			ADIEncoder{'A', 'B'}, // left encoder in ADI ports A & B
-			ADIEncoder{'E', 'F', true},  // right encoder in ADI ports E & F, reversed
+			ADIEncoder{'E', 'F'},  // right encoder in ADI ports E & F
 			ADIEncoder{'C', 'D', true}  // middle encoder in ADI ports C & D, reversed
 		)
 		// specify the tracking wheels diameter (2.75 in), track (4.6 in), and TPR (360)
 		// specify the middle encoder distance (9.25 in) and diameter (2.75 in)
 		.withOdometry({{2.75_in, 4.6_in, 9.25_in, 2.75_in}, quadEncoderTPR})
 		.buildOdometry(); // build an odometry chassis
+
 
 auto profileController = AsyncMotionProfileControllerBuilder()
     .withLimits({1.0, 1.8, 5.0}) //double maxVel double maxAccel double maxJerk 
@@ -47,8 +48,8 @@ ControllerButton cubeReturn(ControllerDigital::B);
 pros::Imu imu(IMU_PORT);
 pros::ADIAnalogIn line(LINE_PORT); // line sensor on tray, for cube detection
 pros::ADIEncoder trackingLeft(1, 2);
-pros::ADIEncoder trackingStrafe(3, 4);
 pros::ADIEncoder trackingRight(5, 6);
+pros::ADIEncoder trackingStrafe(3, 4, true);
 
 // base global defenitions
 const int LIFT_STACKING_HEIGHT = 700; // the motor ticks above which we are stacking
@@ -160,22 +161,21 @@ void driveP(int targetLeft, int targetRight, int voltageMax=115, bool debugLog=f
 void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=false) {
 
 	// tune for straights
-	float kp = 0.032;
-	float ki = 0.01;
+	float kp = 0.02;
+	float ki = 0.02;
 	float kd = 0.03;
 	float acc = 5;
 
 	// tune for turns
-	float kpTurn = 0.00;
-	float kiTurn = 0.01;
-	float kdTurn = 0;
+	float kpTurn = 0.0;
+	float kiTurn = 0.05;
+	float kdTurn = 0.0;
 
 	// the untouchables
 	float error; // distance to target
 	float errorLast = 0; // error in the last loop
 	float errorTheta; // targetTheta - robotTheta
 	float errorLastTheta = 0; // errorTheta in the last loop
-	float targetTheta; // angle from robot to target
 	float p; // proportional straight
 	float i; // integral straight
 	float d; // derivative straight
@@ -185,16 +185,17 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=fals
 	float voltageLeft;
 	float voltageRight;
 	float voltage; // calculated straight voltage
-	float xDif; // target.x - robot.x
-	float yDif; // target.y - robot.y
-	float xOrig = chassis->getState().x.convert(centimeter);
-	float yOrig = chassis->getState().y.convert(centimeter);
+	float xDif = targetX.convert(centimeter) - chassis->getState().x.convert(centimeter); // target.x - robot.x
+	float yDif = targetY.convert(centimeter) - chassis->getState().y.convert(centimeter); // target.y - robot.y
+	float xOrig = chassis->getState().x.convert(centimeter); // original x coord
+	float yOrig = chassis->getState().y.convert(centimeter); // original y coord
+	float targetTheta = std::atan2(yDif,xDif)*180 / M_PI; // angle from origin to target
 	float distanceTotal = std::sqrt(std::pow((targetX.convert(centimeter) - xOrig), 2) + std::pow((targetY.convert(centimeter) - yOrig), 2)); // total distance we need to travel
 	float distanceOrig; // distance from original position
 	int sameErrCycles = 0; // number of cycles we have stayed the same error
 	int same0ErrCycles = 0; // number of cycles we have stayed at 0 error
 	int startTime = pros::millis();
- 
+
 	while(autonomous) {
 
 		// get difference in x and y, robot distance from target
@@ -212,6 +213,7 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=fals
 		else i = 0;
 		d = (error - errorLast) * kd;
 		
+		// set voltage
 		voltage = p + i + d;
 
 		if (distanceOrig > distanceTotal) voltage = -voltage; // if we have passed our point
@@ -220,13 +222,11 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=fals
 		voltageRight = voltage;
 
 		// figure out if we are turned away from our target
-		if (distanceOrig < distanceTotal) targetTheta = std::atan(yDif/xDif)*180 / M_PI;
 		errorTheta = targetTheta - imu.get_rotation();
 
 		// calculate voltage change for left/right
 		pTurn = (error * kpTurn);
-		if (abs(errorTheta) <= 5) iTurn = ((iTurn + errorTheta) * kiTurn); // if we are in range for I to be desireable
-		else iTurn = 0;
+		iTurn = ((iTurn + errorTheta) * kiTurn); // if we are in range for I to be desireable
 		dTurn = (errorTheta - errorLastTheta) * kdTurn;
 
 		voltageLeft = voltageLeft + (pTurn + iTurn + dTurn);
@@ -246,7 +246,7 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=fals
 		}
 
 		// exit paramaters
-		if ((same0ErrCycles > 5) or sameErrCycles >= 20) { // exit if we stay the same 0err for .1 sec or same err for .4 second
+		if ((same0ErrCycles > 15) or sameErrCycles >= 20) { // exit if we stay the same 0err for .3 sec or same err for .4 second
 			chassis->stop();
 			std::cout << "task complete with error " << error << "cm, in " << (pros::millis() - startTime) << "ms" << std::endl;
 			return;
@@ -256,9 +256,10 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=fals
 		if (debugLog) {
 			std::cout << "error  " << error << std::endl;
 			std::cout << "errorTheta  " << errorTheta << std::endl;
-			std::cout << "voltage  " << voltage << std::endl;
+			std::cout << "targetTheta  " << targetTheta << std::endl;
+			std::cout << "xDif  " << xDif << std::endl;
+			std::cout << "yDif  " << yDif << std::endl;
 			std::cout << "dist from orig  " << distanceOrig << std::endl;
-			std::cout << "pos  " << chassis->getState().str() << std::endl;
 		}
 
 		// nothing goes after this
@@ -348,7 +349,7 @@ void turnP(int targetTurn, int voltageMax=127, bool csvOut=false) {
 void turnQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=false) {
 	// tune for turns
 	float kp = 1.6;
-	float ki = 0.8;	
+	float ki = 0.8;
 	float kd = 0.45;
 
 	// the untouchables
@@ -391,7 +392,7 @@ void turnQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=false
 		}
 
 		// exit paramaters
-		if ((same0ErrCycles > 5) or sameErrCycles >= 20) { // exit if we stay the same 0err for .1 sec or same err for .4 second
+		if ((same0ErrCycles > 15) or sameErrCycles >= 20) { // exit if we stay the same 0err for .3 sec or same err for .4 second
 			chassis->stop();
 			std::cout << "task complete with error " << errorTheta << "deg, in " << (pros::millis() - startTime) << "ms" << std::endl;
 			return;
@@ -401,7 +402,6 @@ void turnQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=false
 		if (debugLog) {
 			std::cout << "errorTheta  " << errorTheta << std::endl;
 			std::cout << "targetTheta  " << targetTheta << std::endl;
-			std::cout << "yDif  " << xDif << std::endl;
 		}
 
 		// nothing goes after this
@@ -437,6 +437,15 @@ void traySlew(bool forward) {
 		if (trayMotor.getPosition() < 1000) trayMotor.moveVelocity(-60);
 		else trayMotor.moveVelocity(-100);
 	}
+}
+
+void odomImuSupplement (void*) { // just update calculated theta to actual theta using the imu
+	while (true) {
+		chassis->setState({chassis->getState().x, chassis->getState().y, (((imu.get_rotation()*M_PI)/180) * okapi::radian)});
+		std::cout << pros::millis() << ": pos  " << chassis->getState().str() << std::endl;
+		pros::delay(20);
+	}
+
 }
 
 static lv_res_t autonBtnmAction(lv_obj_t *btnm, const char *txt) {
@@ -534,6 +543,11 @@ void initialize() {
 	if (pros::millis() < 3000) std::cout << pros::millis() << ": finished calibrating!" << std::endl;
 	else std::cout << pros::millis() << ": calibration failed, moving on" << std::endl;
 
+	// start imu implementation to odom
+	pros::Task odomImuSupplementTask(odomImuSupplement, (void*)NULL, TASK_PRIORITY_DEFAULT-1, TASK_STACK_DEPTH_DEFAULT, "odomImuSUpplement");
+	std::cout << pros::millis() << " odomImuSupplement state:" << odomImuSupplementTask.get_state();
+
+	// log motor temps
 	std::cout << "\n" << pros::millis() << ": motor temps:" << std::endl;
 	std::cout << pros::millis() << ": lift: " << liftMotor.get_temperature() << std::endl;
 	std::cout << pros::millis() << ": tray: " << trayMotor.getTemperature() << std::endl;
@@ -574,7 +588,7 @@ void competition_initialize() {}
 void autonomous() {
 	chassis->setState({0_cm, 0_cm, 0_deg});
 	chassis->setMaxVelocity(200);
-	chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
+	chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
 	float origAngle = imu.get_rotation();
 	
 	// motor setup
@@ -589,10 +603,9 @@ void autonomous() {
 	switch (autonSelection) {
 	case autonStates::skills:
 		// skills doesnt exist
-		// turnQ(30_cm, -30_cm, 115, true);
-		driveQ(30_cm, 0_cm, 115, true);
-		turnQ(0_cm, 0_cm, 115);
-		driveQ(0_cm, 0_cm, 115);
+		turnQ(30_cm, -30_cm, 115, true);
+		driveQ(30_cm, -30_cm, 115, true);
+		// turnQ(0_cm, 0_cm, 115);
 		break;
 
 	case autonStates::redUnprotec:
@@ -907,7 +920,6 @@ void opcontrol() {
 
 		// update vals
 		joystickAvg = (masterController.getAnalog(ControllerAnalog::leftY) + (masterController.getAnalog(ControllerAnalog::rightY)) / 2);
-		chassis->setState({chassis->getState().x, chassis->getState().y, (((imu.get_rotation()*M_PI)/180) * okapi::radian)});
 
 		// debug
 		// std::cout << pros::millis() << ": pos " << chassis->getState().str() << std::endl;
