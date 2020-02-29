@@ -72,6 +72,18 @@ enum class trayStates { // the possible tray states
 };
 trayStates trayState = trayStates::returned; // the current tray state
 
+enum class cubeStates { // the cube(line) sensor states, in this order
+	uncovered,
+	covered,
+	setting,
+	settingCovered,
+	finished
+};
+cubeStates cubeState = cubeStates::covered;
+
+// odom debug global
+bool odomDebug = false;
+
 // create a button descriptor string array
 static const char *btnmMap[] = {"Unprotec", "Protec", "Rick", ""};
 
@@ -139,17 +151,17 @@ void driveP(int targetLeft, int targetRight, int voltageMax=115, bool debugLog=f
 		// exit paramaters
 		if ((errorLast < 5 and errorCurrent < 5) or sameErrCycles >= 10) { // allowing for smol error or exit if we stay the same err for .2 second
 			chassis->stop();
-			std::cout << "task complete with error " << errorCurrent << " in " << (pros::millis() - startTime) << "ms" << std::endl;
+			std::cout << pros::millis() << "task complete with error " << errorCurrent << " in " << (pros::millis() - startTime) << "ms" << std::endl;
 			return;
 		}
 		
 		// debug
 		if (debugLog) {
-			std::cout << "error  " << errorCurrent << std::endl;
-			std::cout << "errorLeft  " << errorLeft << std::endl;
-			std::cout << "errorRight  " << errorRight << std::endl;
-			std::cout << "voltageLeft  " << voltageLeft << std::endl;
-			std::cout << "voltageRight  " << voltageRight << std::endl;
+			std::cout << pros::millis() << "error  " << errorCurrent << std::endl;
+			std::cout << pros::millis() << "errorLeft  " << errorLeft << std::endl;
+			std::cout << pros::millis() << "errorRight  " << errorRight << std::endl;
+			std::cout << pros::millis() << "voltageLeft  " << voltageLeft << std::endl;
+			std::cout << pros::millis() << "voltageRight  " << voltageRight << std::endl;
 		}
 
 		// nothing goes after this
@@ -158,7 +170,7 @@ void driveP(int targetLeft, int targetRight, int voltageMax=115, bool debugLog=f
 	}
 }
 
-void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=false) {
+void driveQ(QLength targetX, QLength targetY, int voltageMax=115, bool debugLog=false) {
 
 	// tune for straights
 	float kp = 0.02;
@@ -248,18 +260,18 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=fals
 		// exit paramaters
 		if ((same0ErrCycles > 15) or sameErrCycles >= 20) { // exit if we stay the same 0err for .3 sec or same err for .4 second
 			chassis->stop();
-			std::cout << "task complete with error " << error << "cm, in " << (pros::millis() - startTime) << "ms" << std::endl;
+			std::cout << pros::millis() << "task complete with error " << error << "cm, in " << (pros::millis() - startTime) << "ms" << std::endl;
 			return;
 		}
 
 		// debug
 		if (debugLog) {
-			std::cout << "error  " << error << std::endl;
-			std::cout << "errorTheta  " << errorTheta << std::endl;
-			std::cout << "targetTheta  " << targetTheta << std::endl;
-			std::cout << "xDif  " << xDif << std::endl;
-			std::cout << "yDif  " << yDif << std::endl;
-			std::cout << "dist from orig  " << distanceOrig << std::endl;
+			std::cout << pros::millis() << ": error  " << error << std::endl;
+			std::cout << pros::millis() << ": errorTheta  " << errorTheta << std::endl;
+			std::cout << pros::millis() << ": targetTheta  " << targetTheta << std::endl;
+			std::cout << pros::millis() << ": xDif  " << xDif << std::endl;
+			std::cout << pros::millis() << ": yDif  " << yDif << std::endl;
+			std::cout << pros::millis() << ": dist from orig  " << distanceOrig << std::endl;
 		}
 
 		// nothing goes after this
@@ -269,7 +281,7 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=fals
 	}
 }
 
-void turnP(int targetTurn, int voltageMax=127, bool csvOut=false) {
+void turnP(int targetTurn, int voltageMax=127, bool debugLog=false) {
  
 	// the touchables ;)))))))) touch me uwu :):):)
 	float kp = 1.6;
@@ -328,16 +340,16 @@ void turnP(int targetTurn, int voltageMax=127, bool csvOut=false) {
 		// exit paramaters
 		if (same0ErrCycles >= 5 or sameErrCycles >= 60) { // allowing for smol error or exit if we stay the same err for .6 second
 			chassis->stop();
-			std::cout << "task complete with error " << errorCurrent << " in " << (pros::millis() - startTime) << "ms" << std::endl;
+			std::cout << pros::millis() << "task complete with error " << errorCurrent << " in " << (pros::millis() - startTime) << "ms" << std::endl;
 			return;
 		}
 		
 		// debug
-		// std::cout << "error " << errorCurrent << std::endl;
-		// std::cout << "voltage " << voltage << std::endl;
+		// std::cout << pros::millis() << "error " << errorCurrent << std::endl;
+		// std::cout << pros::millis() << "voltage " << voltage << std::endl;
 
 		// for csv output, graphing the function
-		if (csvOut) std::cout << pros::millis() << "," << error << "," << voltage << std::endl;
+		if (debugLog) std::cout << pros::millis() << "," << error << "," << voltage << std::endl;
 
 		// nothing goes after this
 		errorLast = errorCurrent;
@@ -346,7 +358,7 @@ void turnP(int targetTurn, int voltageMax=127, bool csvOut=false) {
 	}
 }
 
-void turnQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=false) {
+void turnQ(QLength targetX, QLength targetY, int voltageMax=115, bool debugLog=false) {
 	// tune for turns
 	float kp = 1.6;
 	float ki = 0.8;
@@ -394,14 +406,14 @@ void turnQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=false
 		// exit paramaters
 		if ((same0ErrCycles > 15) or sameErrCycles >= 20) { // exit if we stay the same 0err for .3 sec or same err for .4 second
 			chassis->stop();
-			std::cout << "task complete with error " << errorTheta << "deg, in " << (pros::millis() - startTime) << "ms" << std::endl;
+			std::cout << pros::millis() << "task complete with error " << errorTheta << "deg, in " << (pros::millis() - startTime) << "ms" << std::endl;
 			return;
 		}
 
 		// debug
 		if (debugLog) {
-			std::cout << "errorTheta  " << errorTheta << std::endl;
-			std::cout << "targetTheta  " << targetTheta << std::endl;
+			std::cout << pros::millis() << ": errorTheta  " << errorTheta << std::endl;
+			std::cout << pros::millis() << ": targetTheta  " << targetTheta << std::endl;
 		}
 
 		// nothing goes after this
@@ -410,7 +422,8 @@ void turnQ(QLength targetX, QLength targetY, int voltageMax, bool debugLog=false
 	}
 }
 
-void flipout() { // a blocking flipout function
+// a blocking flipout function
+void flipout() {
 	trayMotor.moveAbsolute(1000, 100);
 	liftMotor.move_velocity(100);
 	while (liftMotor.get_position() < 1000) { // dont mess up the preload
@@ -439,10 +452,11 @@ void traySlew(bool forward) {
 	}
 }
 
-void odomImuSupplement (void*) { // just update calculated theta to actual theta using the imu
+// just update calculated theta to actual theta using the imu
+void odomImuSupplement (void*) {
 	while (true) {
 		chassis->setState({chassis->getState().x, chassis->getState().y, (((imu.get_rotation()*M_PI)/180) * okapi::radian)});
-		std::cout << pros::millis() << ": pos  " << chassis->getState().str() << std::endl;
+		if (odomDebug) std::cout << pros::millis() << ": pos  " << chassis->getState().str() << std::endl;
 		pros::delay(20);
 	}
 
@@ -548,7 +562,7 @@ void initialize() {
 	std::cout << pros::millis() << " odomImuSupplement state:" << odomImuSupplementTask.get_state();
 
 	// log motor temps
-	std::cout << "\n" << pros::millis() << ": motor temps:" << std::endl;
+	std::cout << pros::millis() << "\n" << pros::millis() << ": motor temps:" << std::endl;
 	std::cout << pros::millis() << ": lift: " << liftMotor.get_temperature() << std::endl;
 	std::cout << pros::millis() << ": tray: " << trayMotor.getTemperature() << std::endl;
 	std::cout << pros::millis() << ": intake: " << intakeMotors.getTemperature() << std::endl;
@@ -809,13 +823,12 @@ void autonomous() {
 void opcontrol() {
 	chassis->stop();
 	chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
+	trayMotor.setBrakeMode(okapi::AbstractMotor::brakeMode::hold);
 	chassis->setMaxVelocity(200);
 	float joystickAvg = 0; // an average of the left and right joystick values
-	bool cubesReturning = false; // true when we are moving the cubes down to the line sensor, for stacking
+	bool cubesPositioning = false; // true when we are moving the cubes down to the line sensor, for stacking
 	bool trayDebug = false; // im lazy
-
-	// motor setup
-	trayMotor.setBrakeMode(okapi::AbstractMotor::brakeMode::hold);
+	bool cubeDebug = false; // still lazy
 
 	// main loop
 	while (true) {
@@ -829,13 +842,30 @@ void opcontrol() {
 		// advanced intake control, with goal-oriented assists
 
 		// auto cube positioning for stacking
-		if (cubeReturn.isPressed()) cubesReturning = true; // outake until we detect cube
+		if (cubeReturn.isPressed()) cubesPositioning = true; // outake until we detect cube
 
-		if (cubesReturning) {
-			if (line.get_value_calibrated_HR() < 46000) { // if we detect a cube
-				cubesReturning = 0;
+		if (cubesPositioning) {
+			if (cubeState == cubeStates::settingCovered) {
+				if (abs(intakeMotors.getPositionError()) <= 20) { // we finished setting the cube
+					cubeState = cubeStates::finished;
+					cubesPositioning = 0;
+					if (cubeDebug) std::cout << pros::millis() << ": cubeState finished" << std::endl;
+				} 
 			}
-			else intakeMotors.moveVelocity(-50);
+			else if (line.get_value_calibrated_HR() < 46000) { // if we are already covering, move up to uncover
+				if (cubeState == cubeStates::setting) { // this means we have found cube position, so we must move it to its final position
+					intakeMotors.moveRelative(-280, 100);
+					cubeState = cubeStates::settingCovered;
+					if (cubeDebug) std::cout << pros::millis() << ": cubeState settingCovered" << std::endl;
+				}
+				else intakeMotors.moveVelocity(100);
+				if (cubeDebug) std::cout << pros::millis() << ": cubeState uncovering" << std::endl;
+			}
+			else { // if we arent covering the sensor and we arent setting the final position
+				intakeMotors.moveVelocity(-100);
+				cubeState = cubeStates::setting;
+				if (cubeDebug) std::cout << pros::millis() << ": cubeState setting" << std::endl;
+			}
 		}
 
 		// user controlled intake only enabled while returned
@@ -844,7 +874,7 @@ void opcontrol() {
 			else if (intakeIn.isPressed() and not intakeOut.isPressed()) intakeMotors.moveVelocity(200);
 			else if (intakeOut.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(-100);
 			else if (intakeOut.isPressed() or (intakeShift.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT)) intakeMotors.moveVelocity(-200);
-			else if (not cubesReturning) intakeMotors.moveVoltage(0);
+			else if (not cubesPositioning) intakeMotors.moveVoltage(0);
 		}
 		
 		// advanced tray control, also with goal-oriented assists
@@ -889,7 +919,9 @@ void opcontrol() {
 				if (trayDebug) std::cout << pros::millis() << ": trayState returned" << std::endl;
 				break;
 			case trayStates::returning:
-				if (joystickAvg > 0) intakeMotors.moveVoltage(0);
+				if (intakeIn.isPressed() and not intakeOut.isPressed()) intakeMotors.moveVelocity(200);
+				else if (intakeOut.isPressed() or (intakeShift.isPressed())) intakeMotors.moveVelocity(-200);
+				else if (joystickAvg > 0) intakeMotors.moveVoltage(0);
 				else intakeMotors.moveVelocity((joystickAvg*350));
 				chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 				if (trayDebug) std::cout << pros::millis() << ": trayState returning" << std::endl;
@@ -922,7 +954,7 @@ void opcontrol() {
 		joystickAvg = (masterController.getAnalog(ControllerAnalog::leftY) + (masterController.getAnalog(ControllerAnalog::rightY)) / 2);
 
 		// debug
-		// std::cout << pros::millis() << ": pos " << chassis->getState().str() << std::endl;
+		// std::cout << pros::millis() << ": line " << line.get_value_calibrated_HR() << std::endl;
 		// std::cout << pros::millis() << ": lef " << trackingLeft.get_value() << std::endl;
 		// std::cout << pros::millis() << ": rig " << trackingRight.get_value() << std::endl;
 		pros::delay(20);

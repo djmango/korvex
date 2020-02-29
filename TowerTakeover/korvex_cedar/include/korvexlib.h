@@ -20,4 +20,4 @@ const int INTAKE_MTR2 = 4;
 
 // sensors
 const int IMU_PORT = 10;
-const char LINE_PORT = 'H';
+const char LINE_PORT = 'G';
