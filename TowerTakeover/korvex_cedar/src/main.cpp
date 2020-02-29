@@ -179,9 +179,9 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax=115, bool debugLog=
 	float acc = 5;
 
 	// tune for turns
-	float kpTurn = 0.0;
-	float kiTurn = 0.05;
-	float kdTurn = 0.0;
+	float kpTurn = 0.00;
+	float kiTurn = 0.08;
+	float kdTurn = 0.01;
 
 	// the untouchables
 	float error; // distance to target
@@ -234,6 +234,7 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax=115, bool debugLog=
 		voltageRight = voltage;
 
 		// figure out if we are turned away from our target
+		// targetTheta = std::atan2(yDif,xDif)*180 / M_PI;
 		errorTheta = targetTheta - imu.get_rotation();
 
 		// calculate voltage change for left/right
@@ -269,8 +270,10 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax=115, bool debugLog=
 			std::cout << pros::millis() << ": error  " << error << std::endl;
 			std::cout << pros::millis() << ": errorTheta  " << errorTheta << std::endl;
 			std::cout << pros::millis() << ": targetTheta  " << targetTheta << std::endl;
-			std::cout << pros::millis() << ": xDif  " << xDif << std::endl;
-			std::cout << pros::millis() << ": yDif  " << yDif << std::endl;
+			std::cout << pros::millis() << ": voltageLeft  " << voltageLeft << std::endl;
+			std::cout << pros::millis() << ": voltageRight  " << voltageRight << std::endl;
+			// std::cout << pros::millis() << ": xDif  " << xDif << std::endl;
+			// std::cout << pros::millis() << ": yDif  " << yDif << std::endl;
 			std::cout << pros::millis() << ": dist from orig  " << distanceOrig << std::endl;
 		}
 
@@ -617,8 +620,9 @@ void autonomous() {
 	switch (autonSelection) {
 	case autonStates::skills:
 		// skills doesnt exist
-		turnQ(30_cm, -30_cm, 115, true);
-		driveQ(30_cm, -30_cm, 115, true);
+		driveQ(50_cm, 0_cm, 115, true);
+		// turnQ(30_cm, -30_cm, 115, true);
+		// driveQ(30_cm, -30_cm, 115, true);
 		// turnQ(0_cm, 0_cm, 115);
 		break;
 
