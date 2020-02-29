@@ -3,25 +3,31 @@
 #include "korvexlib.h"
 
 // chassis
-auto chassis = ChassisControllerBuilder()
+// auto chassis = ChassisControllerBuilder() // three tracking wheels
+// 		.withMotors({LEFT_MTR2, LEFT_MTR1}, {-RIGHT_MTR2, -RIGHT_MTR1})
+// 		// green gearset, 4 inch wheel diameter, 8.125 inch wheelbase
+// 		.withDimensions(AbstractMotor::gearset::green, {{4_in, 8.125_in}, imev5GreenTPR})
+// 		.withSensors(
+// 			ADIEncoder{'A', 'B'}, // left encoder in ADI ports A & B
+// 			ADIEncoder{'E', 'F'},  // right encoder in ADI ports E & F
+// 			ADIEncoder{'C', 'D', true}  // middle encoder in ADI ports C & D, reversed
+// 		)
+// 		// specify the tracking wheels diameter (2.75 in), track (4.6 in), and TPR (360)
+// 		// specify the middle encoder distance (9.25 in) and diameter (2.75 in)
+// 		.withOdometry({{2.75_in, 4.6_in, 9.25_in, 2.75_in}, quadEncoderTPR})
+// 		.buildOdometry(); // build an odometry chassis
+
+auto chassis = ChassisControllerBuilder() // two tracking wheels
 		.withMotors({LEFT_MTR2, LEFT_MTR1}, {-RIGHT_MTR2, -RIGHT_MTR1})
-		.withGains(
-			{0.001, 0.00, 0.00}, // Distance controller gains
-			{0.000, 0.000, 0.000}, // Turn controller gains
-			{0.00, 0.0, 0.000} // Angle controller gains (helps drive straight)
-		)
 		// green gearset, 4 inch wheel diameter, 8.125 inch wheelbase
 		.withDimensions(AbstractMotor::gearset::green, {{4_in, 8.125_in}, imev5GreenTPR})
 		.withSensors(
 			ADIEncoder{'A', 'B'}, // left encoder in ADI ports A & B
-			ADIEncoder{'E', 'F'},  // right encoder in ADI ports E & F
-			ADIEncoder{'C', 'D', true}  // middle encoder in ADI ports C & D, reversed
+			ADIEncoder{'E', 'F'}  // right encoder in ADI ports E & F
 		)
 		// specify the tracking wheels diameter (2.75 in), track (4.6 in), and TPR (360)
-		// specify the middle encoder distance (9.25 in) and diameter (2.75 in)
-		.withOdometry({{2.75_in, 4.6_in, 9.25_in, 2.75_in}, quadEncoderTPR})
+		.withOdometry({{2.75_in, 4.6_in}, quadEncoderTPR})
 		.buildOdometry(); // build an odometry chassis
-
 
 auto profileController = AsyncMotionProfileControllerBuilder()
     .withLimits({1.0, 1.8, 5.0}) //double maxVel double maxAccel double maxJerk 
@@ -170,7 +176,7 @@ void driveP(int targetLeft, int targetRight, int voltageMax=115, bool debugLog=f
 	}
 }
 
-void driveQ(QLength targetX, QLength targetY, int voltageMax=115, bool debugLog=false) {
+void driveQ(QLength targetX, QLength targetY, bool backwards=false, int voltageMax=115, bool debugLog=false) {
 
 	// tune for straights
 	float kp = 0.02;
@@ -208,6 +214,8 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax=115, bool debugLog=
 	int same0ErrCycles = 0; // number of cycles we have stayed at 0 error
 	int startTime = pros::millis();
 
+	if (backwards) targetTheta = std::atan(yDif/xDif)*180 / M_PI;
+
 	while(autonomous) {
 
 		// get difference in x and y, robot distance from target
@@ -229,12 +237,12 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax=115, bool debugLog=
 		voltage = p + i + d;
 
 		if (distanceOrig > distanceTotal) voltage = -voltage; // if we have passed our point
+		if (backwards) voltage = -voltage; // if we are driving backwards
 
 		voltageLeft = voltage;
 		voltageRight = voltage;
 
 		// figure out if we are turned away from our target
-		// targetTheta = std::atan2(yDif,xDif)*180 / M_PI;
 		errorTheta = targetTheta - imu.get_rotation();
 
 		// calculate voltage change for left/right
@@ -244,6 +252,7 @@ void driveQ(QLength targetX, QLength targetY, int voltageMax=115, bool debugLog=
 
 		voltageLeft = voltageLeft + (pTurn + iTurn + dTurn);
 		voltageRight = voltageRight + -(pTurn + iTurn + dTurn);
+
 
 		// set the motors to the intended speed
 		chassis->getModel()->tank(voltageLeft, voltageRight);
@@ -361,7 +370,7 @@ void turnP(int targetTurn, int voltageMax=127, bool debugLog=false) {
 	}
 }
 
-void turnQ(QLength targetX, QLength targetY, int voltageMax=115, bool debugLog=false) {
+void turnQ(QLength targetX, QLength targetY, bool backwards=false, int voltageMax=115, bool debugLog=false) {
 	// tune for turns
 	float kp = 1.6;
 	float ki = 0.8;
@@ -380,7 +389,9 @@ void turnQ(QLength targetX, QLength targetY, int voltageMax=115, bool debugLog=f
 	int sameErrCycles = 0; // number of cycles we have stayed the same error
 	int same0ErrCycles = 0; // number of cycles we have stayed at 0 error
 	int startTime = pros::millis();
- 
+
+	if (backwards) targetTheta = std::atan(yDif/xDif)*180 / M_PI;
+
 	while(autonomous) {
 
 		// get difference in x and y, robot distance from target
@@ -425,23 +436,12 @@ void turnQ(QLength targetX, QLength targetY, int voltageMax=115, bool debugLog=f
 	}
 }
 
-// a blocking flipout function
-void flipout() {
-	trayMotor.moveAbsolute(1000, 100);
-	liftMotor.move_velocity(100);
-	while (liftMotor.get_position() < 1000) { // dont mess up the preload
-		pros::delay(20);
-	}
-	intakeMotors.moveVelocity(-200);
-	while (liftMotor.get_position() < 2000) { // wait until we initiate flipout
-		pros::delay(20);
-	}
-	liftMotor.move_absolute(0, 100);
-	while (liftMotor.get_position() > 600) { // wait until we initiate flipout
-		pros::delay(20);
-	}
-	intakeMotors.moveVelocity(200);
-	trayMotor.moveAbsolute(20, 100);
+void driveTo(QLength targetX, QLength targetY, bool backwards=false, int voltageMax=115, bool debugLog=false) {
+	float targetTheta;
+	if (backwards) targetTheta = std::atan((targetY.convert(centimeter) - chassis->getState().y.convert(centimeter))/(targetX.convert(centimeter) - chassis->getState().x.convert(centimeter)))*180 / M_PI;
+	else targetTheta = std::atan2((targetY.convert(centimeter) - chassis->getState().y.convert(centimeter)), (targetX.convert(centimeter) - chassis->getState().x.convert(centimeter)))*180 / M_PI;
+	if (abs(targetTheta - imu.get_rotation()) > 15) {turnQ(targetX, targetY, backwards, voltageMax, debugLog);} // only turn if the degree error is greater than 15
+	driveQ(targetX, targetY, backwards, voltageMax, debugLog);
 }
 
 void traySlew(bool forward) {
@@ -615,22 +615,21 @@ void autonomous() {
 	auto timer = TimeUtilFactory().create().getTimer();
 	timer->placeMark();
 
-	if (autonSelection == autonStates::off) autonSelection = autonStates::skills; // use debug if we havent selected any auton
+	if (autonSelection == autonStates::off) autonSelection = autonStates::blueUnprotec; // use debug if we havent selected any auton
 
 	switch (autonSelection) {
 	case autonStates::skills:
 		// skills doesnt exist
-		driveQ(50_cm, 0_cm, 115, true);
-		// turnQ(30_cm, -30_cm, 115, true);
+		// intakeMotors.moveVelocity(200);
+		driveTo(-50_cm, 50_cm, true, 115, true);
+		// turnQ(-50_cm, 50_cm, true, 115, true);
+		// intakeMotors.moveVelocity(0);
+		// driveQ(50_cm, 0_cm, true, 115, true);
 		// driveQ(30_cm, -30_cm, 115, true);
-		// turnQ(0_cm, 0_cm, 115);
 		break;
 
 	case autonStates::redUnprotec:
 		// red unprotec 5 cube
-		flipout();
-		pros::delay(300);
-		turnP(-origAngle);
 		// grab 4 cubes
 		intakeMotors.moveRelative(6800, 200);
 		driveP(1800, 1800, 70);
@@ -655,8 +654,6 @@ void autonomous() {
 
 	case autonStates::redProtec:
 		// red protec 4 cube
-		flipout();
-		turnP(-origAngle);
 		// grab 3 cubes
 		intakeMotors.moveRelative(5000, 200);
 		driveP(1700, 1700, 70);
@@ -689,8 +686,6 @@ void autonomous() {
 	
 	case autonStates::redRick:
 		// red protec 3 cube
-		flipout();
-		turnP(-origAngle);
 		// grab 3 cubes
 		intakeMotors.moveRelative(5000, 200);
 		driveP(900, 900, 70);
@@ -719,12 +714,9 @@ void autonomous() {
 	
 	case autonStates::blueUnprotec:
 		// blue unprotec 5 cube
-		flipout();
-		pros::delay(300);
-		turnP(-origAngle);
 		// grab 4 cubes
 		intakeMotors.moveRelative(6800, 200);
-		driveP(1800, 1800, 70);
+		driveTo(60_in, 0_cm);
 		// turn for stack
 		turnP(-150); // use absolute positioning
 		// move to zone
@@ -745,8 +737,6 @@ void autonomous() {
 		break;
 	case autonStates::blueProtec:
 		// blue protec 4 cube
-		flipout();
-		turnP(-origAngle);
 		// grab 3 cubes
 		intakeMotors.moveRelative(5000, 200);
 		driveP(1700, 1700, 80);
@@ -776,8 +766,6 @@ void autonomous() {
 		break;
 	case autonStates::blueRick:
 		// blue protec 3 cube
-		flipout();
-		turnP(-origAngle);
 		// grab 3 cubes
 		intakeMotors.moveRelative(5000, 200);
 		driveP(900, 900, 70);
