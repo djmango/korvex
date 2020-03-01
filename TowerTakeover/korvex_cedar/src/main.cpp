@@ -176,7 +176,7 @@ void driveP(int targetLeft, int targetRight, int voltageMax=115, bool debugLog=f
 	}
 }
 
-void driveQ(QLength targetX, QLength targetY, bool backwards=false, int voltageMax=115, bool debugLog=false) {
+void driveQ(QLength targetX, QLength targetY, bool backwards=false, float voltageMax=115, bool debugLog=false) {
 
 	// tune for straights
 	float kp = 0.02;
@@ -185,9 +185,9 @@ void driveQ(QLength targetX, QLength targetY, bool backwards=false, int voltageM
 	float acc = 5;
 
 	// tune for turns
-	float kpTurn = 0.00;
-	float kiTurn = 0.08;
-	float kdTurn = 0.01;
+	float kpTurn = 0.0;
+	float kiTurn = 0.03;
+	float kdTurn = 0.0;
 
 	// the untouchables
 	float error; // distance to target
@@ -215,6 +215,7 @@ void driveQ(QLength targetX, QLength targetY, bool backwards=false, int voltageM
 	int startTime = pros::millis();
 
 	if (backwards) targetTheta = std::atan(yDif/xDif)*180 / M_PI;
+	voltageMax = voltageMax/127; // normalize the voltageMax
 
 	while(autonomous) {
 
@@ -236,8 +237,9 @@ void driveQ(QLength targetX, QLength targetY, bool backwards=false, int voltageM
 		// set voltage
 		voltage = p + i + d;
 
-		if (distanceOrig > distanceTotal) voltage = -voltage; // if we have passed our point
-		if (backwards) voltage = -voltage; // if we are driving backwards
+		if (voltage > voltageMax) {voltage = voltageMax;}
+		if (distanceOrig > distanceTotal) {voltage = -voltage;} // if we have passed our point
+		if (backwards) {voltage = -voltage;} // if we are driving backwards
 
 		voltageLeft = voltage;
 		voltageRight = voltage;
@@ -279,7 +281,7 @@ void driveQ(QLength targetX, QLength targetY, bool backwards=false, int voltageM
 			std::cout << pros::millis() << ": error  " << error << std::endl;
 			std::cout << pros::millis() << ": errorTheta  " << errorTheta << std::endl;
 			std::cout << pros::millis() << ": targetTheta  " << targetTheta << std::endl;
-			std::cout << pros::millis() << ": voltageLeft  " << voltageLeft << std::endl;
+			std::cout << pros::millis() << ": voltageLeft " << voltageLeft << std::endl;
 			std::cout << pros::millis() << ": voltageRight  " << voltageRight << std::endl;
 			// std::cout << pros::millis() << ": xDif  " << xDif << std::endl;
 			// std::cout << pros::millis() << ": yDif  " << yDif << std::endl;
@@ -370,7 +372,7 @@ void turnP(int targetTurn, int voltageMax=127, bool debugLog=false) {
 	}
 }
 
-void turnQ(QLength targetX, QLength targetY, bool backwards=false, int voltageMax=115, bool debugLog=false) {
+void turnQ(QLength targetX, QLength targetY, bool backwards=false, bool debugLog=false) {
 	// tune for turns
 	float kp = 1.6;
 	float ki = 0.8;
@@ -409,7 +411,7 @@ void turnQ(QLength targetX, QLength targetY, bool backwards=false, int voltageMa
 
 		// timeout utility
 		if (std::round(errorLastTheta) == std::round(errorTheta)) {
-			if (abs(errorTheta) <= 1) same0ErrCycles +=1; // less than 1 cm is "0" error
+			if (abs(errorTheta) <= 1) same0ErrCycles +=1; // less than 1 deg is "0" error
 			sameErrCycles += 1;
 		}
 		else {
@@ -418,7 +420,7 @@ void turnQ(QLength targetX, QLength targetY, bool backwards=false, int voltageMa
 		}
 
 		// exit paramaters
-		if ((same0ErrCycles > 15) or sameErrCycles >= 20) { // exit if we stay the same 0err for .3 sec or same err for .4 second
+		if ((same0ErrCycles > 5) or sameErrCycles >= 15) { // exit if we stay the same 0err for .1 sec or same err for .3 second
 			chassis->stop();
 			std::cout << pros::millis() << "task complete with error " << errorTheta << "deg, in " << (pros::millis() - startTime) << "ms" << std::endl;
 			return;
@@ -440,7 +442,7 @@ void driveTo(QLength targetX, QLength targetY, bool backwards=false, int voltage
 	float targetTheta;
 	if (backwards) targetTheta = std::atan((targetY.convert(centimeter) - chassis->getState().y.convert(centimeter))/(targetX.convert(centimeter) - chassis->getState().x.convert(centimeter)))*180 / M_PI;
 	else targetTheta = std::atan2((targetY.convert(centimeter) - chassis->getState().y.convert(centimeter)), (targetX.convert(centimeter) - chassis->getState().x.convert(centimeter)))*180 / M_PI;
-	if (abs(targetTheta - imu.get_rotation()) > 15) {turnQ(targetX, targetY, backwards, voltageMax, debugLog);} // only turn if the degree error is greater than 15
+	if (abs(targetTheta - imu.get_rotation()) > 10) {turnQ(targetX, targetY, backwards, debugLog);} // only turn if the degree error is greater than 10
 	driveQ(targetX, targetY, backwards, voltageMax, debugLog);
 }
 
@@ -620,12 +622,6 @@ void autonomous() {
 	switch (autonSelection) {
 	case autonStates::skills:
 		// skills doesnt exist
-		// intakeMotors.moveVelocity(200);
-		driveTo(-50_cm, 50_cm, true, 115, true);
-		// turnQ(-50_cm, 50_cm, true, 115, true);
-		// intakeMotors.moveVelocity(0);
-		// driveQ(50_cm, 0_cm, true, 115, true);
-		// driveQ(30_cm, -30_cm, 115, true);
 		break;
 
 	case autonStates::redUnprotec:
@@ -713,27 +709,40 @@ void autonomous() {
 		break;
 	
 	case autonStates::blueUnprotec:
-		// blue unprotec 5 cube
+		// blue unprotec 9 cube
 		// grab 4 cubes
-		intakeMotors.moveRelative(6800, 200);
-		driveTo(60_in, 0_cm);
-		// turn for stack
-		turnP(-150); // use absolute positioning
-		// move to zone
-		intakeMotors.moveRelative(-700, 50);
-		driveP(1500, 1500, 80);
-		// stack
-		intakeMotors.moveVelocity(-20);
-		liftMotor.move_absolute(-20, 100);
-		trayMotor.moveAbsolute(6200, 100);
-		while (trayMotor.getPosition() < 6000) {
-			pros::delay(20);
-		}
-		trayMotor.moveAbsolute(0, 100);
-		intakeMotors.moveVelocity(-50);
-		driveP(250, 250);
-		driveP(-600, -600, 80);
-		intakeMotors.moveVelocity(0);
+		chassis->getModel()->tank(0.3, 0.3);
+		intakeMotors.moveVelocity(200);
+		while(line.get_value_calibrated_HR() > 46000) pros::delay(20);
+		intakeMotors.moveRelative(1000, 200);
+		while(intakeMotors.getPositionError() > 5) pros::delay(20);
+		intakeMotors.moveRelative(-1200, 200);
+		pros::delay(300);
+		while(intakeMotors.getPositionError() > 5) pros::delay(20);
+		intakeMotors.moveRelative(4000, 200);
+		driveTo(28_in, 0_in, false, 60);
+		// drive for next line of cubes
+		driveTo(10_in, -26_in, true);
+		// grab the line
+		intakeMotors.moveVelocity(200);
+		driveTo(52_in, -24_in, false, 60);
+		intakeMotors.moveRelative(1000, 200);
+
+		// // move to zone
+		// intakeMotors.moveRelative(-700, 50);
+		// driveP(1500, 1500, 80);
+		// // stack
+		// intakeMotors.moveVelocity(-20);
+		// liftMotor.move_absolute(-20, 100);
+		// trayMotor.moveAbsolute(6200, 100);
+		// while (trayMotor.getPosition() < 6000) {
+		// 	pros::delay(20);
+		// }
+		// trayMotor.moveAbsolute(0, 100);
+		// intakeMotors.moveVelocity(-50);
+		// driveP(250, 250);
+		// driveP(-600, -600, 80);
+		// intakeMotors.moveVelocity(0);
 		break;
 	case autonStates::blueProtec:
 		// blue protec 4 cube
