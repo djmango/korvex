@@ -374,9 +374,9 @@ void turnP(int targetTurn, int voltageMax=127, bool debugLog=false) {
 
 void turnQ(QLength targetX, QLength targetY, bool backwards=false, bool debugLog=false) {
 	// tune for turns
-	float kp = 1.6;
-	float ki = 0.8;
-	float kd = 0.45;
+	float kp = 0.02;
+	float ki = 0.018;
+	float kd = 0.037;
 
 	// the untouchables
 	float errorTheta; // targetTheta - robotTheta
@@ -407,7 +407,7 @@ void turnQ(QLength targetX, QLength targetY, bool backwards=false, bool debugLog
 		voltage = p + i + d;
 
 		// set the motors to the intended speed
-		chassis->getModel()->tank(voltage/127, -voltage/127);
+		chassis->getModel()->tank(voltage, -voltage);
 
 		// timeout utility
 		if (std::round(errorLastTheta) == std::round(errorTheta)) {
@@ -427,10 +427,11 @@ void turnQ(QLength targetX, QLength targetY, bool backwards=false, bool debugLog
 		}
 
 		// debug
-		if (debugLog) {
-			std::cout << pros::millis() << ": errorTheta  " << errorTheta << std::endl;
-			std::cout << pros::millis() << ": targetTheta  " << targetTheta << std::endl;
-		}
+		// if (debugLog) {
+		// 	std::cout << pros::millis() << ": errorTheta  " << errorTheta << std::endl;
+		// 	std::cout << pros::millis() << ": targetTheta  " << targetTheta << std::endl;
+		// }
+		if (debugLog) std::cout << pros::millis() << "," << errorTheta << "," << voltage*50 << std::endl;
 
 		// nothing goes after this
 		errorLastTheta = errorTheta;
@@ -442,7 +443,7 @@ void driveTo(QLength targetX, QLength targetY, bool backwards=false, int voltage
 	float targetTheta;
 	if (backwards) targetTheta = std::atan((targetY.convert(centimeter) - chassis->getState().y.convert(centimeter))/(targetX.convert(centimeter) - chassis->getState().x.convert(centimeter)))*180 / M_PI;
 	else targetTheta = std::atan2((targetY.convert(centimeter) - chassis->getState().y.convert(centimeter)), (targetX.convert(centimeter) - chassis->getState().x.convert(centimeter)))*180 / M_PI;
-	if (abs(targetTheta - imu.get_rotation()) > 10) {turnQ(targetX, targetY, backwards, debugLog);} // only turn if the degree error is greater than 10
+	if (abs(targetTheta - imu.get_rotation()) > 20) {turnQ(targetX, targetY, backwards, debugLog);} // only turn if the degree error is greater than 20 deg
 	driveQ(targetX, targetY, backwards, voltageMax, debugLog);
 }
 
@@ -710,39 +711,47 @@ void autonomous() {
 	
 	case autonStates::blueUnprotec:
 		// blue unprotec 9 cube
-		// grab 4 cubes
+		// flipout
 		chassis->getModel()->tank(0.3, 0.3);
 		intakeMotors.moveVelocity(200);
-		while(line.get_value_calibrated_HR() > 46000) pros::delay(20);
-		intakeMotors.moveRelative(1000, 200);
+		liftMotor.move_absolute(400, 200);
+		while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // wait for the cube to get to position
+		intakeMotors.moveRelative(1300, 200);
+		while(intakeMotors.getPositionError() > 10) pros::delay(20);
+		intakeMotors.moveRelative(-1000, 200);
+		pros::delay(200);
 		while(intakeMotors.getPositionError() > 5) pros::delay(20);
-		intakeMotors.moveRelative(-1200, 200);
-		pros::delay(300);
-		while(intakeMotors.getPositionError() > 5) pros::delay(20);
-		intakeMotors.moveRelative(4000, 200);
-		driveTo(28_in, 0_in, false, 60);
+		pros::delay(200);
+		liftMotor.move_absolute(100, 50);
+		// grab first 3 cubes
+		intakeMotors.moveRelative(4500, 200);
+		driveTo(28_in, 0_in, false, 80);
 		// drive for next line of cubes
-		driveTo(10_in, -26_in, true);
-		// grab the line
+		intakeMotors.moveRelative(-500, 200);
+		driveTo(8_in, -26_in, true);
+		// grab the 4 line
+		turnQ(53_in, -25_in); // this is seperate so that intake doesnt cause noise
 		intakeMotors.moveVelocity(200);
-		driveTo(52_in, -24_in, false, 60);
-		intakeMotors.moveRelative(1000, 200);
-
-		// // move to zone
-		// intakeMotors.moveRelative(-700, 50);
-		// driveP(1500, 1500, 80);
-		// // stack
-		// intakeMotors.moveVelocity(-20);
-		// liftMotor.move_absolute(-20, 100);
-		// trayMotor.moveAbsolute(6200, 100);
-		// while (trayMotor.getPosition() < 6000) {
-		// 	pros::delay(20);
-		// }
-		// trayMotor.moveAbsolute(0, 100);
-		// intakeMotors.moveVelocity(-50);
-		// driveP(250, 250);
-		// driveP(-600, -600, 80);
-		// intakeMotors.moveVelocity(0);
+		driveQ(53_in, -25_in, false, 60);
+		// back out for stack
+		intakeMotors.moveRelative(1500, 200);
+		driveTo(26_in, -25_in, true);
+		// move to zone
+		turnQ(0_in, -56_in);
+		intakeMotors.moveRelative(-500, 50);
+		driveP(1000, 1000, 80);
+		// stack
+		intakeMotors.moveVelocity(-20);
+		liftMotor.move_absolute(-20, 100);
+		trayMotor.moveAbsolute(6200, 100);
+		while (trayMotor.getPosition() < 6000) {
+			pros::delay(20);
+		}
+		trayMotor.moveAbsolute(0, 100);
+		intakeMotors.moveVelocity(-50);
+		driveP(250, 250);
+		driveP(-600, -600, 80);
+		intakeMotors.moveVelocity(0);
 		break;
 	case autonStates::blueProtec:
 		// blue protec 4 cube
