@@ -35,8 +35,8 @@ auto profileController = AsyncMotionProfileControllerBuilder()
     .buildMotionProfileController();
 
 // motors
-pros::Motor liftMotor(LIFT_MTR, pros::E_MOTOR_GEARSET_36, false);
-okapi::Motor trayMotor(TRAY_MTR, false, okapi::AbstractMotor::gearset::red, okapi::AbstractMotor::encoderUnits::counts);
+okapi::Motor liftMotor(LIFT_MTR, false, AbstractMotor::gearset::red, AbstractMotor::encoderUnits::counts);
+okapi::Motor trayMotor(TRAY_MTR, false, AbstractMotor::gearset::red, AbstractMotor::encoderUnits::counts);
 okapi::MotorGroup intakeMotors({INTAKE_MTR1, -INTAKE_MTR2});
 
 // controller
@@ -469,6 +469,20 @@ void generatePaths() { // all motion profile paths stored here, no real error co
 			);
 }
 
+// a blocking flipout function
+void flipout() {
+	intakeMotors.moveVelocity(200);
+	liftMotor.moveAbsolute(400, 200);
+	while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // wait for the cube to get to position
+	intakeMotors.moveRelative(1300, 200);
+	while(intakeMotors.getPositionError() > 10) pros::delay(20);
+	intakeMotors.moveRelative(-1000, 200);
+	pros::delay(200);
+	while(intakeMotors.getPositionError() > 5) pros::delay(20);
+	pros::delay(200);
+	liftMotor.moveAbsolute(70, 50);
+}
+
 // just update calculated theta to actual theta using the imu
 void odomImuSupplement (void*) {
 	while (true) {
@@ -585,7 +599,7 @@ void initialize() {
 
 	// log motor temps
 	std::cout << pros::millis() << "\n" << pros::millis() << ": motor temps:" << std::endl;
-	std::cout << pros::millis() << ": lift: " << liftMotor.get_temperature() << std::endl;
+	std::cout << pros::millis() << ": lift: " << liftMotor.getTemperature() << std::endl;
 	std::cout << pros::millis() << ": tray: " << trayMotor.getTemperature() << std::endl;
 	std::cout << pros::millis() << ": intake: " << intakeMotors.getTemperature() << std::endl;
 	
@@ -629,32 +643,55 @@ void autonomous() {
 	
 	// motor setup
 	intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
-	liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+	liftMotor.setBrakeMode(AbstractMotor::brakeMode::hold);
 	
 	auto timer = TimeUtilFactory().create().getTimer();
 	timer->placeMark();
 
-	if (autonSelection == autonStates::off) autonSelection = autonStates::redUnprotec; // use debug if we havent selected any auton
+	if (autonSelection == autonStates::off) autonSelection = autonStates::skills; // use debug if we havent selected any auton
 
 	switch (autonSelection) {
 	case autonStates::skills:
 		// skills doesnt exist
+		chassis->getModel()->tank(0.2, 0.2);
+		flipout();
+		// grab the first 10
+		intakeMotors.moveVelocity(200);
+		driveTo(110_in, 1_in, false, 60);
+		// cubes to position
+		while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // wait for the cube to get to position
+		intakeMotors.moveVelocity(200);
+		while(line.get_value_calibrated_HR() < 46000) pros::delay(20); // go down until we are covering
+		intakeMotors.moveRelative(-280, 100);
+		// final pos
+		// go to zone
+		driveTo(124_in, 15_in);
+		// stack the first 10
+		trayMotor.moveAbsolute(6300, 100);
+		intakeMotors.moveVelocity(-20);
+		liftMotor.moveAbsolute(-20, 100);
+		while (trayMotor.getPosition() < 6200) pros::delay(20);
+		trayMotor.moveAbsolute(0, 100);
+		intakeMotors.moveVelocity(-50);
+		driveP(250, 250);
+		driveP(-600, -600, 80);
+		// grab the cube for 1st tower
+		intakeMotors.moveVelocity(200);
+		driveTo(113_in, -30_in);
+		intakeMotors.moveVelocity(0);
+		// throw the cube in the tower
+		liftMotor.moveAbsolute(900, 200);
+		driveTo(113_in, -26_in, true);
+		intakeMotors.moveRelative(-1000, 200);
+		pros::delay(700);
+		liftMotor.moveAbsolute(0, 200);
 		break;
 
 	case autonStates::redUnprotec:
 		// red unprotec 7 cube
 		// flipout
 		chassis->getModel()->tank(0.3, 0.3);
-		intakeMotors.moveVelocity(200);
-		liftMotor.move_absolute(400, 200);
-		while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // wait for the cube to get to position
-		intakeMotors.moveRelative(1300, 200);
-		while(intakeMotors.getPositionError() > 10) pros::delay(20);
-		intakeMotors.moveRelative(-1000, 200);
-		pros::delay(200);
-		while(intakeMotors.getPositionError() > 5) pros::delay(20);
-		pros::delay(200);
-		liftMotor.move_absolute(100, 50);
+		flipout();
 		// grab first 3 cubes
 		intakeMotors.moveRelative(4500, 200);
 		driveTo(28_in, 0_in, false, 70);
@@ -663,17 +700,21 @@ void autonomous() {
 		driveTo(8_in, 24_in, true);
 		// grab the 4 line
 		turnQ(46_in, 24_in); // this is seperate so that intake doesnt cause noise
-		intakeMotors.moveRelative(7800, 200);
+		intakeMotors.moveRelative(7500, 200);
 		driveQ(46_in, 24_in, false, 80);
+		// move cubes to stacking position
+		intakeMotors.moveVelocity(-200);
+		while(line.get_value_calibrated_HR() > 46000) pros::delay(20);
+		intakeMotors.moveVelocity(0);
 		// move to zone
-		turnQ(9_in, 45_in);
-		intakeMotors.moveRelative(-700, 50);
+		intakeMotors.moveRelative(-200, 50);
+		turnQ(11_in, 42_in);
 		trayMotor.moveAbsolute(5000, 60);
-		driveTo(9_in, 45_in);
+		driveTo(11_in, 42_in);
 		trayMotor.moveAbsolute(6200, 100);
 		// stack
 		intakeMotors.moveVelocity(-20);
-		liftMotor.move_absolute(-20, 100);
+		liftMotor.moveAbsolute(-20, 100);
 		while (trayMotor.getPosition() < 6100) pros::delay(20);
 		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
@@ -698,7 +739,7 @@ void autonomous() {
 		driveP(580, 580);
 		// stack
 		intakeMotors.moveRelative(-1300, 90);
-		liftMotor.move_absolute(-20, 100);
+		liftMotor.moveAbsolute(-20, 100);
 		trayMotor.moveAbsolute(6200, 100);
 		while (trayMotor.getPosition() < 4000) {
 			pros::delay(20);
@@ -730,7 +771,7 @@ void autonomous() {
 		driveP(520, 520);
 		// stack
 		intakeMotors.moveRelative(-900, 200);
-		liftMotor.move_absolute(-20, 100);
+		liftMotor.moveAbsolute(-20, 100);
 		trayMotor.moveAbsolute(6200, 100);
 		while (trayMotor.getPosition() < 6000) {
 			pros::delay(20);
@@ -746,16 +787,7 @@ void autonomous() {
 		// blue unprotec 7 cube
 		// flipout
 		chassis->getModel()->tank(0.3, 0.3);
-		intakeMotors.moveVelocity(200);
-		liftMotor.move_absolute(400, 200);
-		while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // wait for the cube to get to position
-		intakeMotors.moveRelative(1300, 200);
-		while(intakeMotors.getPositionError() > 10) pros::delay(20);
-		intakeMotors.moveRelative(-1000, 200);
-		pros::delay(200);
-		while(intakeMotors.getPositionError() > 5) pros::delay(20);
-		pros::delay(200);
-		liftMotor.move_absolute(100, 50);
+		flipout();
 		// grab first 3 cubes
 		intakeMotors.moveRelative(4500, 200);
 		driveTo(28_in, 0_in, false, 70);
@@ -764,17 +796,20 @@ void autonomous() {
 		driveTo(8_in, -24_in, true);
 		// grab the 4 line
 		turnQ(46_in, -24_in); // this is seperate so that intake doesnt cause noise
-		intakeMotors.moveRelative(7800, 200);
+		intakeMotors.moveRelative(7500, 200);
 		driveQ(46_in, -24_in, false, 80);
+		// move cubes to stacking position
+		intakeMotors.moveVelocity(-200);
+		while(line.get_value_calibrated_HR() > 46000) pros::delay(20);
+		intakeMotors.moveVelocity(0);
 		// move to zone
-		turnQ(9_in, -45_in);
-		intakeMotors.moveRelative(-700, 50);
-		trayMotor.moveAbsolute(4000, 60);
-		driveTo(9_in, -45_in);
+		turnQ(11_in, -42_in);
+		trayMotor.moveAbsolute(5000, 70);
+		driveTo(11_in, -42_in);
 		trayMotor.moveAbsolute(6200, 100);
 		// stack
 		intakeMotors.moveVelocity(-20);
-		liftMotor.move_absolute(-20, 100);
+		liftMotor.moveAbsolute(-20, 100);
 		while (trayMotor.getPosition() < 6100) pros::delay(20);
 		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
@@ -797,7 +832,7 @@ void autonomous() {
 		driveP(550, 550);
 		intakeMotors.moveRelative(-900, 90);
 		// stack
-		liftMotor.move_absolute(-20, 100);
+		liftMotor.moveAbsolute(-20, 100);
 		trayMotor.moveAbsolute(6200, 100);
 		while (trayMotor.getPosition() < 3800) {
 			pros::delay(20);
@@ -827,7 +862,7 @@ void autonomous() {
 		driveP(520, 520);
 		// stack
 		intakeMotors.moveRelative(-900, 200);
-		liftMotor.move_absolute(-20, 100);
+		liftMotor.moveAbsolute(-20, 100);
 		trayMotor.moveAbsolute(6200, 100);
 		while (trayMotor.getPosition() < 6000) {
 			pros::delay(20);
@@ -872,25 +907,14 @@ void opcontrol() {
 	// main loop
 	while (true) {
 		// basic lift control
-		if (liftUp.isPressed()) liftMotor.move_velocity(100);
-		else if (liftDown.isPressed()) liftMotor.move_velocity(-100);
-		else if (liftMotor.get_position() < LIFT_STACKING_HEIGHT and liftMotor.get_position() > LIFT_STACKING_HEIGHT - 300) liftMotor.move_voltage(-2000); // basically to force the lift down but not burn the motor, shut off the motor when we stabalize at 0
-		else if (liftMotor.get_position() < LIFT_STACKING_HEIGHT and liftMotor.get_efficiency() > 50) liftMotor.move_voltage(-2000);
-		else liftMotor.move(0);
+		if (liftUp.isPressed()) liftMotor.moveVelocity(100);
+		else if (liftDown.isPressed()) liftMotor.moveVelocity(-100);
+		else if (liftMotor.getPosition() < LIFT_STACKING_HEIGHT and liftMotor.getPosition() > LIFT_STACKING_HEIGHT - 300) liftMotor.moveVoltage(-2000); // basically to force the lift down but not burn the motor, shut off the motor when we stabalize at 0
+		else if (liftMotor.getPosition() < LIFT_STACKING_HEIGHT and liftMotor.getEfficiency() > 50) liftMotor.moveVoltage(-2000);
+		else liftMotor.moveVoltage(0);
 
 		// flipout routine
-		if (flipoutBtn.changedToPressed()) {
-			intakeMotors.moveVelocity(200);
-			liftMotor.move_absolute(400, 200);
-			while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // wait for the cube to get to position
-			intakeMotors.moveRelative(1300, 200);
-			while(intakeMotors.getPositionError() > 10) pros::delay(20);
-			intakeMotors.moveRelative(-1000, 200);
-			pros::delay(200);
-			while(intakeMotors.getPositionError() > 5) pros::delay(20);
-			pros::delay(200);
-			liftMotor.move_absolute(100, 50);
-		}
+		if (flipoutBtn.changedToPressed()) flipout();
 
 		// advanced intake control, with goal-oriented assists
 
@@ -923,10 +947,10 @@ void opcontrol() {
 
 		// user controlled intake only enabled while returned
 		if (trayState == trayStates::returned and not shift.isPressed()) { // if nothing else is controlling the intake and we arent moving the tray
-			if (intakeIn.isPressed() and not intakeOut.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(100); // if we are dumping into tower, redue intake velocity as not to shoot the cube halfway accross the field
+			if (intakeIn.isPressed() and not intakeOut.isPressed() and liftMotor.getPosition() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(100); // if we are dumping into tower, redue intake velocity as not to shoot the cube halfway accross the field
 			else if (intakeIn.isPressed() and not intakeOut.isPressed()) intakeMotors.moveVelocity(200);
-			else if (intakeOut.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(-100);
-			else if (intakeOut.isPressed() or (intakeShift.isPressed() and liftMotor.get_position() > LIFT_STACKING_HEIGHT)) intakeMotors.moveVelocity(-200);
+			else if (intakeOut.isPressed() and liftMotor.getPosition() > LIFT_STACKING_HEIGHT) intakeMotors.moveVelocity(-100);
+			else if (intakeOut.isPressed() or (intakeShift.isPressed() and liftMotor.getPosition() > LIFT_STACKING_HEIGHT)) intakeMotors.moveVelocity(-200);
 			else if (not cubesPositioning) intakeMotors.moveVoltage(0);
 		}
 		
@@ -935,7 +959,7 @@ void opcontrol() {
 			if (trayState == trayStates::returned) { // if we are already returned, move the tray out
 				intakeMotors.setBrakeMode(AbstractMotor::brakeMode::coast);
 				chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
-				liftMotor.move_absolute(0, 100);
+				liftMotor.moveAbsolute(0, 100);
 				trayMotor.moveAbsolute(6400, 100);
 				trayState = trayStates::extending;
 			}
@@ -950,7 +974,7 @@ void opcontrol() {
 			if (trayState == trayStates::returned) { // if we are already returned, move the tray out
 				intakeMotors.setBrakeMode(AbstractMotor::brakeMode::coast);
 				chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
-				liftMotor.move_absolute(0, 100);
+				liftMotor.moveAbsolute(0, 100);
 				trayMotor.moveAbsolute(6600, 65);
 				trayState = trayStates::extending;
 			}
@@ -974,8 +998,8 @@ void opcontrol() {
 				else trayMotor.moveVoltage(0);
 			}
 			// adjust tray based on lift position
-			else if (liftMotor.get_position() > LIFT_STACKING_HEIGHT) trayMotor.moveAbsolute(600, 100);
-			else if (liftMotor.get_position() <= LIFT_STACKING_HEIGHT and trayMotor.getPosition() <= 600) trayMotor.moveAbsolute(0, 100);
+			else if (liftMotor.getPosition() > LIFT_STACKING_HEIGHT) trayMotor.moveAbsolute(600, 100);
+			else if (liftMotor.getPosition() <= LIFT_STACKING_HEIGHT and trayMotor.getPosition() <= 600) trayMotor.moveAbsolute(0, 100);
 			else trayMotor.moveVoltage(0);
 		}
 
@@ -995,7 +1019,7 @@ void opcontrol() {
 				if (trayDebug) std::cout << pros::millis() << ": trayState returning" << std::endl;
 				break;
 			case trayStates::extending:
-				liftMotor.move_absolute(-150, 100);
+				liftMotor.moveAbsolute(-150, 100);
 				chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
 
 				// the other intake control will not be used while we are stacking, all control is transfered to this block
@@ -1011,8 +1035,8 @@ void opcontrol() {
 		}
 
 		// lift brake mod
-		if (liftMotor.get_position() > LIFT_STACKING_HEIGHT) liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-		else liftMotor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+		if (liftMotor.getPosition() > LIFT_STACKING_HEIGHT) liftMotor.setBrakeMode(AbstractMotor::brakeMode::brake);
+		else liftMotor.setBrakeMode(AbstractMotor::brakeMode::brake);
 
 		chassis->getModel()->tank(masterController.getAnalog(ControllerAnalog::leftY),
 								masterController.getAnalog(ControllerAnalog::rightY));
