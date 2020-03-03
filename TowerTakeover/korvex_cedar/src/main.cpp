@@ -46,8 +46,10 @@ ControllerButton liftDown(ControllerDigital::R2);
 ControllerButton intakeIn(ControllerDigital::L1);
 ControllerButton intakeOut(ControllerDigital::L2);
 ControllerButton intakeShift(ControllerDigital::right);
+ControllerButton flipoutBtn(ControllerDigital::left);
 ControllerButton shift(ControllerDigital::Y);
 ControllerButton trayReturn(ControllerDigital::X);
+ControllerButton trayReturnAlt(ControllerDigital::A);
 ControllerButton cubeReturn(ControllerDigital::B);
 
 // sensors
@@ -261,7 +263,7 @@ void driveQ(QLength targetX, QLength targetY, bool backwards=false, float voltag
 
 		// timeout utility
 		if (std::round(errorLast) == std::round(error)) {
-			if (abs(error) <= 1) same0ErrCycles +=1; // less than 1 cm is "0" error
+			if (abs(error) <= 3) same0ErrCycles +=1; // less than 3 cm is "0" error
 			sameErrCycles += 1;
 		}
 		else {
@@ -411,7 +413,7 @@ void turnQ(QLength targetX, QLength targetY, bool backwards=false, bool debugLog
 
 		// timeout utility
 		if (std::round(errorLastTheta) == std::round(errorTheta)) {
-			if (abs(errorTheta) <= 1) same0ErrCycles +=1; // less than 1 deg is "0" error
+			if (abs(errorTheta) <= 4) same0ErrCycles +=1; // less than 4 deg is "0" error
 			sameErrCycles += 1;
 		}
 		else {
@@ -456,6 +458,15 @@ void traySlew(bool forward) {
 		if (trayMotor.getPosition() < 1000) trayMotor.moveVelocity(-60);
 		else trayMotor.moveVelocity(-100);
 	}
+}
+
+void generatePaths() { // all motion profile paths stored here, no real error correction in these
+	// 8 cube s curve, mirror for red
+	profileController->generatePath({
+				{0_ft, 0_ft, 0_deg},
+				{40_in, 10_in, 0_deg}},
+				"9cCurve1" 
+			);
 }
 
 // just update calculated theta to actual theta using the imu
@@ -558,6 +569,11 @@ void initialize() {
 
 	std::cout << pros::millis() << ": finished creating gui!" << std::endl;
 
+	// generate paths
+	std::cout << pros::millis() << ": generating paths..." << std::endl;
+	generatePaths();
+	std::cout << pros::millis() << ": finished generating paths..." << std::endl;
+
 	// wait for calibrate
 	while (imu.is_calibrating() and pros::millis() < 3000) pros::delay(20);
 	if (pros::millis() < 3000) std::cout << pros::millis() << ": finished calibrating!" << std::endl;
@@ -618,7 +634,7 @@ void autonomous() {
 	auto timer = TimeUtilFactory().create().getTimer();
 	timer->placeMark();
 
-	if (autonSelection == autonStates::off) autonSelection = autonStates::blueUnprotec; // use debug if we havent selected any auton
+	if (autonSelection == autonStates::off) autonSelection = autonStates::redUnprotec; // use debug if we havent selected any auton
 
 	switch (autonSelection) {
 	case autonStates::skills:
@@ -626,22 +642,39 @@ void autonomous() {
 		break;
 
 	case autonStates::redUnprotec:
-		// red unprotec 5 cube
-		// grab 4 cubes
-		intakeMotors.moveRelative(6800, 200);
-		driveP(1800, 1800, 70);
-		// turn for stack
-		turnP(150); // use absolute positioning
+		// red unprotec 7 cube
+		// flipout
+		chassis->getModel()->tank(0.3, 0.3);
+		intakeMotors.moveVelocity(200);
+		liftMotor.move_absolute(400, 200);
+		while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // wait for the cube to get to position
+		intakeMotors.moveRelative(1300, 200);
+		while(intakeMotors.getPositionError() > 10) pros::delay(20);
+		intakeMotors.moveRelative(-1000, 200);
+		pros::delay(200);
+		while(intakeMotors.getPositionError() > 5) pros::delay(20);
+		pros::delay(200);
+		liftMotor.move_absolute(100, 50);
+		// grab first 3 cubes
+		intakeMotors.moveRelative(4500, 200);
+		driveTo(28_in, 0_in, false, 70);
+		// drive for next line of cubes
+		intakeMotors.moveRelative(-300, 200);
+		driveTo(8_in, 24_in, true);
+		// grab the 4 line
+		turnQ(46_in, 24_in); // this is seperate so that intake doesnt cause noise
+		intakeMotors.moveRelative(7800, 200);
+		driveQ(46_in, 24_in, false, 80);
 		// move to zone
+		turnQ(9_in, 45_in);
 		intakeMotors.moveRelative(-700, 50);
-		driveP(1500, 1500, 80);
+		trayMotor.moveAbsolute(5000, 60);
+		driveTo(9_in, 45_in);
+		trayMotor.moveAbsolute(6200, 100);
 		// stack
 		intakeMotors.moveVelocity(-20);
 		liftMotor.move_absolute(-20, 100);
-		trayMotor.moveAbsolute(6200, 100);
-		while (trayMotor.getPosition() < 6000) {
-			pros::delay(20);
-		}
+		while (trayMotor.getPosition() < 6100) pros::delay(20);
 		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
 		driveP(250, 250);
@@ -710,7 +743,7 @@ void autonomous() {
 		break;
 	
 	case autonStates::blueUnprotec:
-		// blue unprotec 9 cube
+		// blue unprotec 7 cube
 		// flipout
 		chassis->getModel()->tank(0.3, 0.3);
 		intakeMotors.moveVelocity(200);
@@ -725,28 +758,24 @@ void autonomous() {
 		liftMotor.move_absolute(100, 50);
 		// grab first 3 cubes
 		intakeMotors.moveRelative(4500, 200);
-		driveTo(28_in, 0_in, false, 80);
+		driveTo(28_in, 0_in, false, 70);
 		// drive for next line of cubes
-		intakeMotors.moveRelative(-500, 200);
-		driveTo(8_in, -26_in, true);
+		intakeMotors.moveRelative(-300, 200);
+		driveTo(8_in, -24_in, true);
 		// grab the 4 line
-		turnQ(53_in, -25_in); // this is seperate so that intake doesnt cause noise
-		intakeMotors.moveVelocity(200);
-		driveQ(53_in, -25_in, false, 60);
-		// back out for stack
-		intakeMotors.moveRelative(1500, 200);
-		driveTo(26_in, -25_in, true);
+		turnQ(46_in, -24_in); // this is seperate so that intake doesnt cause noise
+		intakeMotors.moveRelative(7800, 200);
+		driveQ(46_in, -24_in, false, 80);
 		// move to zone
-		turnQ(0_in, -56_in);
-		intakeMotors.moveRelative(-500, 50);
-		driveP(1000, 1000, 80);
+		turnQ(9_in, -45_in);
+		intakeMotors.moveRelative(-700, 50);
+		trayMotor.moveAbsolute(4000, 60);
+		driveTo(9_in, -45_in);
+		trayMotor.moveAbsolute(6200, 100);
 		// stack
 		intakeMotors.moveVelocity(-20);
 		liftMotor.move_absolute(-20, 100);
-		trayMotor.moveAbsolute(6200, 100);
-		while (trayMotor.getPosition() < 6000) {
-			pros::delay(20);
-		}
+		while (trayMotor.getPosition() < 6100) pros::delay(20);
 		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
 		driveP(250, 250);
@@ -849,6 +878,20 @@ void opcontrol() {
 		else if (liftMotor.get_position() < LIFT_STACKING_HEIGHT and liftMotor.get_efficiency() > 50) liftMotor.move_voltage(-2000);
 		else liftMotor.move(0);
 
+		// flipout routine
+		if (flipoutBtn.changedToPressed()) {
+			intakeMotors.moveVelocity(200);
+			liftMotor.move_absolute(400, 200);
+			while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // wait for the cube to get to position
+			intakeMotors.moveRelative(1300, 200);
+			while(intakeMotors.getPositionError() > 10) pros::delay(20);
+			intakeMotors.moveRelative(-1000, 200);
+			pros::delay(200);
+			while(intakeMotors.getPositionError() > 5) pros::delay(20);
+			pros::delay(200);
+			liftMotor.move_absolute(100, 50);
+		}
+
 		// advanced intake control, with goal-oriented assists
 
 		// auto cube positioning for stacking
@@ -894,6 +937,21 @@ void opcontrol() {
 				chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
 				liftMotor.move_absolute(0, 100);
 				trayMotor.moveAbsolute(6400, 100);
+				trayState = trayStates::extending;
+			}
+			else { // return to default tray position
+				intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
+				chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
+				trayMotor.moveAbsolute(0, 100);
+				trayState = trayStates::returning;
+			}
+		}
+		else if (trayReturnAlt.changedToPressed()) { // a slower, further tray movement for high stacks
+			if (trayState == trayStates::returned) { // if we are already returned, move the tray out
+				intakeMotors.setBrakeMode(AbstractMotor::brakeMode::coast);
+				chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
+				liftMotor.move_absolute(0, 100);
+				trayMotor.moveAbsolute(6600, 65);
 				trayState = trayStates::extending;
 			}
 			else { // return to default tray position
