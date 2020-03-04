@@ -3,20 +3,6 @@
 #include "korvexlib.h"
 
 // chassis
-// auto chassis = ChassisControllerBuilder() // three tracking wheels
-// 		.withMotors({LEFT_MTR2, LEFT_MTR1}, {-RIGHT_MTR2, -RIGHT_MTR1})
-// 		// green gearset, 4 inch wheel diameter, 8.125 inch wheelbase
-// 		.withDimensions(AbstractMotor::gearset::green, {{4_in, 8.125_in}, imev5GreenTPR})
-// 		.withSensors(
-// 			ADIEncoder{'A', 'B'}, // left encoder in ADI ports A & B
-// 			ADIEncoder{'E', 'F'},  // right encoder in ADI ports E & F
-// 			ADIEncoder{'C', 'D', true}  // middle encoder in ADI ports C & D, reversed
-// 		)
-// 		// specify the tracking wheels diameter (2.75 in), track (4.6 in), and TPR (360)
-// 		// specify the middle encoder distance (9.25 in) and diameter (2.75 in)
-// 		.withOdometry({{2.75_in, 4.6_in, 9.25_in, 2.75_in}, quadEncoderTPR})
-// 		.buildOdometry(); // build an odometry chassis
-
 auto chassis = ChassisControllerBuilder() // two tracking wheels
 		.withMotors({LEFT_MTR2, LEFT_MTR1}, {-RIGHT_MTR2, -RIGHT_MTR1})
 		// green gearset, 4 inch wheel diameter, 8.125 inch wheelbase
@@ -474,13 +460,15 @@ void flipout() {
 	intakeMotors.moveVelocity(200);
 	liftMotor.moveAbsolute(400, 200);
 	while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // wait for the cube to get to position
-	intakeMotors.moveRelative(1300, 200);
+	intakeMotors.moveVelocity(200);
+	while(line.get_value_calibrated_HR() < 46000) pros::delay(20);
+	intakeMotors.moveRelative(700, 200);
 	while(intakeMotors.getPositionError() > 10) pros::delay(20);
-	intakeMotors.moveRelative(-1000, 200);
+	intakeMotors.moveRelative(-800, 200);
 	pros::delay(200);
 	while(intakeMotors.getPositionError() > 5) pros::delay(20);
 	pros::delay(200);
-	liftMotor.moveAbsolute(70, 50);
+	liftMotor.moveAbsolute(-100, 60);
 }
 
 // just update calculated theta to actual theta using the imu
@@ -648,24 +636,23 @@ void autonomous() {
 	auto timer = TimeUtilFactory().create().getTimer();
 	timer->placeMark();
 
-	if (autonSelection == autonStates::off) autonSelection = autonStates::skills; // use debug if we havent selected any auton
+	if (autonSelection == autonStates::off) autonSelection = autonStates::blueProtec; // use debug if we havent selected any auton
 
 	switch (autonSelection) {
 	case autonStates::skills:
 		// skills doesnt exist
-		chassis->getModel()->tank(0.2, 0.2);
+		// chassis->getModel()->tank(0.2, 0.2);
 		flipout();
 		// grab the first 10
 		intakeMotors.moveVelocity(200);
-		driveTo(110_in, 1_in, false, 60);
+		driveTo(110_in, 0_in, false, 55);
 		// cubes to position
-		while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // wait for the cube to get to position
-		intakeMotors.moveVelocity(200);
-		while(line.get_value_calibrated_HR() < 46000) pros::delay(20); // go down until we are covering
+		while (line.get_value_calibrated_HR() < 46000) pros::delay(200); // wait for the cubes to go above line sensor
+		intakeMotors.moveVelocity(-200);
+		while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // go down until we are covering
 		intakeMotors.moveRelative(-280, 100);
-		// final pos
 		// go to zone
-		driveTo(124_in, 15_in);
+		driveTo(122_in, 11_in);
 		// stack the first 10
 		trayMotor.moveAbsolute(6300, 100);
 		intakeMotors.moveVelocity(-20);
@@ -676,15 +663,16 @@ void autonomous() {
 		driveP(250, 250);
 		driveP(-600, -600, 80);
 		// grab the cube for 1st tower
-		intakeMotors.moveVelocity(200);
-		driveTo(113_in, -30_in);
-		intakeMotors.moveVelocity(0);
+		intakeMotors.moveRelative(6800, 200);
+		driveTo(113_in, -32_in);
 		// throw the cube in the tower
-		liftMotor.moveAbsolute(900, 200);
-		driveTo(113_in, -26_in, true);
-		intakeMotors.moveRelative(-1000, 200);
+		liftMotor.moveAbsolute(2100, 100);
+		driveP(-250, -250);
+		intakeMotors.moveRelative(-2000, 200);
 		pros::delay(700);
-		liftMotor.moveAbsolute(0, 200);
+		liftMotor.moveAbsolute(0, 100);
+		driveP(-300, -200);
+		driveTo(20_in, -26_in);
 		break;
 
 	case autonStates::redUnprotec:
@@ -725,34 +713,6 @@ void autonomous() {
 
 	case autonStates::redProtec:
 		// red protec 4 cube
-		// grab 3 cubes
-		intakeMotors.moveRelative(5000, 200);
-		driveP(1700, 1700, 70);
-		intakeMotors.moveVoltage(0);
-		// turn for final cube
-		turnP(-132);
-		// grab final cube
-		intakeMotors.moveRelative(5000, 200);
-		driveP(1300, 1300, 70);
-		// move to zone
-		turnP(-136);
-		driveP(580, 580);
-		// stack
-		intakeMotors.moveRelative(-1300, 90);
-		liftMotor.moveAbsolute(-20, 100);
-		trayMotor.moveAbsolute(6200, 100);
-		while (trayMotor.getPosition() < 4000) {
-			pros::delay(20);
-		}
-		intakeMotors.moveVelocity(-30);
-		while (trayMotor.getPosition() < 6000) {
-			pros::delay(20);
-		}
-		trayMotor.moveAbsolute(0, 100);
-		intakeMotors.moveVelocity(-50);
-		driveP(250, 250);
-		driveP(-800, -800, 80);
-		intakeMotors.moveVelocity(0);
 		break;
 	
 	case autonStates::redRick:
@@ -819,31 +779,30 @@ void autonomous() {
 		break;
 	case autonStates::blueProtec:
 		// blue protec 4 cube
-		// grab 3 cubes
-		intakeMotors.moveRelative(5000, 200);
-		driveP(1700, 1700, 80);
-		intakeMotors.moveVoltage(0);
-		// turn for final cube
-		turnP(130);
-		// grab final cube
-		intakeMotors.moveRelative(5400, 200);
-		driveP(1300, 1300, 70);
-		// move to zone
-		driveP(550, 550);
-		intakeMotors.moveRelative(-900, 90);
+		flipout();
+		intakeMotors.moveRelative(600, 100);
+		pros::delay(600);
+		// grab first cube
+		intakeMotors.moveVelocity(200);
+		driveTo(21_in, 0_in, false, 60);
+		// grab second cube
+		driveTo(21_in, -26_in, false, 70);
+		// grab third cube
+		driveTo(21_in, -38_in, false, 70);
+		intakeMotors.moveRelative(500, 200);
+		// move for zone
+		driveTo(18_in, 4_in, true);
+		driveTo(12_in, 10_in);
 		// stack
 		liftMotor.moveAbsolute(-20, 100);
 		trayMotor.moveAbsolute(6200, 100);
-		while (trayMotor.getPosition() < 3800) {
-			pros::delay(20);
-		}
-		intakeMotors.moveVelocity(-20);
 		while (trayMotor.getPosition() < 6000) {
 			pros::delay(20);
 		}
 		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
-		driveP(-800, -800, 80);
+		driveP(250, 250);
+		driveP(-600, -600, 80);
 		intakeMotors.moveVelocity(0);
 		break;
 	case autonStates::blueRick:
