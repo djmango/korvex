@@ -143,7 +143,7 @@ void driveP(int targetLeft, int targetRight, int voltageMax=115, bool debugLog=f
 		}
 
 		// exit paramaters
-		if ((errorLast < 5 and errorCurrent < 5) or sameErrCycles >= 10) { // allowing for smol error or exit if we stay the same err for .2 second
+		if ((errorLast < 5 and errorCurrent < 5) or sameErrCycles >= 20) { // allowing for smol error or exit if we stay the same err for .4 second
 			chassis->stop();
 			std::cout << pros::millis() << "task complete with error " << errorCurrent << " in " << (pros::millis() - startTime) << "ms" << std::endl;
 			return;
@@ -461,14 +461,17 @@ void flipout() {
 	liftMotor.moveAbsolute(400, 200);
 	while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // wait for the cube to get to position
 	intakeMotors.moveVelocity(200);
-	while(line.get_value_calibrated_HR() < 46000) pros::delay(20);
+	pros::delay(100);
+	while(line.get_value_calibrated_HR() < 46000) pros::delay(20); // move cube above position to initiate flipout
 	intakeMotors.moveRelative(700, 200);
-	while(intakeMotors.getPositionError() > 10) pros::delay(20);
-	intakeMotors.moveRelative(-800, 200);
+	pros::delay(100);
+	while(abs(intakeMotors.getPositionError()) > 5) pros::delay(20); // save the cube yo
+	intakeMotors.moveRelative(-600, 200);
 	pros::delay(200);
-	while(intakeMotors.getPositionError() > 5) pros::delay(20);
+	while(abs(intakeMotors.getPositionError()) > 5) pros::delay(20);
+	liftMotor.moveAbsolute(-50, 100);
 	pros::delay(200);
-	liftMotor.moveAbsolute(-100, 60);
+	while(abs(liftMotor.getPositionError()) > 40) pros::delay(20);
 }
 
 // just update calculated theta to actual theta using the imu
@@ -636,43 +639,48 @@ void autonomous() {
 	auto timer = TimeUtilFactory().create().getTimer();
 	timer->placeMark();
 
-	if (autonSelection == autonStates::off) autonSelection = autonStates::blueProtec; // use debug if we havent selected any auton
+	if (autonSelection == autonStates::off) autonSelection = autonStates::skills; // use debug if we havent selected any auton
 
 	switch (autonSelection) {
 	case autonStates::skills:
 		// skills doesnt exist
-		// chassis->getModel()->tank(0.2, 0.2);
 		flipout();
 		// grab the first 10
 		intakeMotors.moveVelocity(200);
 		driveTo(110_in, 0_in, false, 55);
+		pros::delay(600); // wait for last cube
 		// cubes to position
 		while (line.get_value_calibrated_HR() < 46000) pros::delay(200); // wait for the cubes to go above line sensor
-		intakeMotors.moveVelocity(-200);
+		intakeMotors.moveVelocity(-100);
 		while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // go down until we are covering
-		intakeMotors.moveRelative(-280, 100);
+		intakeMotors.moveRelative(0, 100);
 		// go to zone
-		driveTo(122_in, 11_in);
+		driveTo(121_in, 10.5_in);
 		// stack the first 10
-		trayMotor.moveAbsolute(6300, 100);
-		intakeMotors.moveVelocity(-20);
+		trayMotor.moveAbsolute(6300, 70);
+		intakeMotors.moveVelocity(0);
 		liftMotor.moveAbsolute(-20, 100);
 		while (trayMotor.getPosition() < 6200) pros::delay(20);
 		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
-		driveP(250, 250);
 		driveP(-600, -600, 80);
 		// grab the cube for 1st tower
-		intakeMotors.moveRelative(6800, 200);
-		driveTo(113_in, -32_in);
+		intakeMotors.moveVelocity(200);
+		driveTo(113_in, -30_in);
+		while (line.get_value_calibrated_HR() < 46000) pros::delay(200); // wait for the cubes to go above line sensor
+		intakeMotors.moveVelocity(-100);
+		while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // go down until we are covering
+		intakeMotors.moveRelative(-50, 100);
+		while (abs(intakeMotors.getPositionError()) > 10) pros::delay(20);
+		liftMotor.moveAbsolute(2000, 60);
+		driveP(-75, -75);
 		// throw the cube in the tower
-		liftMotor.moveAbsolute(2100, 100);
-		driveP(-250, -250);
 		intakeMotors.moveRelative(-2000, 200);
 		pros::delay(700);
 		liftMotor.moveAbsolute(0, 100);
-		driveP(-300, -200);
-		driveTo(20_in, -26_in);
+		intakeMotors.moveVelocity(200);
+		driveTo(20_in, -22_in);
+		intakeMotors.moveVelocity(0);
 		break;
 
 	case autonStates::redUnprotec:
@@ -1006,6 +1014,7 @@ void opcontrol() {
 
 		// debug
 		// std::cout << pros::millis() << ": line " << line.get_value_calibrated_HR() << std::endl;
+		// std::cout << pros::millis() << ": imu " << imu.get_heading() << std::endl;
 		// std::cout << pros::millis() << ": lef " << trackingLeft.get_value() << std::endl;
 		// std::cout << pros::millis() << ": rig " << trackingRight.get_value() << std::endl;
 		pros::delay(20);
