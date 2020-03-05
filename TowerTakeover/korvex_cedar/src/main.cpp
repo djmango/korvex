@@ -664,28 +664,52 @@ void autonomous() {
 		liftMotor.moveAbsolute(-50, 100);
 		while (trayMotor.getPosition() < 6200) pros::delay(20);
 		trayMotor.moveAbsolute(0, 100);
+		pros::delay(600);
 		intakeMotors.moveVelocity(-50);
-		driveP(90, 90);
 		driveP(-450, -450, 80);
 		// grab the cube for 1st tower
 		intakeMotors.moveVelocity(200);
 		driveTo(115_in, -29_in);
+		// move the first cube to position
 		while (line.get_value_calibrated_HR() < 46000) pros::delay(200); // wait for the cubes to go above line sensor
 		intakeMotors.moveVelocity(-100);
 		while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // go down until we are covering
 		intakeMotors.moveRelative(-50, 100);
-		while (abs(intakeMotors.getPositionError()) > 10) pros::delay(20);
+		while (abs(intakeMotors.getPositionError()) > 20) pros::delay(20);
 		liftMotor.moveAbsolute(2200, 60);
 		driveP(-230, -230);
 		// throw the cube in the tower
 		intakeMotors.moveRelative(-2400, 200);
-		pros::delay(500);
+		pros::delay(200);
 		liftMotor.moveAbsolute(-50, 100);
+		// grab the next 7 ish cubes
 		intakeMotors.moveVelocity(200);
 		driveTo(26_in, -22_in, false, 50, true);
-		// driveTo(20_in, -22_in, 50);
-		intakeMotors.moveVelocity(0);
-		driveTo(11_in, 11_in);
+		// move second stack to correct position
+		while (line.get_value_calibrated_HR() < 46000) pros::delay(200); // wait for the cubes to go above line sensor
+		intakeMotors.moveVelocity(-200);
+		while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // go down until we are covering
+		intakeMotors.moveRelative(-150, 100);
+		while (abs(intakeMotors.getPositionError()) > 20) pros::delay(20);
+		// drive to zone
+		driveTo(12_in, 10_in);
+		// stack the 2nd stack
+		trayMotor.moveAbsolute(6300, 70);
+		intakeMotors.moveVelocity(-10);
+		liftMotor.moveAbsolute(-50, 100);
+		while (trayMotor.getPosition() < 6200) pros::delay(20);
+		trayMotor.moveAbsolute(0, 100);
+		pros::delay(600);
+		intakeMotors.moveVelocity(-50);
+		driveP(-700, -700, 80);
+		// grab 2nd tower cube
+		intakeMotors.moveVelocity(200);
+		driveTo(50_in, 9_in);
+		while (line.get_value_calibrated_HR() < 46000) pros::delay(200);
+		intakeMotors.moveVelocity(-100);
+		while(line.get_value_calibrated_HR() > 46000) pros::delay(20);
+		intakeMotors.moveRelative(-50, 100);
+		while (abs(intakeMotors.getPositionError()) > 20) pros::delay(20);
 		break;
 
 	case autonStates::redUnprotec:
