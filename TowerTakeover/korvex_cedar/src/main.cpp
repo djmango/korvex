@@ -164,7 +164,7 @@ void driveP(int targetLeft, int targetRight, int voltageMax=115, bool debugLog=f
 	}
 }
 
-void driveQ(QLength targetX, QLength targetY, bool backwards=false, float voltageMax=115, bool debugLog=false) {
+void driveQ(QLength targetX, QLength targetY, bool backwards=false, float voltageMax=115, bool forceFlip=false, bool debugLog=false) {
 
 	// tune for straights
 	float kp = 0.02;
@@ -203,6 +203,7 @@ void driveQ(QLength targetX, QLength targetY, bool backwards=false, float voltag
 	int startTime = pros::millis();
 
 	if (backwards) targetTheta = std::atan(yDif/xDif)*180 / M_PI;
+	if (forceFlip) targetTheta = -targetTheta; // i know its dumb
 	voltageMax = voltageMax/127; // normalize the voltageMax
 
 	while(autonomous) {
@@ -360,7 +361,7 @@ void turnP(int targetTurn, int voltageMax=127, bool debugLog=false) {
 	}
 }
 
-void turnQ(QLength targetX, QLength targetY, bool backwards=false, bool debugLog=false) {
+void turnQ(QLength targetX, QLength targetY, bool backwards=false, bool forceFlip=false, bool debugLog=false) {
 	// tune for turns
 	float kp = 0.02;
 	float ki = 0.018;
@@ -381,6 +382,7 @@ void turnQ(QLength targetX, QLength targetY, bool backwards=false, bool debugLog
 	int startTime = pros::millis();
 
 	if (backwards) targetTheta = std::atan(yDif/xDif)*180 / M_PI;
+	if (forceFlip) targetTheta = -targetTheta;
 
 	while(autonomous) {
 
@@ -427,12 +429,12 @@ void turnQ(QLength targetX, QLength targetY, bool backwards=false, bool debugLog
 	}
 }
 
-void driveTo(QLength targetX, QLength targetY, bool backwards=false, int voltageMax=115, bool debugLog=false) {
+void driveTo(QLength targetX, QLength targetY, bool backwards=false, int voltageMax=115, bool forceFlip=false, bool debugLog=false) {
 	float targetTheta;
-	if (backwards) targetTheta = std::atan((targetY.convert(centimeter) - chassis->getState().y.convert(centimeter))/(targetX.convert(centimeter) - chassis->getState().x.convert(centimeter)))*180 / M_PI;
+	if (backwards or forceFlip) targetTheta = std::atan((targetY.convert(centimeter) - chassis->getState().y.convert(centimeter))/(targetX.convert(centimeter) - chassis->getState().x.convert(centimeter)))*180 / M_PI;
 	else targetTheta = std::atan2((targetY.convert(centimeter) - chassis->getState().y.convert(centimeter)), (targetX.convert(centimeter) - chassis->getState().x.convert(centimeter)))*180 / M_PI;
-	if (abs(targetTheta - imu.get_rotation()) > 20) {turnQ(targetX, targetY, backwards, debugLog);} // only turn if the degree error is greater than 20 deg
-	driveQ(targetX, targetY, backwards, voltageMax, debugLog);
+	if (abs(targetTheta - imu.get_rotation()) > 20) {turnQ(targetX, targetY, backwards, forceFlip, debugLog);} // only turn if the degree error is greater than 20 deg
+	driveQ(targetX, targetY, backwards, voltageMax, forceFlip, debugLog);
 }
 
 void traySlew(bool forward) {
@@ -458,8 +460,8 @@ void generatePaths() { // all motion profile paths stored here, no real error co
 // a blocking flipout function
 void flipout() {
 	intakeMotors.moveVelocity(200);
-	liftMotor.moveAbsolute(400, 200);
 	while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // wait for the cube to get to position
+	liftMotor.moveAbsolute(400, 200);
 	intakeMotors.moveVelocity(200);
 	pros::delay(100);
 	while(line.get_value_calibrated_HR() < 46000) pros::delay(20); // move cube above position to initiate flipout
@@ -647,7 +649,7 @@ void autonomous() {
 		flipout();
 		// grab the first 10
 		intakeMotors.moveVelocity(200);
-		driveTo(110_in, 0_in, false, 55);
+		driveTo(110_in, 0_in, false, 50);
 		pros::delay(600); // wait for last cube
 		// cubes to position
 		while (line.get_value_calibrated_HR() < 46000) pros::delay(200); // wait for the cubes to go above line sensor
@@ -655,32 +657,35 @@ void autonomous() {
 		while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // go down until we are covering
 		intakeMotors.moveRelative(0, 100);
 		// go to zone
-		driveTo(121_in, 10.5_in);
+		driveTo(121_in, 10_in);
 		// stack the first 10
 		trayMotor.moveAbsolute(6300, 70);
-		intakeMotors.moveVelocity(0);
-		liftMotor.moveAbsolute(-20, 100);
+		intakeMotors.moveVelocity(-10);
+		liftMotor.moveAbsolute(-50, 100);
 		while (trayMotor.getPosition() < 6200) pros::delay(20);
 		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
-		driveP(-600, -600, 80);
+		driveP(90, 90);
+		driveP(-450, -450, 80);
 		// grab the cube for 1st tower
 		intakeMotors.moveVelocity(200);
-		driveTo(113_in, -30_in);
+		driveTo(115_in, -29_in);
 		while (line.get_value_calibrated_HR() < 46000) pros::delay(200); // wait for the cubes to go above line sensor
 		intakeMotors.moveVelocity(-100);
 		while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // go down until we are covering
 		intakeMotors.moveRelative(-50, 100);
 		while (abs(intakeMotors.getPositionError()) > 10) pros::delay(20);
-		liftMotor.moveAbsolute(2000, 60);
-		driveP(-75, -75);
+		liftMotor.moveAbsolute(2200, 60);
+		driveP(-230, -230);
 		// throw the cube in the tower
-		intakeMotors.moveRelative(-2000, 200);
-		pros::delay(700);
-		liftMotor.moveAbsolute(0, 100);
+		intakeMotors.moveRelative(-2400, 200);
+		pros::delay(500);
+		liftMotor.moveAbsolute(-50, 100);
 		intakeMotors.moveVelocity(200);
-		driveTo(20_in, -22_in);
+		driveTo(26_in, -22_in, false, 50, true);
+		// driveTo(20_in, -22_in, 50);
 		intakeMotors.moveVelocity(0);
+		driveTo(11_in, 11_in);
 		break;
 
 	case autonStates::redUnprotec:
