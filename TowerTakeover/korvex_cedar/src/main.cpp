@@ -167,9 +167,9 @@ void driveP(int targetLeft, int targetRight, int voltageMax=115, bool debugLog=f
 void driveQ(QLength targetX, QLength targetY, bool backwards=false, float voltageMax=115, bool forceFlip=false, bool debugLog=false) {
 
 	// tune for straights
-	float kp = 0.08;
+	float kp = 0.052;
 	float ki = 0.0;
-	float kd = 0.35;
+	float kd = 0.3; // .06, .38
 	// fk yeah lets just keep tuning 30 mins before a match lmao
 
 	// tune for turns
@@ -460,16 +460,19 @@ void generatePaths() { // all motion profile paths stored here, no real error co
 
 // a blocking flipout function
 void flipout() {
+	auto timer = TimeUtilFactory().create().getTimer();
 	intakeMotors.moveVelocity(200);
-	while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // wait for the cube to get to position
 	liftMotor.moveAbsolute(400, 200);
+	timer->placeMark();
+	while(line.get_value_calibrated_HR() > 46000 and timer->getDtFromMark().convert(second) < 1) pros::delay(20); // wait for the cube to get to position
 	intakeMotors.moveVelocity(200);
 	pros::delay(100);
-	while(line.get_value_calibrated_HR() < 46000) pros::delay(20); // move cube above position to initiate flipout
-	intakeMotors.moveRelative(700, 200);
-	pros::delay(100);
-	while(abs(intakeMotors.getPositionError()) > 5) pros::delay(20); // save the cube yo
-	intakeMotors.moveRelative(-600, 100);
+	timer->placeMark();
+	while(line.get_value_calibrated_HR() < 46000 and timer->getDtFromMark().convert(second) < 1) pros::delay(20); // move cube above position to initiate flipout
+	intakeMotors.moveRelative(600, 200);
+	pros::delay(20);
+	while(abs(intakeMotors.getPositionError()) > 50) pros::delay(20); // save the cube yo
+	intakeMotors.moveRelative(-600, 200);
 	pros::delay(200);
 	while(abs(intakeMotors.getPositionError()) > 5) pros::delay(20);
 	liftMotor.moveAbsolute(-10, 100);
@@ -585,7 +588,10 @@ void initialize() {
 	// wait for calibrate
 	while (imu.is_calibrating() and pros::millis() < 3000) pros::delay(20);
 	if (pros::millis() < 3000) std::cout << pros::millis() << ": finished calibrating!" << std::endl;
-	else std::cout << pros::millis() << ": calibration failed, moving on" << std::endl;
+	else {
+		masterController.rumble(".. -");
+		std::cout << pros::millis() << ": calibration failed, moving on" << std::endl;
+	}
 
 	// start imu implementation to odom
 	pros::Task odomImuSupplementTask(odomImuSupplement, (void*)NULL, TASK_PRIORITY_DEFAULT-1, TASK_STACK_DEPTH_DEFAULT, "odomImuSUpplement");
@@ -640,7 +646,7 @@ void autonomous() {
 	
 	auto timer = TimeUtilFactory().create().getTimer();
 	timer->placeMark();
-	if (autonSelection == autonStates::off) autonSelection = autonStates::blueUnprotec; // use debug if we havent selected any auton
+	if (autonSelection == autonStates::off) autonSelection = autonStates::skills; // use debug if we havent selected any auton
 
 	switch (autonSelection) {
 	case autonStates::skills:
@@ -653,9 +659,11 @@ void autonomous() {
 		driveTo(110_in, 0_in, false, 50);
 		pros::delay(600); // wait for last cube
 		// cubes to position
-		while (line.get_value_calibrated_HR() < 46000) pros::delay(200); // wait for the cubes to go above line sensor
+		timer->placeMark();
+		while (line.get_value_calibrated_HR() < 46000 and timer->getDtFromMark().convert(second) < 1) pros::delay(200); // wait for the cubes to go above line sensor
 		intakeMotors.moveVelocity(-100);
-		while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // go down until we are covering
+		timer->placeMark();
+		while(line.get_value_calibrated_HR() > 46000 and timer->getDtFromMark().convert(second) < 1) pros::delay(20); // go down until we are covering
 		intakeMotors.moveRelative(-50, 100);
 		// go to zone
 		turnP(45);
@@ -667,7 +675,8 @@ void autonomous() {
 		intakeMotors.setBrakeMode(AbstractMotor::brakeMode::coast);
 		intakeMotors.moveVelocity(-10);
 		liftMotor.moveAbsolute(-50, 100);
-		while (abs(trayMotor.getPositionError() > 50)) pros::delay(20);
+		timer->placeMark();
+		while (abs(trayMotor.getPositionError() > 50) and timer->getDtFromMark().convert(second) < 1) pros::delay(20);
 		pros::delay(900);
 		intakeMotors.moveVelocity(-150);
 		timer->placeMark();
@@ -679,17 +688,20 @@ void autonomous() {
 		intakeMotors.moveVelocity(200);
 		driveTo(115_in, -28_in, false, 80);
 		// move the first cube to position
-		while (line.get_value_calibrated_HR() < 46000) pros::delay(20); // wait for the cubes to go above line sensor
+		timer->placeMark();
+		while (line.get_value_calibrated_HR() < 46000 and timer->getDtFromMark().convert(second) < 1) pros::delay(20); // wait for the cubes to go above line sensor
 		intakeMotors.moveVelocity(-100);
-		while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // go down until we are covering
+		timer->placeMark();
+		while(line.get_value_calibrated_HR() > 46000 and timer->getDtFromMark().convert(second) < 1) pros::delay(20); // go down until we are covering
 		intakeMotors.moveRelative(-50, 100);
-		while (abs(intakeMotors.getPositionError()) > 20) pros::delay(20);
+		while (abs(intakeMotors.getPositionError()) > 20 and timer->getDtFromMark().convert(second) < 1) pros::delay(20);
 		liftMotor.moveAbsolute(2300, 100);
 		driveP(-150, -150);
 		turnP(-90);
 		// throw the cube in the tower
 		intakeMotors.moveRelative(-2600, 140);
-		while (abs(intakeMotors.getPositionError()) > 20) pros::delay(20);
+		timer->placeMark();
+		while (abs(intakeMotors.getPositionError()) > 20 and timer->getDtFromMark().convert(second) < 1) pros::delay(20);
 		liftMotor.moveAbsolute(800, 100);
 		driveP(-70, -70);
 		// grab the next 7 ish cubes
@@ -699,11 +711,14 @@ void autonomous() {
 		liftMotor.moveAbsolute(-20, 100);
 		driveTo(35_in, -22_in, false, 50, true);
 		// move second stack to correct position
-		while (line.get_value_calibrated_HR() < 46000) pros::delay(200); // wait for the cubes to go above line sensor
+		timer->placeMark();
+		while (line.get_value_calibrated_HR() < 46000 and timer->getDtFromMark().convert(second) < 1) pros::delay(200); // wait for the cubes to go above line sensor
 		intakeMotors.moveVelocity(-200);
-		while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // go down until we are covering
+		timer->placeMark();
+		while(line.get_value_calibrated_HR() > 46000 and timer->getDtFromMark().convert(second) < 1) pros::delay(20); // go down until we are covering
 		intakeMotors.moveRelative(-150, 100);
-		while (abs(intakeMotors.getPositionError()) > 20) pros::delay(20);
+		timer->placeMark();
+		while (abs(intakeMotors.getPositionError()) > 20 and timer->getDtFromMark().convert(second) < 1) pros::delay(20);
 		// drive to zone
 		driveTo(12_in, 9_in);
 		// stack the 2nd stack
@@ -718,35 +733,43 @@ void autonomous() {
 		// grab 2nd tower cube
 		intakeMotors.moveVelocity(200);
 		driveTo(56_in, 7_in);
-		while (line.get_value_calibrated_HR() < 46000) pros::delay(20);
+		timer->placeMark();
+		while (line.get_value_calibrated_HR() < 46000 and timer->getDtFromMark().convert(second) < 1) pros::delay(20);
 		intakeMotors.moveVelocity(-100);
-		while(line.get_value_calibrated_HR() > 46000) pros::delay(20);
+		timer->placeMark();
+		while(line.get_value_calibrated_HR() > 46000 and timer->getDtFromMark().convert(second) < 1) pros::delay(20);
 		intakeMotors.moveRelative(-50, 100);
-		while (abs(intakeMotors.getPositionError()) > 20) pros::delay(20);
+		timer->placeMark();
+		while (abs(intakeMotors.getPositionError()) > 20 and timer->getDtFromMark().convert(second) < 1) pros::delay(20);
 		// drive to 2nd tower
 		driveP(-500, -500);
 		liftMotor.moveAbsolute(1800, 100);
 		driveTo(57_in, -4_in);
 		// throw the 2nd cube in the tower
 		intakeMotors.moveRelative(-2600, 120);
-		while (abs(intakeMotors.getPositionError()) > 20) pros::delay(20);
+		timer->placeMark();
+		while (abs(intakeMotors.getPositionError()) > 20 and timer->getDtFromMark().convert(second) < 1) pros::delay(20);
 		// drive to 3rd tower cube
 		turnQ(23_in, -35_in);
 		liftMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(200);
 		driveTo(23_in, -35_in);
 		// normalize 3rd cube
-		while (line.get_value_calibrated_HR() < 46000) pros::delay(20);
+		timer->placeMark();
+		while (line.get_value_calibrated_HR() < 46000 and timer->getDtFromMark().convert(second) < 1) pros::delay(20);
 		intakeMotors.moveVelocity(-100);
-		while(line.get_value_calibrated_HR() > 46000) pros::delay(20);
+		timer->placeMark();
+		while(line.get_value_calibrated_HR() > 46000 and timer->getDtFromMark().convert(second) < 1) pros::delay(20);
 		intakeMotors.moveRelative(-50, 100);
-		while (abs(intakeMotors.getPositionError()) > 20) pros::delay(20);
+		timer->placeMark();
+		while (abs(intakeMotors.getPositionError()) > 20 and timer->getDtFromMark().convert(second) < 1) pros::delay(20);
 		liftMotor.moveAbsolute(2100, 100);
 		// line up with tower
 		turnP(-90);
 		// throw er in
 		intakeMotors.moveRelative(-2600, 150);
-		while (abs(intakeMotors.getPositionError()) > 20) pros::delay(20);
+		timer->placeMark();
+		while (abs(intakeMotors.getPositionError()) > 20 and timer->getDtFromMark().convert(second) < 1) pros::delay(20);
 		driveP(-200, -200);
 		liftMotor.moveAbsolute(0, 100);
 		break;
@@ -754,27 +777,29 @@ void autonomous() {
 	case autonStates::redUnprotec:
 		// red unprotec 7 cube
 		// flipout
-		chassis->getModel()->tank(0.3, 0.3);
+		chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 		flipout();
+		chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
 		// grab first 3 cubes
-		intakeMotors.moveRelative(4500, 200);
+		intakeMotors.moveRelative(5000, 200);
 		driveTo(28_in, 0_in, false, 70);
 		// drive for next line of cubes
-		intakeMotors.moveRelative(-300, 200);
 		driveTo(8_in, 24_in, true);
 		// grab the 4 line
-		turnQ(46_in, 24_in); // this is seperate so that intake doesnt cause noise
-		intakeMotors.moveRelative(7500, 200);
-		driveQ(46_in, 24_in, false, 80);
+		turnQ(42_in, 24_in); // this is seperate so that intake doesnt cause noise
+		intakeMotors.moveRelative(7800, 200);
+		driveQ(42_in, 24_in, false, 65);
 		// move cubes to stacking position
 		intakeMotors.moveVelocity(-200);
 		while(line.get_value_calibrated_HR() > 46000) pros::delay(20);
 		intakeMotors.moveVelocity(0);
 		// move to zone
-		intakeMotors.moveRelative(-200, 50);
-		turnQ(11_in, 42_in);
+		turnQ(11_in, 40_in);
 		trayMotor.moveAbsolute(5000, 60);
-		driveTo(11_in, 42_in);
+		driveQ(11_in, 40_in);
+		chassis->getModel()->tank(0.7, 0.7);
+		pros::delay(300);
+		chassis->getModel()->tank(0, 0);
 		trayMotor.moveAbsolute(6200, 100);
 		// stack
 		intakeMotors.moveVelocity(-20);
@@ -782,7 +807,9 @@ void autonomous() {
 		while (trayMotor.getPosition() < 6100) pros::delay(20);
 		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
-		driveP(250, 250);
+		chassis->getModel()->tank(0.7, 0.7);
+		pros::delay(150);
+		chassis->getModel()->tank(0, 0);
 		driveP(-600, -600, 80);
 		intakeMotors.moveVelocity(0);
 		break;
@@ -793,57 +820,33 @@ void autonomous() {
 	
 	case autonStates::redRick:
 		// red protec 3 cube
-		// grab 3 cubes
-		intakeMotors.moveRelative(5000, 200);
-		driveP(900, 900, 70);
-		intakeMotors.moveVoltage(0);
-		// turn for final cube
-		turnP(-90);
-		// grab final cube
-		intakeMotors.moveRelative(4000, 200);
-		driveP(900, 900, 70);
-		// move to zone
-		turnP(-132);
-		driveP(520, 520);
-		// stack
-		intakeMotors.moveRelative(-900, 200);
-		liftMotor.moveAbsolute(-20, 100);
-		trayMotor.moveAbsolute(6200, 100);
-		while (trayMotor.getPosition() < 6000) {
-			pros::delay(20);
-		}
-		trayMotor.moveAbsolute(0, 100);
-		intakeMotors.moveVelocity(-50);
-		driveP(250, 250);
-		driveP(-600, -600, 80);
-		intakeMotors.moveVelocity(0);
 		break;
 	
 	case autonStates::blueUnprotec:
 		// blue unprotec 7 cube
 		// flipout
-		// chassis->getModel()->tank(0.3, 0.3);
 		chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 		flipout();
 		chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
 		// grab first 3 cubes
-		intakeMotors.moveRelative(4500, 200);
+		intakeMotors.moveRelative(5000, 200);
 		driveTo(28_in, 0_in, false, 70);
 		// drive for next line of cubes
 		driveTo(8_in, -24_in, true);
 		// grab the 4 line
 		turnQ(42_in, -24_in); // this is seperate so that intake doesnt cause noise
-		intakeMotors.moveRelative(7500, 200);
+		intakeMotors.moveRelative(7800, 200);
 		driveQ(42_in, -24_in, false, 65);
 		// move cubes to stacking position
 		intakeMotors.moveVelocity(-200);
 		while(line.get_value_calibrated_HR() > 46000) pros::delay(20);
 		intakeMotors.moveVelocity(0);
 		// move to zone
-		turnQ(10_in, -39_in);
-		trayMotor.moveAbsolute(5000, 70);
-		chassis->getModel()->tank(1, 1);
-		pros::delay(1000);
+		turnQ(11_in, -40_in);
+		trayMotor.moveAbsolute(5000, 60);
+		driveQ(11_in, -40_in);
+		chassis->getModel()->tank(0.7, 0.7);
+		pros::delay(300);
 		chassis->getModel()->tank(0, 0);
 		trayMotor.moveAbsolute(6200, 100);
 		// stack
@@ -852,7 +855,7 @@ void autonomous() {
 		while (trayMotor.getPosition() < 6100) pros::delay(20);
 		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
-		chassis->getModel()->tank(1, 1);
+		chassis->getModel()->tank(0.7, 0.7);
 		pros::delay(150);
 		chassis->getModel()->tank(0, 0);
 		driveP(-600, -600, 80);
@@ -888,30 +891,6 @@ void autonomous() {
 		break;
 	case autonStates::blueRick:
 		// blue protec 3 cube
-		// grab 3 cubes
-		intakeMotors.moveRelative(5000, 200);
-		driveP(900, 900, 70);
-		intakeMotors.moveVoltage(0);
-		// turn for final cube
-		turnP(90);
-		// grab final cube
-		intakeMotors.moveRelative(4000, 200);
-		driveP(900, 900, 70);
-		// move to zone
-		turnP(132);
-		driveP(520, 520);
-		// stack
-		intakeMotors.moveRelative(-900, 200);
-		liftMotor.moveAbsolute(-20, 100);
-		trayMotor.moveAbsolute(6200, 100);
-		while (trayMotor.getPosition() < 6000) {
-			pros::delay(20);
-		}
-		trayMotor.moveAbsolute(0, 100);
-		intakeMotors.moveVelocity(-50);
-		driveP(250, 250);
-		driveP(-600, -600, 80);
-		intakeMotors.moveVelocity(0);
 		break;
 	
 	default:

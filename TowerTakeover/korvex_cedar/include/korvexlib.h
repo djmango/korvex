@@ -19,5 +19,5 @@ const int INTAKE_MTR1 = 3;
 const int INTAKE_MTR2 = 5;
 
 // sensors
-const int IMU_PORT = 10;
+const int IMU_PORT = 9;
 const char LINE_PORT = 'G';
