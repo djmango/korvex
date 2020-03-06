@@ -471,7 +471,7 @@ void flipout() {
 	intakeMotors.moveRelative(-600, 200);
 	pros::delay(200);
 	while(abs(intakeMotors.getPositionError()) > 5) pros::delay(20);
-	liftMotor.moveAbsolute(-50, 100);
+	liftMotor.moveAbsolute(-10, 100);
 	pros::delay(200);
 	while(abs(liftMotor.getPositionError()) > 40) pros::delay(20);
 }
@@ -646,7 +646,9 @@ void autonomous() {
 	switch (autonSelection) {
 	case autonStates::skills:
 		// skills doesnt exist
+		chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 		flipout();
+		chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
 		// grab the first 10
 		intakeMotors.moveVelocity(200);
 		driveTo(110_in, 0_in, false, 50);
@@ -655,36 +657,48 @@ void autonomous() {
 		while (line.get_value_calibrated_HR() < 46000) pros::delay(200); // wait for the cubes to go above line sensor
 		intakeMotors.moveVelocity(-100);
 		while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // go down until we are covering
-		intakeMotors.moveRelative(0, 100);
+		intakeMotors.moveRelative(-50, 100);
 		// go to zone
-		driveTo(121_in, 10_in);
+		turnP(45);
+		chassis->getModel()->tank(0.8, 0.8); // ram into wall, fingers crossed it lines us up
+		pros::delay(700);
+		chassis->getModel()->tank(0, 0);
 		// stack the first 10
-		trayMotor.moveAbsolute(6300, 70);
+		trayMotor.moveAbsolute(6350, 70);
+		intakeMotors.setBrakeMode(AbstractMotor::brakeMode::coast);
 		intakeMotors.moveVelocity(-10);
 		liftMotor.moveAbsolute(-50, 100);
-		while (trayMotor.getPosition() < 6200) pros::delay(20);
+		while (abs(trayMotor.getPositionError() > 50)) pros::delay(20);
+		pros::delay(900);
+		intakeMotors.moveVelocity(-150);
+		timer->placeMark();
+		while(abs(intakeMotors.getVelocityError()) > 20 and timer->getDtFromMark().convert(second) < 1) pros::delay(20); // idk man
 		trayMotor.moveAbsolute(0, 100);
-		pros::delay(600);
-		intakeMotors.moveVelocity(-50);
-		driveP(-450, -450, 80);
+		driveP(-450, -450, 95);
+		intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
 		// grab the cube for 1st tower
 		intakeMotors.moveVelocity(200);
-		driveTo(115_in, -29_in);
+		driveTo(115_in, -28_in, false, 80);
 		// move the first cube to position
-		while (line.get_value_calibrated_HR() < 46000) pros::delay(200); // wait for the cubes to go above line sensor
+		while (line.get_value_calibrated_HR() < 46000) pros::delay(20); // wait for the cubes to go above line sensor
 		intakeMotors.moveVelocity(-100);
 		while(line.get_value_calibrated_HR() > 46000) pros::delay(20); // go down until we are covering
 		intakeMotors.moveRelative(-50, 100);
 		while (abs(intakeMotors.getPositionError()) > 20) pros::delay(20);
-		liftMotor.moveAbsolute(2200, 60);
-		driveP(-230, -230);
+		liftMotor.moveAbsolute(2300, 100);
+		driveP(-150, -150);
+		turnP(-90);
 		// throw the cube in the tower
-		intakeMotors.moveRelative(-2400, 200);
-		pros::delay(200);
-		liftMotor.moveAbsolute(-50, 100);
+		intakeMotors.moveRelative(-2600, 140);
+		while (abs(intakeMotors.getPositionError()) > 20) pros::delay(20);
+		liftMotor.moveAbsolute(800, 100);
+		driveP(-70, -70);
 		// grab the next 7 ish cubes
+		turnQ(30_in, -22_in, false, true);
+		driveP(-400, -400);
 		intakeMotors.moveVelocity(200);
-		driveTo(26_in, -22_in, false, 50, true);
+		liftMotor.moveAbsolute(-20, 100);
+		driveTo(35_in, -22_in, false, 50, true);
 		// move second stack to correct position
 		while (line.get_value_calibrated_HR() < 46000) pros::delay(200); // wait for the cubes to go above line sensor
 		intakeMotors.moveVelocity(-200);
@@ -692,24 +706,50 @@ void autonomous() {
 		intakeMotors.moveRelative(-150, 100);
 		while (abs(intakeMotors.getPositionError()) > 20) pros::delay(20);
 		// drive to zone
-		driveTo(12_in, 10_in);
+		driveTo(12_in, 9_in);
 		// stack the 2nd stack
 		trayMotor.moveAbsolute(6300, 70);
 		intakeMotors.moveVelocity(-10);
 		liftMotor.moveAbsolute(-50, 100);
 		while (trayMotor.getPosition() < 6200) pros::delay(20);
+		pros::delay(900);
 		trayMotor.moveAbsolute(0, 100);
-		pros::delay(600);
 		intakeMotors.moveVelocity(-50);
 		driveP(-700, -700, 80);
 		// grab 2nd tower cube
 		intakeMotors.moveVelocity(200);
-		driveTo(50_in, 9_in);
-		while (line.get_value_calibrated_HR() < 46000) pros::delay(200);
+		driveTo(56_in, 7_in);
+		while (line.get_value_calibrated_HR() < 46000) pros::delay(20);
 		intakeMotors.moveVelocity(-100);
 		while(line.get_value_calibrated_HR() > 46000) pros::delay(20);
 		intakeMotors.moveRelative(-50, 100);
 		while (abs(intakeMotors.getPositionError()) > 20) pros::delay(20);
+		// drive to 2nd tower
+		driveP(-500, -500);
+		liftMotor.moveAbsolute(1800, 100);
+		driveTo(57_in, -4_in);
+		// throw the 2nd cube in the tower
+		intakeMotors.moveRelative(-2600, 120);
+		while (abs(intakeMotors.getPositionError()) > 20) pros::delay(20);
+		// drive to 3rd tower cube
+		turnQ(23_in, -35_in);
+		liftMotor.moveAbsolute(0, 100);
+		intakeMotors.moveVelocity(200);
+		driveTo(23_in, -35_in);
+		// normalize 3rd cube
+		while (line.get_value_calibrated_HR() < 46000) pros::delay(20);
+		intakeMotors.moveVelocity(-100);
+		while(line.get_value_calibrated_HR() > 46000) pros::delay(20);
+		intakeMotors.moveRelative(-50, 100);
+		while (abs(intakeMotors.getPositionError()) > 20) pros::delay(20);
+		liftMotor.moveAbsolute(2100, 100);
+		// line up with tower
+		turnP(-90);
+		// throw er in
+		intakeMotors.moveRelative(-2600, 150);
+		while (abs(intakeMotors.getPositionError()) > 20) pros::delay(20);
+		driveP(-200, -200);
+		liftMotor.moveAbsolute(0, 100);
 		break;
 
 	case autonStates::redUnprotec:
