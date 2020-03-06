@@ -167,10 +167,10 @@ void driveP(int targetLeft, int targetRight, int voltageMax=115, bool debugLog=f
 void driveQ(QLength targetX, QLength targetY, bool backwards=false, float voltageMax=115, bool forceFlip=false, bool debugLog=false) {
 
 	// tune for straights
-	float kp = 0.02;
-	float ki = 0.02;
-	float kd = 0.03;
-	float acc = 5;
+	float kp = 0.08;
+	float ki = 0.0;
+	float kd = 0.35;
+	// fk yeah lets just keep tuning 30 mins before a match lmao
 
 	// tune for turns
 	float kpTurn = 0.0;
@@ -274,7 +274,7 @@ void driveQ(QLength targetX, QLength targetY, bool backwards=false, float voltag
 			std::cout << pros::millis() << ": voltageRight  " << voltageRight << std::endl;
 			// std::cout << pros::millis() << ": xDif  " << xDif << std::endl;
 			// std::cout << pros::millis() << ": yDif  " << yDif << std::endl;
-			std::cout << pros::millis() << ": dist from orig  " << distanceOrig << std::endl;
+			// std::cout << pros::millis() << ": dist from orig  " << distanceOrig << std::endl;
 		}
 
 		// nothing goes after this
@@ -363,9 +363,10 @@ void turnP(int targetTurn, int voltageMax=127, bool debugLog=false) {
 
 void turnQ(QLength targetX, QLength targetY, bool backwards=false, bool forceFlip=false, bool debugLog=false) {
 	// tune for turns
-	float kp = 0.02;
-	float ki = 0.018;
-	float kd = 0.037;
+	float kp = 0.08;
+	float ki = 0.0;
+	float kd = 0.5;
+	// who needs an I? i retuned during drivers meeting lmao
 
 	// the untouchables
 	float errorTheta; // targetTheta - robotTheta
@@ -418,10 +419,10 @@ void turnQ(QLength targetX, QLength targetY, bool backwards=false, bool forceFli
 
 		// debug
 		// if (debugLog) {
-		// 	std::cout << pros::millis() << ": errorTheta  " << errorTheta << std::endl;
-		// 	std::cout << pros::millis() << ": targetTheta  " << targetTheta << std::endl;
+			// std::cout << pros::millis() << ": errorTheta  " << errorTheta << std::endl;
+			// std::cout << pros::millis() << ": targetTheta  " << targetTheta << std::endl;
 		// }
-		if (debugLog) std::cout << pros::millis() << "," << errorTheta << "," << voltage*50 << std::endl;
+		// if (debugLog) std::cout << pros::millis() << "," << errorTheta << "," << voltage*50 << std::endl;
 
 		// nothing goes after this
 		errorLastTheta = errorTheta;
@@ -468,7 +469,7 @@ void flipout() {
 	intakeMotors.moveRelative(700, 200);
 	pros::delay(100);
 	while(abs(intakeMotors.getPositionError()) > 5) pros::delay(20); // save the cube yo
-	intakeMotors.moveRelative(-600, 200);
+	intakeMotors.moveRelative(-600, 100);
 	pros::delay(200);
 	while(abs(intakeMotors.getPositionError()) > 5) pros::delay(20);
 	liftMotor.moveAbsolute(-10, 100);
@@ -632,7 +633,6 @@ void autonomous() {
 	chassis->setState({0_cm, 0_cm, 0_deg});
 	chassis->setMaxVelocity(200);
 	chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
-	float origAngle = imu.get_rotation();
 	
 	// motor setup
 	intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
@@ -640,8 +640,7 @@ void autonomous() {
 	
 	auto timer = TimeUtilFactory().create().getTimer();
 	timer->placeMark();
-
-	if (autonSelection == autonStates::off) autonSelection = autonStates::skills; // use debug if we havent selected any auton
+	if (autonSelection == autonStates::off) autonSelection = autonStates::blueUnprotec; // use debug if we havent selected any auton
 
 	switch (autonSelection) {
 	case autonStates::skills:
@@ -823,26 +822,29 @@ void autonomous() {
 	case autonStates::blueUnprotec:
 		// blue unprotec 7 cube
 		// flipout
-		chassis->getModel()->tank(0.3, 0.3);
+		// chassis->getModel()->tank(0.3, 0.3);
+		chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 		flipout();
+		chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
 		// grab first 3 cubes
 		intakeMotors.moveRelative(4500, 200);
 		driveTo(28_in, 0_in, false, 70);
 		// drive for next line of cubes
-		intakeMotors.moveRelative(-300, 200);
 		driveTo(8_in, -24_in, true);
 		// grab the 4 line
-		turnQ(46_in, -24_in); // this is seperate so that intake doesnt cause noise
+		turnQ(42_in, -24_in); // this is seperate so that intake doesnt cause noise
 		intakeMotors.moveRelative(7500, 200);
-		driveQ(46_in, -24_in, false, 80);
+		driveQ(42_in, -24_in, false, 65);
 		// move cubes to stacking position
 		intakeMotors.moveVelocity(-200);
 		while(line.get_value_calibrated_HR() > 46000) pros::delay(20);
 		intakeMotors.moveVelocity(0);
 		// move to zone
-		turnQ(11_in, -42_in);
+		turnQ(10_in, -39_in);
 		trayMotor.moveAbsolute(5000, 70);
-		driveTo(11_in, -42_in);
+		chassis->getModel()->tank(1, 1);
+		pros::delay(1000);
+		chassis->getModel()->tank(0, 0);
 		trayMotor.moveAbsolute(6200, 100);
 		// stack
 		intakeMotors.moveVelocity(-20);
@@ -850,7 +852,9 @@ void autonomous() {
 		while (trayMotor.getPosition() < 6100) pros::delay(20);
 		trayMotor.moveAbsolute(0, 100);
 		intakeMotors.moveVelocity(-50);
-		driveP(250, 250);
+		chassis->getModel()->tank(1, 1);
+		pros::delay(150);
+		chassis->getModel()->tank(0, 0);
 		driveP(-600, -600, 80);
 		intakeMotors.moveVelocity(0);
 		break;
