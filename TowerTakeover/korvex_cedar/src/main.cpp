@@ -167,9 +167,9 @@ void driveP(int targetLeft, int targetRight, int voltageMax=115, bool debugLog=f
 void driveQ(QLength targetX, QLength targetY, bool backwards=false, float voltageMax=115, bool forceFlip=false, bool debugLog=false) {
 
 	// tune for straights
-	float kp = 0.052;
-	float ki = 0.0;
-	float kd = 0.3; // .06, .38
+	float kp = 0.04;
+	float ki = 0.02;
+	float kd = 0.25;
 	// fk yeah lets just keep tuning 30 mins before a match lmao
 
 	// tune for turns
@@ -464,11 +464,11 @@ void flipout() {
 	intakeMotors.moveVelocity(200);
 	liftMotor.moveAbsolute(400, 200);
 	timer->placeMark();
-	while(line.get_value_calibrated_HR() > 46000 and timer->getDtFromMark().convert(second) < 1) pros::delay(20); // wait for the cube to get to position
+	while(line.get_value_calibrated_HR() > 46000 and timer->getDtFromMark().convert(second) < 0.5) pros::delay(20); // wait for the cube to get to position
 	intakeMotors.moveVelocity(200);
 	pros::delay(100);
 	timer->placeMark();
-	while(line.get_value_calibrated_HR() < 46000 and timer->getDtFromMark().convert(second) < 1) pros::delay(20); // move cube above position to initiate flipout
+	while(line.get_value_calibrated_HR() < 46000 and timer->getDtFromMark().convert(second) < 0.5) pros::delay(20); // move cube above position to initiate flipout
 	intakeMotors.moveRelative(600, 200);
 	pros::delay(20);
 	while(abs(intakeMotors.getPositionError()) > 50) pros::delay(20); // save the cube yo
@@ -646,7 +646,7 @@ void autonomous() {
 	
 	auto timer = TimeUtilFactory().create().getTimer();
 	timer->placeMark();
-	if (autonSelection == autonStates::off) autonSelection = autonStates::skills; // use debug if we havent selected any auton
+	if (autonSelection == autonStates::off) autonSelection = autonStates::redUnprotec; // use debug if we havent selected any auton
 
 	switch (autonSelection) {
 	case autonStates::skills:
@@ -781,35 +781,37 @@ void autonomous() {
 		flipout();
 		chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
 		// grab first 3 cubes
-		intakeMotors.moveRelative(5000, 200);
-		driveTo(28_in, 0_in, false, 70);
+		intakeMotors.moveRelative(6000, 200);
+		turnQ(100_in, 0_in); // idk why but it needs this??
+		driveTo(28_in, 0_in, false, 65);
 		// drive for next line of cubes
 		driveTo(8_in, 24_in, true);
 		// grab the 4 line
 		turnQ(42_in, 24_in); // this is seperate so that intake doesnt cause noise
-		intakeMotors.moveRelative(7800, 200);
+		intakeMotors.moveRelative(8000, 200);
 		driveQ(42_in, 24_in, false, 65);
+		intakeMotors.moveVelocity(200);
 		// move cubes to stacking position
+		timer->placeMark();
+		while (line.get_value_calibrated_HR() < 46000 and timer->getDtFromMark().convert(second) < 0.5) pros::delay(20);
 		intakeMotors.moveVelocity(-200);
-		while(line.get_value_calibrated_HR() > 46000) pros::delay(20);
-		intakeMotors.moveVelocity(0);
+		timer->placeMark();
+		while(line.get_value_calibrated_HR() > 46000 and timer->getDtFromMark().convert(second) < 0.5) pros::delay(20);
+		intakeMotors.moveRelative(-150, 200);
 		// move to zone
-		turnQ(11_in, 40_in);
-		trayMotor.moveAbsolute(5000, 60);
-		driveQ(11_in, 40_in);
-		chassis->getModel()->tank(0.7, 0.7);
-		pros::delay(300);
-		chassis->getModel()->tank(0, 0);
+		turnQ(9_in, 40_in);
+		trayMotor.moveAbsolute(5000, 90);
+		driveQ(9_in, 40_in);
 		trayMotor.moveAbsolute(6200, 100);
 		// stack
-		intakeMotors.moveVelocity(-20);
+		intakeMotors.moveVelocity(-30);
 		liftMotor.moveAbsolute(-20, 100);
 		while (trayMotor.getPosition() < 6100) pros::delay(20);
 		trayMotor.moveAbsolute(0, 100);
-		intakeMotors.moveVelocity(-50);
-		chassis->getModel()->tank(0.7, 0.7);
-		pros::delay(150);
+		chassis->getModel()->tank(0.5, 0.5);
+		pros::delay(80);
 		chassis->getModel()->tank(0, 0);
+		intakeMotors.moveVelocity(-50);
 		driveP(-600, -600, 80);
 		intakeMotors.moveVelocity(0);
 		break;
@@ -829,35 +831,37 @@ void autonomous() {
 		flipout();
 		chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
 		// grab first 3 cubes
-		intakeMotors.moveRelative(5000, 200);
-		driveTo(28_in, 0_in, false, 70);
+		intakeMotors.moveRelative(6000, 200);
+		turnQ(100_in, 0_in); // idk why but it needs this??
+		driveTo(28_in, 0_in, false, 65);
 		// drive for next line of cubes
 		driveTo(8_in, -24_in, true);
 		// grab the 4 line
 		turnQ(42_in, -24_in); // this is seperate so that intake doesnt cause noise
-		intakeMotors.moveRelative(7800, 200);
+		intakeMotors.moveRelative(8000, 200);
 		driveQ(42_in, -24_in, false, 65);
+		intakeMotors.moveVelocity(200);
 		// move cubes to stacking position
+		timer->placeMark();
+		while (line.get_value_calibrated_HR() < 46000 and timer->getDtFromMark().convert(second) < 0.5) pros::delay(20);
 		intakeMotors.moveVelocity(-200);
-		while(line.get_value_calibrated_HR() > 46000) pros::delay(20);
-		intakeMotors.moveVelocity(0);
+		timer->placeMark();
+		while(line.get_value_calibrated_HR() > 46000 and timer->getDtFromMark().convert(second) < 0.5) pros::delay(20);
+		intakeMotors.moveRelative(-150, 200);
 		// move to zone
-		turnQ(11_in, -40_in);
-		trayMotor.moveAbsolute(5000, 60);
-		driveQ(11_in, -40_in);
-		chassis->getModel()->tank(0.7, 0.7);
-		pros::delay(300);
-		chassis->getModel()->tank(0, 0);
+		turnQ(9_in, -40_in);
+		trayMotor.moveAbsolute(5000, 90);
+		driveQ(9_in, -40_in);
 		trayMotor.moveAbsolute(6200, 100);
 		// stack
-		intakeMotors.moveVelocity(-20);
+		intakeMotors.moveVelocity(-30);
 		liftMotor.moveAbsolute(-20, 100);
 		while (trayMotor.getPosition() < 6100) pros::delay(20);
 		trayMotor.moveAbsolute(0, 100);
-		intakeMotors.moveVelocity(-50);
-		chassis->getModel()->tank(0.7, 0.7);
-		pros::delay(150);
+		chassis->getModel()->tank(0.5, 0.5);
+		pros::delay(80);
 		chassis->getModel()->tank(0, 0);
+		intakeMotors.moveVelocity(-50);
 		driveP(-600, -600, 80);
 		intakeMotors.moveVelocity(0);
 		break;
@@ -922,6 +926,7 @@ void opcontrol() {
 	bool cubesPositioning = false; // true when we are moving the cubes down to the line sensor, for stacking
 	bool trayDebug = false; // im lazy
 	bool cubeDebug = false; // still lazy
+	auto timer = TimeUtilFactory().create().getTimer();
 
 	// main loop
 	while (true) {
@@ -938,7 +943,11 @@ void opcontrol() {
 		// advanced intake control, with goal-oriented assists
 
 		// auto cube positioning for stacking
-		if (cubeReturn.isPressed()) cubesPositioning = true; // outake until we detect cube
+		if (cubeReturn.isPressed()) {
+			cubesPositioning = true; // outake until we detect cube or timeout
+			timer->placeMark();
+		}
+		if (timer->getDtFromMark().convert(second) > 1) cubesPositioning = false; // timeout just in case
 
 		if (cubesPositioning) {
 			if (cubeState == cubeStates::settingCovered) {
@@ -976,30 +985,20 @@ void opcontrol() {
 		// advanced tray control, also with goal-oriented assists
 		if (trayReturn.changedToPressed()) { // manual tray toggle requests, this is highest priority control
 			if (trayState == trayStates::returned) { // if we are already returned, move the tray out
-				intakeMotors.setBrakeMode(AbstractMotor::brakeMode::coast);
-				chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
-				liftMotor.moveAbsolute(0, 100);
-				trayMotor.moveAbsolute(6400, 100);
+				trayMotor.moveAbsolute(6300, 90);
 				trayState = trayStates::extending;
 			}
 			else { // return to default tray position
-				intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
-				chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 				trayMotor.moveAbsolute(0, 100);
 				trayState = trayStates::returning;
 			}
 		}
 		else if (trayReturnAlt.changedToPressed()) { // a slower, further tray movement for high stacks
 			if (trayState == trayStates::returned) { // if we are already returned, move the tray out
-				intakeMotors.setBrakeMode(AbstractMotor::brakeMode::coast);
-				chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
-				liftMotor.moveAbsolute(0, 100);
 				trayMotor.moveAbsolute(6600, 65);
 				trayState = trayStates::extending;
 			}
 			else { // return to default tray position
-				intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
-				chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 				trayMotor.moveAbsolute(0, 100);
 				trayState = trayStates::returning;
 			}
@@ -1007,7 +1006,7 @@ void opcontrol() {
 
 		// update trayState
 		if (trayMotor.getPosition() <= 100 and abs(trayMotor.getActualVelocity()) <= 5 and trayState != trayStates::extending) trayState = trayStates::returned; // let functions know if weve returned
-		else if (trayMotor.getPosition() >= 6350) trayState = trayStates::returning;
+		else if (trayMotor.getPosition() >= 6000) trayState = trayStates::returning;
 
 		// tray control using shift key
 		if (trayState == trayStates::returned) {
@@ -1034,11 +1033,13 @@ void opcontrol() {
 				else if (intakeOut.isPressed() or (intakeShift.isPressed())) intakeMotors.moveVelocity(-200);
 				else if (joystickAvg > 0) intakeMotors.moveVoltage(0);
 				else intakeMotors.moveVelocity((joystickAvg*350));
+				intakeMotors.setBrakeMode(AbstractMotor::brakeMode::hold);
 				chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
 				if (trayDebug) std::cout << pros::millis() << ": trayState returning" << std::endl;
 				break;
 			case trayStates::extending:
 				liftMotor.moveAbsolute(-150, 100);
+				intakeMotors.setBrakeMode(AbstractMotor::brakeMode::coast);
 				chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
 
 				// the other intake control will not be used while we are stacking, all control is transfered to this block
