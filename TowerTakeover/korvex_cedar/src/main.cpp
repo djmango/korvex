@@ -167,9 +167,9 @@ void driveP(int targetLeft, int targetRight, int voltageMax=115, bool debugLog=f
 void driveQ(QLength targetX, QLength targetY, bool backwards=false, float voltageMax=115, bool forceFlip=false, bool debugLog=false) {
 
 	// tune for straights
-	float kp = 0.04;
-	float ki = 0.02;
-	float kd = 0.25;
+	float kp = 0.058;
+	float ki = 0.0;
+	float kd = 0.5;
 	// fk yeah lets just keep tuning 30 mins before a match lmao
 
 	// tune for turns
@@ -219,7 +219,7 @@ void driveQ(QLength targetX, QLength targetY, bool backwards=false, float voltag
 		error = std::sqrt(std::pow(xDif, 2) + std::pow(yDif, 2));
 
 		p = (error * kp);
-		if (abs(error) <= 10) i = ((i + error) * ki); // if we are in range for I to be desireable
+		if (abs(error) <= 5) i = ((i + error) * ki); // if we are in range for I to be desireable
 		else i = 0;
 		d = (error - errorLast) * kd;
 		
@@ -646,7 +646,7 @@ void autonomous() {
 	
 	auto timer = TimeUtilFactory().create().getTimer();
 	timer->placeMark();
-	if (autonSelection == autonStates::off) autonSelection = autonStates::redUnprotec; // use debug if we havent selected any auton
+	if (autonSelection == autonStates::off) autonSelection = autonStates::redProtec; // use debug if we havent selected any auton
 
 	switch (autonSelection) {
 	case autonStates::skills:
@@ -797,11 +797,11 @@ void autonomous() {
 		intakeMotors.moveVelocity(-200);
 		timer->placeMark();
 		while(line.get_value_calibrated_HR() > 46000 and timer->getDtFromMark().convert(second) < 0.5) pros::delay(20);
-		intakeMotors.moveRelative(-150, 200);
+		intakeMotors.moveRelative(-240, 200);
 		// move to zone
-		turnQ(9_in, 40_in);
-		trayMotor.moveAbsolute(5000, 90);
-		driveQ(9_in, 40_in);
+		turnQ(9_in, -43_in);
+		trayMotor.moveAbsolute(4000, 100);
+		driveQ(9_in, -43_in);
 		trayMotor.moveAbsolute(6200, 100);
 		// stack
 		intakeMotors.moveVelocity(-30);
@@ -818,10 +818,88 @@ void autonomous() {
 
 	case autonStates::redProtec:
 		// red protec 4 cube
+		// flipout
+		chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
+		intakeMotors.moveVelocity(200);
+		liftMotor.moveAbsolute(400, 200);
+		timer->placeMark();
+		while(line.get_value_calibrated_HR() > 46000 and timer->getDtFromMark().convert(second) < 0.5) pros::delay(20); // wait for the cube to get to position
+		intakeMotors.moveVelocity(200);
+		pros::delay(100);
+		timer->placeMark();
+		while(line.get_value_calibrated_HR() < 46000 and timer->getDtFromMark().convert(second) < 0.5) pros::delay(20); // move cube above position to initiate flipout
+		intakeMotors.moveRelative(600, 200);
+		pros::delay(20);
+		while(abs(intakeMotors.getPositionError()) > 50) pros::delay(20); // save the cube yo
+		intakeMotors.moveRelative(-300, 200);
+		pros::delay(200);
+		while(abs(intakeMotors.getPositionError()) > 5) pros::delay(20);
+		liftMotor.moveAbsolute(-10, 100);
+		pros::delay(200);
+		while(abs(liftMotor.getPositionError()) > 40) pros::delay(20);
+		pros::delay(700);
+		intakeMotors.moveVelocity(200);
+		// grab the first cube
+		turnQ(100_in, 0_in); // idk why but it needs this??
+		driveTo(20.5_in, 0_in, false, 70);
+		// grab the 3rd cube
+		driveTo(20.5_in, -24_in, false, 70);
+		// move cubes to correct position
+		timer->placeMark();
+		while (line.get_value_calibrated_HR() < 46000 and timer->getDtFromMark().convert(second) < 0.5) pros::delay(20);
+		intakeMotors.moveVelocity(-200);
+		timer->placeMark();
+		while(line.get_value_calibrated_HR() > 46000 and timer->getDtFromMark().convert(second) < 0.5) pros::delay(20);
+		intakeMotors.moveRelative(-120, 200);
+		// drive to zone
+		driveTo(8.5_in, -33.5_in, false, 70);
+		trayMotor.moveAbsolute(6200, 100);
+		// stack
+		intakeMotors.moveVelocity(-30);
+		liftMotor.moveAbsolute(-20, 100);
+		while (trayMotor.getPosition() < 6100) pros::delay(20);
+		pros::delay(300);
+		trayMotor.moveAbsolute(0, 100);
+		intakeMotors.moveVelocity(-50);
+		driveP(-600, -600, 80);
+		intakeMotors.moveVelocity(0);
 		break;
 	
 	case autonStates::redRick:
-		// red protec 3 cube
+		// red unprotec 6 cube
+		// flipout
+		chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
+		flipout();
+		chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::hold);
+		// grab 6 cubes
+		intakeMotors.moveVelocity(200);
+		turnQ(100_in, 0_in); // idk why but it needs this??
+		driveTo(50_in, -2_in, false, 60);
+		// move cubes to stacking position
+		timer->placeMark();
+		while (line.get_value_calibrated_HR() < 46000 and timer->getDtFromMark().convert(second) < 0.5) pros::delay(20);
+		intakeMotors.moveVelocity(-200);
+		timer->placeMark();
+		while(line.get_value_calibrated_HR() > 46000 and timer->getDtFromMark().convert(second) < 0.5) pros::delay(20);
+		intakeMotors.moveRelative(-240, 200);
+		// move to zone
+		turnQ(9_in, 26_in);
+		trayMotor.moveAbsolute(3000, 80);
+		driveQ(9_in, 26_in);
+		trayMotor.moveAbsolute(6200, 100);
+		// stack
+		intakeMotors.moveVelocity(-30);
+		liftMotor.moveAbsolute(-20, 100);
+		while (trayMotor.getPosition() < 6100) pros::delay(20);
+		trayMotor.moveAbsolute(0, 100);
+		pros::delay(600);
+		chassis->getModel()->tank(-0.3, -0.3);
+		chassis->getModel()->setBrakeMode(AbstractMotor::brakeMode::coast);
+		intakeMotors.moveVelocity(-50);
+		pros::delay(1000);
+		chassis->getModel()->tank(0, 0);
+		// driveP(-600, -600, 80);
+		intakeMotors.moveVelocity(0);
 		break;
 	
 	case autonStates::blueUnprotec:
