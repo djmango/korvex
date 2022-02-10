@@ -1,2 +1,2 @@
-﻿Django==2.2.13
+﻿Django==2.2.27
 whitenoise==4.0
