@@ -2,7 +2,7 @@
 
 ### a repository of all the software written for korvex robotics
 
-![US](/media/itookthewoktopoland.jpg?raw=true "We won States!")
+![US](/media/itookthewoktopoland.jpeg?raw=true "We won States!")
 
 ------
 
