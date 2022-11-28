@@ -2,6 +2,8 @@
 
 ### a repository of all the software written for korvex robotics
 
+![US](/media/itookthewoktopoland.jpg?raw=true "We won States!")
+
 ------
 
 ## what is VEX robotics?
